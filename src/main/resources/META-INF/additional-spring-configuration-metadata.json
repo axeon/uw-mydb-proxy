@@ -1,0 +1,126 @@
+{
+  "groups": [
+    {
+      "name": "uw.mydb",
+      "type": "uw.mydb.conf.MydbConfig",
+      "sourceType": "uw.mydb.conf.MydbConfig"
+    },
+    {
+      "name": "uw.mydb.server",
+      "type": "uw.mydb.conf.MydbConfig$ServerConfig",
+      "sourceType": "uw.mydb.conf.MydbConfig",
+      "sourceMethod": "getServer()"
+    },
+    {
+      "name": "uw.mydb.stats",
+      "type": "uw.mydb.conf.MydbConfig$Stats",
+      "sourceType": "uw.mydb.conf.MydbConfig",
+      "sourceMethod": "getStats()"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service",
+      "type": "uw.mydb.conf.MydbConfig$MetricService",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats",
+      "sourceMethod": "getMetricService()"
+    }
+  ],
+  "properties": [
+    {
+      "name": "uw.mydb.mysql-groups",
+      "type": "java.util.Map<java.lang.String,uw.mydb.conf.MydbConfig$MysqlGroupConfig>",
+      "description": "mysql配置组",
+      "sourceType": "uw.mydb.conf.MydbConfig"
+    },
+    {
+      "name": "uw.mydb.routes",
+      "type": "java.util.Map<java.lang.String,uw.mydb.conf.MydbConfig$RouteConfig>",
+      "description": "分表路由设置。",
+      "sourceType": "uw.mydb.conf.MydbConfig"
+    },
+    {
+      "name": "uw.mydb.schemas",
+      "type": "java.util.Map<java.lang.String,uw.mydb.conf.MydbConfig$SchemaConfig>",
+      "description": "schemas设置",
+      "sourceType": "uw.mydb.conf.MydbConfig"
+    },
+    {
+      "name": "uw.mydb.server.ip",
+      "type": "java.lang.String",
+      "description": "绑定的数据传输IP地址",
+      "sourceType": "uw.mydb.conf.MydbConfig$ServerConfig"
+    },
+    {
+      "name": "uw.mydb.server.port",
+      "type": "java.lang.Integer",
+      "description": "绑定的数据传输端口",
+      "sourceType": "uw.mydb.conf.MydbConfig$ServerConfig"
+    },
+    {
+      "name": "uw.mydb.stats.client-metrics",
+      "type": "java.lang.Boolean",
+      "description": "客户端统计。",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service.database",
+      "type": "java.lang.String",
+      "description": "influx数据库",
+      "sourceType": "uw.mydb.conf.MydbConfig$MetricService"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service.host",
+      "type": "java.lang.String",
+      "description": "influxdb主机",
+      "sourceType": "uw.mydb.conf.MydbConfig$MetricService"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service.interval",
+      "type": "java.lang.Long",
+      "description": "间隔时间。",
+      "sourceType": "uw.mydb.conf.MydbConfig$MetricService"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service.password",
+      "type": "java.lang.String",
+      "description": "influx密码",
+      "sourceType": "uw.mydb.conf.MydbConfig$MetricService"
+    },
+    {
+      "name": "uw.mydb.stats.metric-service.username",
+      "type": "java.lang.String",
+      "description": "influxdb用户名",
+      "sourceType": "uw.mydb.conf.MydbConfig$MetricService"
+    },
+    {
+      "name": "uw.mydb.stats.mysql-metrics",
+      "type": "java.lang.Boolean",
+      "description": "mysql统计.",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats"
+    },
+    {
+      "name": "uw.mydb.stats.schema-metrics",
+      "type": "java.lang.Boolean",
+      "description": "schema统计。",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats"
+    },
+    {
+      "name": "uw.mydb.stats.server-metrics",
+      "type": "java.lang.Boolean",
+      "description": "服务器的统计。",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats"
+    },
+    {
+      "name": "uw.mydb.stats.slow-query-timeout",
+      "type": "java.lang.Long",
+      "description": "slowQuery超时毫秒数。",
+      "sourceType": "uw.mydb.conf.MydbConfig$Stats"
+    },
+    {
+      "name": "uw.mydb.users",
+      "type": "java.util.Map<java.lang.String,uw.mydb.conf.MydbConfig$UserConfig>",
+      "description": "用户账号设置",
+      "sourceType": "uw.mydb.conf.MydbConfig"
+    }
+  ],
+  "hints": []
+}

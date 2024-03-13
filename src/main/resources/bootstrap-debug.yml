@@ -1,0 +1,26 @@
+project:
+  name: @project.name@
+  version: @project.version@
+
+spring:
+  application:
+    name: ${project.name}
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.88.21:8848
+        namespace: debug
+        username: nacos
+        password: nacos888
+        file-extension: yaml
+        refresh-enabled: false
+      discovery:
+        service: ${spring.application.name}
+        ip: ${APP_HOST:}
+        server-addr: ${spring.cloud.nacos.config.server-addr}
+        namespace: ${spring.cloud.nacos.config.namespace}
+        username: ${spring.cloud.nacos.config.username}
+        password: ${spring.cloud.nacos.config.password}
+logging:
+  level:
+    uw.mydb: trace
