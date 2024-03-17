@@ -5,7 +5,7 @@ variables:
   APP_PORT: 10000
   APP_MEM: 800
   APP_NAME: uw-mydb
-  REGISTRY: "192.168.88.21:5000"
+  REGISTRY: "dev.xili.pub:5000"
 
 # 编译
 #build:
@@ -18,4 +18,4 @@ variables:
 #    - APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
 #    - docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY}/${APP_NAME}:${APP_VERSION} .
 #    - docker push ${REGISTRY}/${APP_NAME}:${APP_VERSION}
-#    - /home/gitlab-runner/bin/deploy-registry-app.sh ${REGISTRY} ${APP_NAME} ${APP_VERSION} ${APP_PORT} ${APP_MEM}
+#    #- /home/gitlab-runner/bin/deploy-registry-app.sh ${REGISTRY} ${APP_NAME} ${APP_VERSION} ${APP_PORT} ${APP_MEM}
