@@ -8,14 +8,14 @@ variables:
   REGISTRY: "dev.xili.pub:5000"
 
 # 编译
-#build:
-#  stage: build
-#  only:
-#    - main
-#    - master
-#  script:
-#    - mvn clean package -U -Dmaven.test.skip=true
-#    - APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
-#    - docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY}/${APP_NAME}:${APP_VERSION} .
-#    - docker push ${REGISTRY}/${APP_NAME}:${APP_VERSION}
-#    #- /home/gitlab-runner/bin/deploy-registry-app.sh ${REGISTRY} ${APP_NAME} ${APP_VERSION} ${APP_PORT} ${APP_MEM}
+build:
+  stage: build
+  only:
+    - main
+    - master
+  script:
+    - mvn clean package -U -Dmaven.test.skip=true
+    - APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
+    - docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY}/${APP_NAME}:${APP_VERSION} .
+    - docker push ${REGISTRY}/${APP_NAME}:${APP_VERSION}
+    #- /home/gitlab-runner/bin/deploy-registry-app.sh ${REGISTRY} ${APP_NAME} ${APP_VERSION} ${APP_PORT} ${APP_MEM}
