@@ -25,6 +25,6 @@ public class MydbProperties {
     /**
      * 端口号。
      */
-    private int port;
+    private int proxyPort;
 
 }

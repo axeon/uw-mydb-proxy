@@ -25,6 +25,10 @@ public class MydbConfigService {
 
 
     static {
+        //Proxy配置缓存 key: routeId value:ProxyConfig
+        FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), (key, oldValue, newValue) -> {
+
+        } );
         //route配置缓存 key: routeId value:RouteConfig
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), (key, oldValue, newValue) -> {
 
@@ -37,7 +41,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), (key, oldValue, newValue) -> {
 
         } );
-        //schema meta缓存 key: clusterId.database value: List<tableName>
+        //schema meta缓存 key: clusterId.database value: Set<tableName>
         FusionCache.config( new FusionCache.Config( DataTable.class, 10000, 0L ), (key, oldValue, newValue) -> {
 
         } );
@@ -53,6 +57,15 @@ public class MydbConfigService {
     public static boolean checkTableExists(DataTable dataTable) {
         Set<String> tableSet = FusionCache.get( DataTable.class, dataTable.getClusterId() + "." + dataTable.getDatabase() );
         return tableSet.contains( dataTable.getTable() );
+    }
+
+    /**
+     * 获得proxy配置。
+     * @param configId
+     * @return
+     */
+    public static MydbProxyConfig getProxyConfig(String configId) {
+        return FusionCache.get( MydbProxyConfig.class, configId );
     }
 
     /**
@@ -91,11 +104,5 @@ public class MydbConfigService {
         return FusionCache.get( MysqlClusterConfig.class, clusterId );
     }
 
-    /**
-     * 拉取完整配置。
-     */
-    private static MydbFullConfig loadConfig() throws Exception {
-        return agentClient.getForEntity( "/agent/mydb/getConfig", MydbFullConfig.class ).getValue();
-    }
 
 }

@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
-import uw.mydb.vo.MydbFullConfig;
 
 
 /**
@@ -14,7 +13,7 @@ import uw.mydb.vo.MydbFullConfig;
  * @author axeon
  */
 @Configuration
-@EnableConfigurationProperties({MydbFullConfig.class})
+@EnableConfigurationProperties({MydbProperties.class})
 public class MydbSpringAutoConfiguration {
 
     /**

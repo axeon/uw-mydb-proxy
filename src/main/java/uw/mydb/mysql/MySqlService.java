@@ -139,7 +139,6 @@ public class MySqlService implements ConcurrentBag.IBagStateListener {
                     .handler( new MySqlDataHandlerFactory() );
             addSessionExecutor = new ThreadPoolExecutor( 1, 10, 20, SECONDS, new SynchronousQueue<>(),
                     new ThreadFactoryBuilder().setNameFormat( "mysql_add_session-%d" ).setDaemon( true ).build(), new ThreadPoolExecutor.DiscardPolicy() );
-            MySqlMaintenanceService.scheduleHouseKeeping( new HouseKeeper() );
             return true;
         } else {
             return false;
@@ -394,80 +393,6 @@ public class MySqlService implements ConcurrentBag.IBagStateListener {
     }
 
     /**
-     * House Keeping后台线程。
-     */
-    public final class HouseKeeper implements Runnable {
-
-        @Override
-        public void run() {
-            try {
-                final long now = SystemClock.now();
-                int idleCount = 0, busyCount = 0;
-                final List<MySqlSession> list = sessionBag.sourceList();
-                for (MySqlSession session : list) {
-                    switch (session.getState()) {
-                        case STATE_USING:
-                            busyCount++;
-                            checkBusyTimeout( session, now );
-                            break;
-                        case STATE_NORMAL:
-                            idleCount++;
-                            checkIdleTimeout( session, now, idleCount );
-                            break;
-                        default:
-                            break;
-                    }
-                }
-                fillPool(); // Try to maintain minimum connections
-            } catch (Exception e) {
-                logger.error( "Unexpected exception in housekeeping task", e );
-            }
-        }
-
-        /**
-         * 检查忙超时。
-         *
-         * @param session
-         * @param now
-         */
-        void checkBusyTimeout(MySqlSession session, long now) {
-            if (SystemClock.elapsedMillis( session.lastAccess, now ) > SECONDS.toMillis( config.getConnBusyTimeout() ) && sessionBag.reserve( STATE_USING, session )) {
-                closeSession( session, MySqlErrorCode.ERR_CONN_BUSY_TIMEOUT, "connection has busy timeout" );
-            } else {
-                checkAgeTimeout( session, now );
-            }
-        }
-
-        /**
-         * 检查闲超时。
-         *
-         * @param session
-         * @param now
-         */
-        void checkIdleTimeout(MySqlSession session, long now, int idleCount) {
-            if (idleCount > config.getConnMin() && SystemClock.elapsedMillis( session.lastAccess, now ) > SECONDS.toMillis( config.getConnIdleTimeout() ) && sessionBag.reserve( STATE_NORMAL, session )) {
-                closeSession( session, MySqlErrorCode.ERR_NONE, "connection has idle timeout" );
-            } else {
-                //检查寿命超时。
-                checkAgeTimeout( session, now );
-            }
-        }
-
-        /**
-         * 检查寿命超时。
-         *
-         * @param session
-         * @param now
-         */
-        void checkAgeTimeout(MySqlSession session, long now) {
-            if (SystemClock.elapsedMillis( session.createTime, now ) > SECONDS.toMillis( config.getConnMaxAge() ) && sessionBag.reserve( STATE_NORMAL, session )) {
-                closeSession( session, MySqlErrorCode.ERR_NONE, "connection has maxAge timeout" );
-            }
-        }
-
-    }
-
-    /**
      * 向bag中增加一个session。
      *
      * @param session
@@ -498,12 +423,6 @@ public class MySqlService implements ConcurrentBag.IBagStateListener {
         //session必须解绑。
         session.unbind();
         if (sessionBag.remove( session )) {
-            MySqlMaintenanceService.queueCloseSession( new Runnable() {
-                @Override
-                public void run() {
-                    session.trueClose();
-                }
-            } );
         }
     }
 }

@@ -1,14 +1,11 @@
 package uw.mydb.vo;
 
-import java.util.Map;
-import java.util.Set;
-
 /**
- * mydb完整配置，仅用于初次传输数据。
+ * mydb proxy配置类。
  *
  * @author axeon
  */
-public class MydbFullConfig {
+public class MydbProxyConfig {
 
     /**
      * 配置ID
@@ -44,31 +41,6 @@ public class MydbFullConfig {
      * 更新时间戳。
      */
     private long lastUpdate;
-
-    /**
-     * 表配置Map。
-     */
-    private Map<String, TableConfig> tableMap;
-
-    /**
-     * 路由配置Map。
-     */
-    private Map<Long, RouteConfig> routeMap;
-
-    /**
-     * saas节点Map。
-     */
-    private Map<String, DataNode> saasNodeMap;
-
-    /**
-     * mysql集群map。
-     */
-    private Map<Long, MysqlClusterConfig> mysqlClusterMap;
-
-    /**
-     * schemaMap。
-     */
-    private Map<String, Set<String>> schemaMetaMap;
 
     public long getConfigId() {
         return configId;
@@ -116,46 +88,6 @@ public class MydbFullConfig {
 
     public void setBaseCluster(long baseCluster) {
         this.baseCluster = baseCluster;
-    }
-
-    public Map<String, TableConfig> getTableMap() {
-        return tableMap;
-    }
-
-    public void setTableMap(Map<String, TableConfig> tableMap) {
-        this.tableMap = tableMap;
-    }
-
-    public Map<Long, RouteConfig> getRouteMap() {
-        return routeMap;
-    }
-
-    public void setRouteMap(Map<Long, RouteConfig> routeMap) {
-        this.routeMap = routeMap;
-    }
-
-    public Map<String, DataNode> getSaasNodeMap() {
-        return saasNodeMap;
-    }
-
-    public void setSaasNodeMap(Map<String, DataNode> saasNodeMap) {
-        this.saasNodeMap = saasNodeMap;
-    }
-
-    public Map<Long, MysqlClusterConfig> getMysqlClusterMap() {
-        return mysqlClusterMap;
-    }
-
-    public void setMysqlClusterMap(Map<Long, MysqlClusterConfig> mysqlClusterMap) {
-        this.mysqlClusterMap = mysqlClusterMap;
-    }
-
-    public Map<String, Set<String>> getSchemaMetaMap() {
-        return schemaMetaMap;
-    }
-
-    public void setSchemaMetaMap(Map<String, Set<String>> schemaMetaMap) {
-        this.schemaMetaMap = schemaMetaMap;
     }
 
     public long getLastUpdate() {

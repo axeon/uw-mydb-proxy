@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.vo.DataTable;
-import uw.mydb.vo.MydbFullConfig;
 import uw.mydb.vo.RouteConfig;
 import uw.mydb.vo.TableConfig;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 路由管理器。
@@ -22,43 +22,41 @@ public class RouteManager {
     /**
      * 算法实例的管理器
      */
-    private static Map<Long, ArrayList<RouteAlgorithm>> routeAlgorithmMap = new HashMap<>();
-
-    private static MydbFullConfig config;
+    private static Map<Long, ArrayList<RouteAlgorithm>> routeAlgorithmMap = new ConcurrentHashMap<>();
 
 
     /**
      * 初始化管理器，缓存算法实例。
      */
     public static void init() {
-        // 初始化本机路由算法。
-        for (RouteConfig routeConfig : config.getRouteMap().values()) {
-            ArrayList<RouteAlgorithm> routeAlgorithms = new ArrayList<>();
-            try {
-                Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
-                Object object = clazz.getDeclaredConstructor().newInstance();
-                if (object instanceof RouteAlgorithm algorithm) {
-                    algorithm.init( routeConfig );
-                    algorithm.config();
-                    routeAlgorithms.add( algorithm );
-                }
-            } catch (Exception e) {
-                logger.error( "算法类加载失败！" + e.getMessage(), e );
-            }
-            routeAlgorithmMap.put( routeConfig.getId(), routeAlgorithms );
-        }
-        // 处理parent路由算法
-        for (RouteConfig routeConfig : config.getRouteMap().values()) {
-            if (routeConfig.getParentId() > 0) {
-                ArrayList<RouteAlgorithm> routeAlgorithms = routeAlgorithmMap.get( routeConfig.getId() );
-                ArrayList<RouteAlgorithm> parentRouteAlgorithms = routeAlgorithmMap.get( routeConfig.getParentId() );
-                if (parentRouteAlgorithms != null) {
-                    routeAlgorithms.addAll( parentRouteAlgorithms );
-                } else {
-                    logger.error( "RouteConfig[{}]未找到指定的父级配置[{}]", routeConfig.getRouteName(), routeConfig.getParentId() );
-                }
-            }
-        }
+//        // 初始化本机路由算法。
+//        for (RouteConfig routeConfig : config.getRouteMap().values()) {
+//            ArrayList<RouteAlgorithm> routeAlgorithms = new ArrayList<>();
+//            try {
+//                Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
+//                Object object = clazz.getDeclaredConstructor().newInstance();
+//                if (object instanceof RouteAlgorithm algorithm) {
+//                    algorithm.init( routeConfig );
+//                    algorithm.config();
+//                    routeAlgorithms.add( algorithm );
+//                }
+//            } catch (Exception e) {
+//                logger.error( "算法类加载失败！" + e.getMessage(), e );
+//            }
+//            routeAlgorithmMap.put( routeConfig.getId(), routeAlgorithms );
+//        }
+//        // 处理parent路由算法
+//        for (RouteConfig routeConfig : config.getRouteMap().values()) {
+//            if (routeConfig.getParentId() > 0) {
+//                ArrayList<RouteAlgorithm> routeAlgorithms = routeAlgorithmMap.get( routeConfig.getId() );
+//                ArrayList<RouteAlgorithm> parentRouteAlgorithms = routeAlgorithmMap.get( routeConfig.getParentId() );
+//                if (parentRouteAlgorithms != null) {
+//                    routeAlgorithms.addAll( parentRouteAlgorithms );
+//                } else {
+//                    logger.error( "RouteConfig[{}]未找到指定的父级配置[{}]", routeConfig.getRouteName(), routeConfig.getParentId() );
+//                }
+//            }
+//        }
     }
 
     /**
@@ -104,7 +102,7 @@ public class RouteManager {
         //构造空路由配置。
         routeInfoData.setSingle( routeInfo );
         //获得路由算法列表。
-        List<RouteAlgorithm> routeAlgorithms = routeAlgorithmMap.get( tableConfig.getRouteId() );
+        List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         if (routeAlgorithms == null) {
             return routeInfoData;
         }
@@ -146,14 +144,15 @@ public class RouteManager {
                 routeInfoData.setSingle( routeInfo );
             }
         }
+
         //TODO 检查schema情况
-//        if (routeInfoData.isSingle()) {
-//            SchemaInfoService.checkAndCreateSchema(tableConfig, routeInfoData.getRouteResult());
-//        } else {
-//            for (RouteAlgorithm.RouteResult info : routeInfoData.getRouteResults()) {
-//                SchemaInfoService.checkAndCreateSchema(tableConfig, info);
-//            }
-//        }
+        if (routeInfoData.isSingle()) {
+            MydbConfigService.checkTableExists( routeInfoData.getRouteResult() );
+        } else {
+            for (DataTable dataTable : routeInfoData.getRouteResults()) {
+                MydbConfigService.checkTableExists( dataTable );
+            }
+        }
         return routeInfoData;
     }
 
@@ -164,12 +163,51 @@ public class RouteManager {
      * @return
      */
     public static List<DataTable> getAllRouteList(TableConfig tableConfig) throws RouteAlgorithm.RouteException {
-        List<RouteAlgorithm> routeAlgorithms = routeAlgorithmMap.get( tableConfig.getRouteId() );
+        List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         List<DataTable> routeInfo = new ArrayList<>();
         for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
             routeInfo = routeAlgorithm.getAllRouteList( tableConfig, routeInfo );
         }
         return routeInfo;
+    }
+
+    /**
+     * 获得路由算法列表。
+     *
+     * @param routeId
+     * @return
+     */
+    private static ArrayList<RouteAlgorithm> getRouteAlgorithmList(long routeId) {
+        return routeAlgorithmMap.computeIfAbsent( routeId, key -> {
+            ArrayList<RouteAlgorithm> algorithmList = new ArrayList<>();
+            long loadRouteId = routeId;
+            //重试最多10次。
+            for (int i = 0; i < 10; i++) {
+                if (loadRouteId < 1) {
+                    return algorithmList;
+                }
+                RouteConfig routeConfig = MydbConfigService.getRouteConfig( loadRouteId );
+                if (routeConfig == null) {
+                    return algorithmList;
+                }
+                try {
+                    Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
+                    Object object = clazz.getDeclaredConstructor().newInstance();
+                    if (object instanceof RouteAlgorithm algorithm) {
+                        algorithm.init( routeConfig );
+                        algorithm.config();
+                        algorithmList.add( algorithm );
+                    }
+                } catch (Exception e) {
+                    logger.error( "算法类加载失败！" + e.getMessage(), e );
+                }
+                //继续循环上级。
+                if (routeConfig.getParentId() > 0) {
+                    loadRouteId = routeConfig.getParentId();
+                }
+            }
+            return algorithmList;
+        } );
     }
 
 

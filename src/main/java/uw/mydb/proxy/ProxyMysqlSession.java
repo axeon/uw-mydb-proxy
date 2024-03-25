@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.conf.MydbConfigService;
 import uw.mydb.constant.GlobalConstants;
 import uw.mydb.mysql.MySqlClusterManager;
 import uw.mydb.mysql.MySqlClusterService;
@@ -22,7 +23,7 @@ import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
 import uw.mydb.util.RandomUtils;
 import uw.mydb.util.SystemClock;
-import uw.mydb.vo.MydbFullConfig;
+import uw.mydb.vo.MydbProxyConfig;
 
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
@@ -161,9 +162,6 @@ public class ProxyMysqlSession implements MySqlSessionCallback {
      */
     private SqlParseResult routeResult;
 
-    private MydbFullConfig config;
-
-
 
     public ProxyMysqlSession(ChannelHandlerContext ctx) {
         this.ctx = ctx;
@@ -213,6 +211,7 @@ public class ProxyMysqlSession implements MySqlSessionCallback {
     public void setDatabase(String database) {
         if (StringUtils.isNotBlank( database )) {
             this.database = database;
+            MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
             MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService( config.getBaseCluster() );
             groupService.getMasterService().getSession( this ).exeCommand( false, CommandPacket.build( "use " + this.database ) );
         } else {
@@ -257,6 +256,8 @@ public class ProxyMysqlSession implements MySqlSessionCallback {
      * @param buf
      */
     public void auth(ChannelHandlerContext ctx, ByteBuf buf) {
+        MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
+
         AuthPacket authPacket = new AuthPacket();
         authPacket.readPayLoad( buf );
         String authPluginName = authPacket.authPluginName;
