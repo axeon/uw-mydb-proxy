@@ -26,46 +26,12 @@ public class RouteManager {
 
 
     /**
-     * 初始化管理器，缓存算法实例。
-     */
-    public static void init() {
-//        // 初始化本机路由算法。
-//        for (RouteConfig routeConfig : config.getRouteMap().values()) {
-//            ArrayList<RouteAlgorithm> routeAlgorithms = new ArrayList<>();
-//            try {
-//                Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
-//                Object object = clazz.getDeclaredConstructor().newInstance();
-//                if (object instanceof RouteAlgorithm algorithm) {
-//                    algorithm.init( routeConfig );
-//                    algorithm.config();
-//                    routeAlgorithms.add( algorithm );
-//                }
-//            } catch (Exception e) {
-//                logger.error( "算法类加载失败！" + e.getMessage(), e );
-//            }
-//            routeAlgorithmMap.put( routeConfig.getId(), routeAlgorithms );
-//        }
-//        // 处理parent路由算法
-//        for (RouteConfig routeConfig : config.getRouteMap().values()) {
-//            if (routeConfig.getParentId() > 0) {
-//                ArrayList<RouteAlgorithm> routeAlgorithms = routeAlgorithmMap.get( routeConfig.getId() );
-//                ArrayList<RouteAlgorithm> parentRouteAlgorithms = routeAlgorithmMap.get( routeConfig.getParentId() );
-//                if (parentRouteAlgorithms != null) {
-//                    routeAlgorithms.addAll( parentRouteAlgorithms );
-//                } else {
-//                    logger.error( "RouteConfig[{}]未找到指定的父级配置[{}]", routeConfig.getRouteName(), routeConfig.getParentId() );
-//                }
-//            }
-//        }
-    }
-
-    /**
-     * 获得匹配列的map。
+     * 构造路由keyData。
      *
      * @param tableConfig
      * @return
      */
-    public static RouteAlgorithm.RouteKeyData getParamMap(RouteAlgorithm.RouteKeyData keyData, TableConfig tableConfig) {
+    public static RouteAlgorithm.RouteKeyData buildRouteKeyData(RouteAlgorithm.RouteKeyData keyData, TableConfig tableConfig) {
         if (tableConfig == null) {
             return null;
         }

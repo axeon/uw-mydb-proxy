@@ -502,7 +502,7 @@ public class SqlParser {
         }
         //如果有route信息的，拉一下routeKeyData。
         if (tableRouteData.tableConfig.getRouteId() > 0) {
-            RouteManager.getParamMap( routeKeyData, tableRouteData.tableConfig );
+            RouteManager.buildRouteKeyData( routeKeyData, tableRouteData.tableConfig );
         }
         return tableRouteData;
     }

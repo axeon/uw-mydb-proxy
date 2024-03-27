@@ -17,6 +17,7 @@ public enum MysqlClusterMode {
      * 主从模式
      */
     MASTER_SLAVE( 1, "主从模式" ),
+
     /**
      * 主主模式
      */
