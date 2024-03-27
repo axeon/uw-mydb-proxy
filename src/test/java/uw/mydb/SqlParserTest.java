@@ -47,7 +47,6 @@ public class SqlParserTest {
         SpringApplication.run(UwMydbApplication.class, args);
         database = "";
         //初始化路由管理器
-        RouteManager.init();
         Options opt = new OptionsBuilder()
                 .include(SqlParserTest.class.getSimpleName())
                 .forks(0)
