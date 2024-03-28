@@ -1,6 +1,6 @@
 package uw.mydb.stats.vo;
 
-import uw.mydb.proxy.ProxyMysqlSession;
+import uw.mydb.proxy.ProxySession;
 import uw.mydb.proxy.ProxySessionManager;
 
 import java.util.Map;
@@ -42,7 +42,7 @@ public class ServerRunInfo {
      * @return
      */
     public Map<String, Long> getConnectionMap() {
-        return ProxySessionManager.getMap().values().stream().map(ProxyMysqlSession::getHost).collect(Collectors.groupingBy(Function.identity(), counting()));
+        return ProxySessionManager.getMap().values().stream().map( ProxySession::getHost).collect(Collectors.groupingBy(Function.identity(), counting()));
     }
 
 }

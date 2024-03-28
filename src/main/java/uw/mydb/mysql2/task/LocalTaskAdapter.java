@@ -1,10 +1,10 @@
-package uw.mydb.mysql2.tool;
+package uw.mydb.mysql2.task;
 
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.mysql.MySqlClusterService;
 import uw.mydb.mysql2.MySqlClusterManager;
-import uw.mydb.mysql2.MySqlClusterService;
 import uw.mydb.mysql2.MySqlSession;
 import uw.mydb.mysql2.MySqlSessionCallback;
 import uw.mydb.protocol.packet.CommandPacket;
@@ -18,7 +18,7 @@ import uw.mydb.protocol.packet.MySqlPacket;
  */
 public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
 
-    private static final Logger logger = LoggerFactory.getLogger(LocalTaskAdapter.class);
+    private static final Logger logger = LoggerFactory.getLogger( LocalTaskAdapter.class );
 
     /**
      * 用于执行的命令的mysqlGroupName。
@@ -84,17 +84,17 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
         cmd.command = MySqlPacket.CMD_QUERY;
         cmd.arg = sql;
 
-        MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService(mysqlClusterId);
+        MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService( mysqlClusterId );
         if (groupService == null) {
-            logger.warn("无法找到合适的mysqlGroup!");
+            logger.warn( "无法找到合适的mysqlGroup!" );
             return;
         }
-        MySqlSession mysqlSession = groupService.getMasterService().getSession(this);
+        MySqlSession mysqlSession = null;// groupService.getMasterService().getSession(this);
         if (mysqlSession == null) {
-            logger.warn("无法找到合适的mysqlSession!");
+            logger.warn( "无法找到合适的mysqlSession!" );
             return;
         }
-        mysqlSession.exeCommand(isMaster, cmd);
+        mysqlSession.exeCommand( isMaster, cmd );
     }
 
     /**
@@ -178,9 +178,9 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
     @Override
     public void onFinish() {
         if (errorNo == 0) {
-            localCmdCallback.onSuccess(data);
+            localCmdCallback.onSuccess( data );
         } else {
-            localCmdCallback.onFailure(errorNo, errorMessage);
+            localCmdCallback.onFailure( errorNo, errorMessage );
         }
     }
 }

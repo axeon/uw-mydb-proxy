@@ -18,7 +18,7 @@ import java.net.InetSocketAddress;
  */
 public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
 
-    public static final AttributeKey<ProxyMysqlSession> MYDB_SESSION = AttributeKey.valueOf("mydb.session");
+    public static final AttributeKey<ProxySession> MYDB_SESSION = AttributeKey.valueOf("mydb.session");
 
     private static final Logger logger = LoggerFactory.getLogger(ProxyDataHandler.class);
 
@@ -30,7 +30,7 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        ProxyMysqlSession session = new ProxyMysqlSession(ctx);
+        ProxySession session = new ProxySession(ctx);
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
         session.setHost(address.getAddress().getHostAddress());
         session.setPort(address.getPort());
@@ -50,7 +50,7 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
         //拿到session
-        ProxyMysqlSession session = ctx.channel().attr(MYDB_SESSION).get();
+        ProxySession session = ctx.channel().attr(MYDB_SESSION).get();
         if (session == null) {
             logger.warn("!!!发现错误来源的访问信息，来源:{}", ctx.channel().remoteAddress());
             ctx.close();
@@ -132,7 +132,7 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        ProxyMysqlSession session = ctx.channel().attr(MYDB_SESSION).get();
+        ProxySession session = ctx.channel().attr(MYDB_SESSION).get();
         ProxySessionManager.remove(ctx.channel().remoteAddress().toString());
         super.channelInactive(ctx);
     }

@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.constant.MydbRouteMatchMode;
 import uw.mydb.protocol.util.MySqlErrorCode;
-import uw.mydb.proxy.ProxyMysqlSession;
+import uw.mydb.proxy.ProxySession;
 import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.route.RouteManager;
 import uw.mydb.sqlparser.parser.HintTypes;
@@ -35,7 +35,7 @@ public class SqlParser {
     /**
      * 代理session
      */
-    private ProxyMysqlSession proxySession;
+    private ProxySession proxySession;
 
     /**
      * sql所在的schema
@@ -113,7 +113,7 @@ public class SqlParser {
      * @param proxySession
      * @param srcSql
      */
-    public SqlParser(ProxyMysqlSession proxySession, String srcSql) {
+    public SqlParser(ProxySession proxySession, String srcSql) {
         this.proxySession = proxySession;
         this.database = proxySession.getDatabase();
         this.srcSql = srcSql;

@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ProxySessionManager {
 
-    private static ConcurrentHashMap<String, ProxyMysqlSession> map = new ConcurrentHashMap();
+    private static ConcurrentHashMap<String, ProxySession> map = new ConcurrentHashMap();
 
     /**
      * 获得在线计数。
@@ -25,7 +25,7 @@ public class ProxySessionManager {
      *
      * @return
      */
-    public static ConcurrentHashMap<String, ProxyMysqlSession> getMap() {
+    public static ConcurrentHashMap<String, ProxySession> getMap() {
         return map;
     }
 
@@ -35,7 +35,7 @@ public class ProxySessionManager {
      * @param key
      * @param session
      */
-    public static void put(String key, ProxyMysqlSession session) {
+    public static void put(String key, ProxySession session) {
         map.put(key, session);
     }
 

@@ -36,9 +36,9 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author axeon
  */
-public class ProxyMysqlSession implements MySqlSessionCallback {
+public class ProxySession implements MySqlSessionCallback {
 
-    private static final Logger logger = LoggerFactory.getLogger( ProxyMysqlSession.class );
+    private static final Logger logger = LoggerFactory.getLogger( ProxySession.class );
 
     /**
      * 多节点执行的异步线程池。
@@ -163,7 +163,7 @@ public class ProxyMysqlSession implements MySqlSessionCallback {
     private SqlParseResult routeResult;
 
 
-    public ProxyMysqlSession(ChannelHandlerContext ctx) {
+    public ProxySession(ChannelHandlerContext ctx) {
         this.ctx = ctx;
         this.id = sessionIdGenerator.incrementAndGet();
     }

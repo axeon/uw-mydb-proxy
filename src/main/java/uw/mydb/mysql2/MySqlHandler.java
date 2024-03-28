@@ -13,10 +13,10 @@ import org.slf4j.LoggerFactory;
  *
  * @author axeon
  */
-public class MySqlDataHandler extends ChannelInboundHandlerAdapter {
+public class MySqlHandler extends ChannelInboundHandlerAdapter {
 
     public static final AttributeKey<MySqlSession> MYSQL_SESSION = AttributeKey.valueOf("mysql.session");
-    private static final Logger logger = LoggerFactory.getLogger(MySqlDataHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger( MySqlHandler.class);
 
     @Override
     public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
