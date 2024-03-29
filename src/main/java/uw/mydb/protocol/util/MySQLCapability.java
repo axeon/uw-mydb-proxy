@@ -269,7 +269,9 @@ public class MySQLCapability {
     /**
      * Enable authentication response packet to be larger than 255 bytes.
      * <p>
-     * When the ability to change default plugin require that the initial password field in the Protocol::HandshakeResponse41 paclet can be of arbitrary size. However, the 4.1 client-server protocol limits the length of the auth-data-field sent from client to server to 255 bytes. The solution is to change the type of the field to a true length encoded string and indicate the protocol change with this client capability flag.
+     * When the ability to change default plugin require that the initial password field in the Protocol::HandshakeResponse41 paclet can be of arbitrary size. However, the 4.1
+     * client-server protocol limits the length of the auth-data-field sent from client to server to 255 bytes. The solution is to change the type of the field to a true length
+     * encoded string and indicate the protocol change with this client capability flag.
      * <p>
      * Server
      * Understands length-encoded integer for auth response data in Protocol::HandshakeResponse41.
@@ -326,7 +328,8 @@ public class MySQLCapability {
      * Expects an OK_Packet (instead of EOF_Packet) after the resultset rows of a Text Resultset.
      * <p>
      * Background
-     * To support CLIENT_SESSION_TRACK, additional information must be sent after all successful commands. Although the OK_Packet is extensible, the EOF_Packet is not due to the overlap of its bytes with the content of the Text Resultset Row.
+     * To support CLIENT_SESSION_TRACK, additional information must be sent after all successful commands. Although the OK_Packet is extensible, the EOF_Packet is not due to the
+     * overlap of its bytes with the content of the Text Resultset Row.
      * <p>
      * Therefore, the EOF_Packet in the Text Resultset is replaced with an OK_Packet. EOF_Packet is deprecated as of MySQL 5.7.5.
      * <p>
@@ -392,12 +395,12 @@ public class MySQLCapability {
         flag |= MySQLCapability.CLIENT_MULTI_STATEMENTS;
         flag |= MySQLCapability.CLIENT_MULTI_RESULTS;
         flag |= MySQLCapability.CLIENT_PS_MULTI_RESULTS;
-        flag |= MySQLCapability.CLIENT_PLUGIN_AUTH  ;
+        flag |= MySQLCapability.CLIENT_PLUGIN_AUTH;
 //        flag |= MySQLCapability.CLIENT_CONNECT_ATTRS ;
         flag |= MySQLCapability.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA;
 //        flag |= MySQLCapability.CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS;
         flag |= MySQLCapability.CLIENT_SESSION_TRACK;
-//        flag |= MySQLCapability.CLIENT_DEPRECATE_EOF;
+        flag |= MySQLCapability.CLIENT_DEPRECATE_EOF;
 //        flag |= MySQLCapability.CLIENT_OPTIONAL_RESULTSET_METADATA;
 //        flag |= MySQLCapability.CLIENT_ZSTD_COMPRESSION_ALGORITHM;
 //        flag |= MySQLCapability.CLIENT_QUERY_ATTRIBUTES;
@@ -405,33 +408,6 @@ public class MySQLCapability {
 
         return flag;
     }
-
-//    public static long initClientFlags() {
-//        long flag = 0;
-//        flag |= MySQLCapability.CLIENT_LONG_PASSWORD;
-//        flag |= MySQLCapability.CLIENT_FOUND_ROWS;
-//        flag |= MySQLCapability.CLIENT_LONG_FLAG;
-//        flag |= MySQLCapability.CLIENT_CONNECT_WITH_DB;
-//        // flag |= Capability.CLIENT_NO_SCHEMA;
-//        boolean usingCompress = false;
-//        if (usingCompress) {
-//            flag |= MySQLCapability.CLIENT_COMPRESS;
-//        }
-//        flag |= MySQLCapability.CLIENT_ODBC;
-//        flag |= MySQLCapability.CLIENT_LOCAL_FILES;
-//        flag |= MySQLCapability.CLIENT_IGNORE_SPACE;
-//        flag |= MySQLCapability.CLIENT_PROTOCOL_41;
-//        flag |= MySQLCapability.CLIENT_INTERACTIVE;
-//        // flag |= Capability.CLIENT_SSL;
-//        flag |= MySQLCapability.CLIENT_IGNORE_SIGPIPE;
-//        flag |= MySQLCapability.CLIENT_TRANSACTIONS;
-//        // flag |= Capability.CLIENT_RESERVED;
-//        flag |= MySQLCapability.CLIENT_SECURE_CONNECTION;
-//        // client extension
-//        flag |= MySQLCapability.CLIENT_MULTI_STATEMENTS;
-//        flag |= MySQLCapability.CLIENT_MULTI_RESULTS;
-//        return flag;
-//    }
 
     public static long getServerCapabilities() {
         long flag = 0;
@@ -461,35 +437,35 @@ public class MySQLCapability {
         return (int) (value >>> 16);
     }
 
-    public static boolean isLongPassword(long value) {
+    public static boolean isClientLongPassword(long value) {
         return (value & CLIENT_LONG_PASSWORD) != 0;
     }
 
-    public static boolean isFoundRows(long value) {
+    public static boolean isClientFoundRows(long value) {
         return (value & CLIENT_FOUND_ROWS) != 0;
     }
 
-    public static boolean isConnectionWithDatabase(long value) {
+    public static boolean isClientConnectWithDb(long value) {
         return (value & CLIENT_CONNECT_WITH_DB) != 0;
     }
 
-    public static boolean isDoNotAllowDatabaseDotTableDotColumn(long value) {
+    public static boolean isClientNoSchema(long value) {
         return (value & CLIENT_NO_SCHEMA) != 0;
     }
 
-    public static boolean isCanUseCompressionProtocol(long value) {
+    public static boolean isClientCompress(long value) {
         return (value & CLIENT_COMPRESS) != 0;
     }
 
-    public static boolean isODBCClient(long value) {
+    public static boolean isClientODBC(long value) {
         return (value & CLIENT_ODBC) != 0;
     }
 
-    public static boolean isCanUseLoadDataLocal(long value) {
+    public static boolean isClientLocalFiles(long value) {
         return (value & CLIENT_LOCAL_FILES) != 0;
     }
 
-    public static boolean isIgnoreSpacesBeforeLeftBracket(long value) {
+    public static boolean isClientIgnoreSpace(long value) {
         return (value & CLIENT_IGNORE_SPACE) != 0;
     }
 
@@ -497,55 +473,55 @@ public class MySQLCapability {
         return (value & CLIENT_PROTOCOL_41) != 0;
     }
 
-    public static boolean isSwitchToSSLAfterHandshake(long value) {
+    public static boolean isClientSSL(long value) {
         return (value & CLIENT_SSL) != 0;
     }
 
-    public static boolean isIgnoreSigpipes(long value) {
+    public static boolean isClientIgnoreSigpipe(long value) {
         return (value & CLIENT_IGNORE_SIGPIPE) != 0;
     }
 
-    public static boolean isKnowsAboutTransactions(long value) {
+    public static boolean isClientTransactions(long value) {
         return (value & CLIENT_TRANSACTIONS) != 0;
     }
 
-    public static boolean isInteractive(long value) {
+    public static boolean isClientInteractive(long value) {
         return (value & CLIENT_INTERACTIVE) != 0;
     }
 
-    public static boolean isSpeak41Protocol(long value) {
+    public static boolean isClientReserved(long value) {
         return (value & CLIENT_RESERVED) != 0;
     }
 
-    public static boolean isCanDo41Anthentication(long value) {
+    public static boolean isClientSecureConnection(long value) {
         return (value & CLIENT_SECURE_CONNECTION) != 0;
     }
 
-    public static boolean isMultipleStatements(long value) {
+    public static boolean isClientMultipleStatements(long value) {
         return (value & CLIENT_MULTI_STATEMENTS) != 0;
     }
 
-    public static boolean isPSMultipleResults(long value) {
+    public static boolean isClientPSMultipleResults(long value) {
         return (value & CLIENT_PS_MULTI_RESULTS) != 0;
     }
 
-    public static boolean isPluginAuth(long value) {
+    public static boolean isClientPluginAuth(long value) {
         return (value & CLIENT_PLUGIN_AUTH) != 0;
     }
 
-    public static boolean isConnectAttrs(long value) {
+    public static boolean isClientConnectAttrs(long value) {
         return (value & CLIENT_CONNECT_ATTRS) != 0;
     }
 
-    public static boolean isPluginAuthLenencClientData(long value) {
+    public static boolean isClientPluginAuthLenencClientData(long value) {
         return (value & CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA) != 0;
     }
 
-    public static boolean isSessionVariableTracking(long value) {
+    public static boolean isClientSessionTrack(long value) {
         return (value & CLIENT_SESSION_TRACK) != 0;
     }
 
-    public static boolean isDeprecateEOF(long value) {
+    public static boolean isClientDeprecateEOF(long value) {
         return (value & CLIENT_DEPRECATE_EOF) != 0;
     }
 

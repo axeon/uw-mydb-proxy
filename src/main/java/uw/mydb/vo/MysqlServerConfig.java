@@ -4,6 +4,51 @@ package uw.mydb.vo;
  * mysql服务器配置
  */
 public class MysqlServerConfig {
+    /**
+     * 读取权重
+     */
+    private int weight = 1;
+    /**
+     * 主机
+     */
+    private String host;
+    /**
+     * 端口号
+     */
+    private int port;
+    /**
+     * 用户名
+     */
+    private String user;
+    /**
+     * 密码
+     */
+    private String pass;
+    /**
+     * 线程数。
+     */
+    private int threadNum = 0;
+    /**
+     * 最大连接数
+     */
+    private int connMax = 1000;
+    /**
+     * 最小连接数
+     */
+    private int connMin = 1;
+    /**
+     * 连接闲时超时秒数.
+     */
+    private int connIdleTimeout = 180;
+    /**
+     * 连接忙时超时秒数.
+     */
+    private int connBusyTimeout = 180;
+    /**
+     * 连接最大寿命秒数.
+     */
+    private int connMaxAge = 1800;
+
     public MysqlServerConfig() {
     }
 
@@ -22,58 +67,10 @@ public class MysqlServerConfig {
         this.connMaxAge = connMaxAge;
     }
 
-    /**
-     * 读取权重
-     */
-    private int weight = 1;
-
-    /**
-     * 主机
-     */
-    private String host;
-    /**
-     * 端口号
-     */
-    private int port;
-    /**
-     * 用户名
-     */
-    private String user;
-
-    /**
-     * 密码
-     */
-    private String pass;
-
-    /**
-     * 线程数。
-     */
-    private int threadNum = 0;
-
-    /**
-     * 最大连接数
-     */
-    private int connMax = 1000;
-
-    /**
-     * 最小连接数
-     */
-    private int connMin = 1;
-
-    /**
-     * 连接闲时超时秒数.
-     */
-    private int connIdleTimeout = 180;
-
-    /**
-     * 连接忙时超时秒数.
-     */
-    private int connBusyTimeout = 180;
-
-    /**
-     * 连接最大寿命秒数.
-     */
-    private int connMaxAge = 1800;
+    @Override
+    public String toString() {
+        return user + "@" + host + ":" + port;
+    }
 
     public int getWeight() {
         return weight;

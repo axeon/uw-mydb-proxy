@@ -16,6 +16,9 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
+/**
+ * CachingSha2PasswordPlugin。
+ */
 public class CachingSha2PasswordPlugin {
 
     static final Logger log = LoggerFactory.getLogger(CachingSha2PasswordPlugin.class);

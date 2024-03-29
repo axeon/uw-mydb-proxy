@@ -277,7 +277,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             EOFPacket eofPacket = new EOFPacket();
             eofPacket.packetId = (byte) packetSeq.incrementAndGet();
             eofPacket.warningCount = errorCount.get();
-            eofPacket.status = 0x22;
+            eofPacket.statusFlag = 0x22;
             eofPacket.writeToChannel(ctx);
             sendBytes.addAndGet(eofPacket.getPacketLength());
         } else {

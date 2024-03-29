@@ -38,12 +38,14 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
                 logger.warn("!!!状态[NORMAL]未处理信息:" + ByteBufUtil.prettyHexDump(buf));
                 break;
             case MySqlSession.STATE_AUTH:
+                logger.info( "收到mysql验证结果信息" );
                 //验证阶段。
                 session.handleAuthResponse(ctx, buf);
                 break;
             case MySqlSession.STATE_INIT:
                 //初始阶段，此时需要发送验证包
-                session.handleInitResponse(ctx, buf);
+                logger.info( "收到mysql初始化信息" );
+                session.handleHandshake(ctx, buf);
                 break;
             case MySqlSession.STATE_REMOVED:
                 //验证失败信息，直接关闭链接吧。
@@ -65,6 +67,7 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
 
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        logger.info( "exceptionCaught" );
         super.exceptionCaught(ctx, cause);
         MySqlSession session = ctx.channel().attr(MYSQL_SESSION).get();
         ctx.close();
@@ -79,6 +82,7 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        logger.info( "channelInactive" );
         MySqlSession session = ctx.channel().attr(MYSQL_SESSION).get();
         session.trueClose();
         super.channelInactive(ctx);

@@ -6,14 +6,13 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
-import uw.mydb.mysql.MySqlService;
 import uw.mydb.protocol.packet.*;
 import uw.mydb.protocol.util.MySQLCapability;
 import uw.mydb.sqlparser.SqlParseResult;
-import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
 import uw.mydb.util.SystemClock;
+import uw.mydb.vo.MysqlServerConfig;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
@@ -85,22 +84,22 @@ public class MySqlSession {
      * 创建时间.
      */
     final long createTime = SystemClock.now();
-
-    /**
-     * 对应的channel。
-     */
-    Channel channel;
-
     /**
      * 开始使用时间.
      */
     long lastAccess = createTime;
-
     /**
      * 前端对应的ctx。
      */
     MySqlSessionCallback sessionCallback;
-
+    /**
+     * 对应的channel。
+     */
+    private Channel channel;
+    /**
+     * mysql服务器配置。
+     */
+    private MysqlServerConfig mysqlServerConfig;
     /**
      * 连接状态。
      */
@@ -163,18 +162,11 @@ public class MySqlSession {
     private CommandPacket command;
 
 
-    public MySqlSession(MySqlService mysqlService, Channel channel) {
+    public MySqlSession(MysqlServerConfig mysqlServerConfig, Channel channel) {
+        this.mysqlServerConfig = mysqlServerConfig;
         this.channel = channel;
     }
 
-    /**
-     * 检测链接可用性。
-     *
-     * @return
-     */
-    public boolean isAlive() {
-        return true;
-    }
 
     /**
      * 异步执行一条sql。
@@ -255,14 +247,34 @@ public class MySqlSession {
     public void handleAuthResponse(ChannelHandlerContext ctx, ByteBuf buf) {
         byte status = buf.getByte( 4 );
         switch (status) {
+            case MySqlPacket.PACKET_AUTH_SWITCH:
+                logger.info( "PACKET_AUTH_SWITCH" );
+                AuthSwitchRequestPacket authSwitchRequestPacket = new AuthSwitchRequestPacket();
+                authSwitchRequestPacket.readPayLoad( buf );
+                AuthSwitchResponsePacket authSwitchResponsePacket = new AuthSwitchResponsePacket();
+                authSwitchResponsePacket.packetId = ++authSwitchRequestPacket.packetId;
+                authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPass(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
+                authSwitchResponsePacket.writeToChannel( ctx );
+                ctx.flush();
+                break;
+            case MySqlPacket.PACKET_AUTH_MORE_DATA:
+                logger.info( "PACKET_AUTH" );
+//                AuthMoreDataPacket packet = new AuthMoreDataPacket();
+//                packet.readPayLoad( buf );
+                ctx.flush();
+                break;
             case MySqlPacket.PACKET_OK:
+                logger.info( "PACKET_OK" );
+                OKPacket okPacket = new OKPacket();
+                okPacket.readPayLoad( buf );
                 setState( STATE_NORMAL );
                 break;
             case MySqlPacket.PACKET_ERROR:
+                logger.info( "PACKET_ERROR" );
                 //报错了，直接关闭吧。
                 ErrorPacket errorPacket = new ErrorPacket();
                 errorPacket.readPayLoad( buf );
-                logger.error( "MySQL[{}]服务器验证阶段报错{}:{}", "test", errorPacket.errorNo, errorPacket.message );
+                logger.error( "MySQL[{}]服务器验证阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
                 setState( STATE_REMOVED );
                 trueClose();
                 break;
@@ -271,39 +283,36 @@ public class MySqlSession {
     }
 
     /**
-     * 处理初始返回结果。
+     * 处理握手流程。
      *
      * @param buf
      */
-    public void handleInitResponse(ChannelHandlerContext ctx, ByteBuf buf) {
+    public void handleHandshake(ChannelHandlerContext ctx, ByteBuf buf) {
         byte status = buf.getByte( 4 );
         if (status == MySqlPacket.PACKET_ERROR) {
             ErrorPacket errorPacket = new ErrorPacket();
             errorPacket.readPayLoad( buf );
-            logger.error( "MySQL[{}]服务器初始阶段报错{}:{}", "test", errorPacket.errorNo, errorPacket.message );
+            logger.error( "MySQL[{}]服务器握手阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
             //报错了，直接关闭吧。
             setState( STATE_REMOVED );
             trueClose();
             return;
         }
-        HandshakePacket handshakePacket = new HandshakePacket();
+        AuthHandshakeRequestPacket handshakePacket = new AuthHandshakeRequestPacket();
         handshakePacket.readPayLoad( buf );
         // 设置字符集编码
         int charsetIndex = (handshakePacket.serverCharsetIndex & 0xff);
         // 发送应答报文给后端
-        AuthPacket packet = new AuthPacket();
-        packet.packetId = 1;
-        packet.clientCapability = MySQLCapability.initClientFlags();
-        packet.maxPacketSize = 8 * 1024 * 1024;
-        packet.charsetIndex = charsetIndex;
-        packet.user = "root";
-        packet.authPluginName = StringUtils.isNotEmpty( handshakePacket.authPluginName ) ? handshakePacket.authPluginName : MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
-        try {
-            packet.password = password( "mysqlRootPassword", handshakePacket );
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException( e.getMessage() );
-        }
-        packet.writeToChannel( ctx );
+        AuthHandshakeResponsePacket handshakeResponsePacket = new AuthHandshakeResponsePacket();
+        handshakeResponsePacket.packetId = 1;
+        handshakeResponsePacket.clientCapability = MySQLCapability.initClientFlags();
+        handshakeResponsePacket.maxPacketSize = 16 * 1024 * 1024;
+        handshakeResponsePacket.charsetIndex = charsetIndex;
+        handshakeResponsePacket.username = mysqlServerConfig.getUser();
+        handshakeResponsePacket.authPluginName = StringUtils.isNotBlank( handshakePacket.authPluginName ) ? handshakePacket.authPluginName :
+                MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
+        handshakeResponsePacket.password = buildPassword( mysqlServerConfig.getPass(), handshakeResponsePacket.authPluginName, buildAuthSeed( handshakePacket ) );
+        handshakeResponsePacket.writeToChannel( ctx );
         ctx.flush();
         //进入验证模式。
         setState( STATE_AUTH );
@@ -413,25 +422,36 @@ public class MySqlSession {
      * 生成密码数据。
      *
      * @param pass
-     * @param packet
+     * @param seed
      * @return
      * @throws NoSuchAlgorithmException
      */
-    private static byte[] password(String pass, HandshakePacket packet) throws NoSuchAlgorithmException {
+    private static byte[] buildPassword(String pass, String pluginName, byte[] seed) {
         if (pass == null || pass.length() == 0) {
             return null;
         }
+
+        // 根据plugin不同返回对应的加密数据。。
+        if (CachingSha2PasswordPlugin.PROTOCOL_PLUGIN_NAME.equals( pluginName )) {
+            return CachingSha2PasswordPlugin.scrambleCachingSha2( pass, seed );
+        } else {
+            return MySqlNativePasswordPlugin.scramble411( pass, seed );
+        }
+    }
+
+    /**
+     * 构造密码seed。
+     *
+     * @param packet
+     * @return
+     */
+    private static byte[] buildAuthSeed(AuthHandshakeRequestPacket packet) {
         int sl1 = packet.authPluginDataPartOne.length;
         int sl2 = packet.authPluginDataPartTwo.length;
         byte[] seed = new byte[sl1 + sl2];
         System.arraycopy( packet.authPluginDataPartOne, 0, seed, 0, sl1 );
         System.arraycopy( packet.authPluginDataPartTwo, 0, seed, sl1, sl2 );
-        // 根据plugin不同返回对应的加密数据。。
-        if (packet.authPluginName.equals( CachingSha2PasswordPlugin.PROTOCOL_PLUGIN_NAME )) {
-            return CachingSha2PasswordPlugin.scrambleCachingSha2( pass, seed );
-        } else {
-            return MySqlNativePasswordPlugin.scramble411( pass, seed );
-        }
+        return seed;
     }
 
     /**

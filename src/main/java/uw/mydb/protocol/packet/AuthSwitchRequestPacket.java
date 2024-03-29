@@ -20,25 +20,25 @@ public class AuthSwitchRequestPacket extends MySqlPacket {
     public byte[] authPluginData;
 
     @Override
-    protected void read(ByteBuf buf) {
-        status = buf.readByte();
-        authPluginName = ByteBufUtils.readStringWithNull(buf);
-        authPluginData = ByteBufUtils.readBytesWithEof(buf);
+    protected void write(ByteBuf buf) {
+        buf.writeByte( status );
+        if (authPluginName == null) {
+            buf.writeByte( (byte) 0 );
+        } else {
+            ByteBufUtils.writeBytesWithNull( buf, authPluginName.getBytes() );
+        }
+        if (authPluginData == null) {
+            buf.writeByte( (byte) 0 );
+        } else {
+            buf.writeBytes( authPluginData );
+        }
     }
 
     @Override
-    protected void write(ByteBuf buf) {
-        buf.writeByte(status);
-        if (authPluginName == null) {
-            buf.writeByte((byte) 0);
-        } else {
-            ByteBufUtils.writeBytesWithNull(buf, authPluginName.getBytes());
-        }
-        if (authPluginData == null) {
-            buf.writeByte((byte) 0);
-        } else {
-            buf.writeBytes(authPluginData);
-        }
+    protected void read(ByteBuf buf) {
+        status = buf.readByte();
+        authPluginName = ByteBufUtils.readStringWithNull( buf );
+        authPluginData = ByteBufUtils.readBytesWithEof( buf );
     }
 
 

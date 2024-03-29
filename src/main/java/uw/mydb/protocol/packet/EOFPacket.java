@@ -18,24 +18,24 @@ import uw.mydb.util.ByteBufUtils;
 public class EOFPacket extends MySqlPacket {
     public byte packetType = PACKET_EOF;
     public int warningCount;
-    public int status = 2;
+    public int statusFlag = 2;
 
     @Override
     protected void write(ByteBuf buf) {
         buf.writeByte(packetType);
         ByteBufUtils.writeUB2(buf, warningCount);
-        ByteBufUtils.writeUB2(buf, status);
+        ByteBufUtils.writeUB2(buf, statusFlag );
     }
 
     @Override
     protected void read(ByteBuf buf) {
         packetType = buf.readByte();
         warningCount = ByteBufUtils.readUB2(buf);
-        status = ByteBufUtils.readUB2(buf);
+        statusFlag = ByteBufUtils.readUB2(buf);
     }
 
     public boolean hasStatusFlag(long flag) {
-        return ((this.status & flag) == flag);
+        return ((this.statusFlag & flag) == flag);
     }
 
 

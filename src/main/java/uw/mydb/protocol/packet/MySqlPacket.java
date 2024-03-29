@@ -21,13 +21,35 @@ public abstract class MySqlPacket {
      */
     private static final byte[] NULL_PACKET_LEN = new byte[3];
 
-    // 后端报文类型
+    /**
+     * 承载类型OK
+     */
     public static final byte PACKET_OK = 0;
-    public static final byte PACKET_ERROR = (byte) 0xFF;
-    public static final byte PACKET_EOF = (byte) 0xFE;
-    public static final byte PACKET_AUTH = 1;
-    public static final byte PACKET_QUIT = 2;
 
+    /**
+     * 承载类型ERROR
+     */
+    public static final byte PACKET_ERROR = (byte) 0xFF;
+
+    /**
+     * 承载类型EOF
+     */
+    public static final byte PACKET_EOF = (byte) 0xFE;
+
+    /**
+     * 承载类型AUTH_MORE_DATA
+     */
+    public static final byte PACKET_AUTH_MORE_DATA = 1;
+
+    /**
+     * 承载类型AUTH切换
+     */
+    public static final byte PACKET_AUTH_SWITCH = (byte)0xFE;
+
+    /**
+     * 承载类型QUIT
+     */
+    public static final byte PACKET_QUIT = 2;
 
     /**
      * 当前为load data的响应包

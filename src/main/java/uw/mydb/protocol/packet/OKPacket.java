@@ -28,6 +28,7 @@ public class OKPacket extends MySqlPacket {
     public long insertId;
     public int serverStatus;
     public int warningCount;
+
     public byte[] message;
 
     /**

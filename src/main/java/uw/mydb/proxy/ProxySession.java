@@ -235,7 +235,7 @@ public class ProxySession implements MySqlSessionCallback {
         System.arraycopy( rand2, 0, seed, rand1.length, rand2.length );
         this.authSeed = seed;
         // 发送握手数据包
-        HandshakePacket hs = new HandshakePacket();
+        AuthHandshakeRequestPacket hs = new AuthHandshakeRequestPacket();
         hs.packetId = 0;
         hs.protocolVersion = GlobalConstants.PROTOCOL_VERSION;
         hs.serverVersion = GlobalConstants.SERVER_VERSION;
@@ -258,13 +258,13 @@ public class ProxySession implements MySqlSessionCallback {
     public void auth(ChannelHandlerContext ctx, ByteBuf buf) {
         MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
 
-        AuthPacket authPacket = new AuthPacket();
+        AuthHandshakeResponsePacket authPacket = new AuthHandshakeResponsePacket();
         authPacket.readPayLoad( buf );
         String authPluginName = authPacket.authPluginName;
         long capabilities = authPacket.clientCapability;
 
         //如果客户端开启压缩，那么直接返回不支持。
-        if (MySQLCapability.isCanUseCompressionProtocol( capabilities )) {
+        if (MySQLCapability.isClientCompress( capabilities )) {
             onFailMessage( ctx, MySqlErrorCode.ER_NET_UNCOMPRESS_ERROR, "Can not use compression protocol!" );
             onFinish();
             ctx.close();
@@ -281,8 +281,8 @@ public class ProxySession implements MySqlSessionCallback {
 //            return;
 //        }
 
-        if (!StringUtils.equals( config.getUsername(), authPacket.user )) {
-            onFailMessage( ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.user + "', because user is not exists! " );
+        if (!StringUtils.equals( config.getUsername(), authPacket.username )) {
+            onFailMessage( ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! " );
             onFinish();
             ctx.close();
             return;
@@ -297,7 +297,7 @@ public class ProxySession implements MySqlSessionCallback {
         }
 
         if (!Arrays.equals( encryptPass, authPacket.password )) {
-            onFailMessage( ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.user + "', because password is error " );
+            onFailMessage( ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.username + "', because password is error " );
             onFinish();
             ctx.close();
             return;
@@ -310,7 +310,7 @@ public class ProxySession implements MySqlSessionCallback {
         // 设置字符集编码
         this.charsetIndex = (authPacket.charsetIndex & 0xff);
         //设置session用户
-        this.user = authPacket.user;
+        this.user = authPacket.username;
         this.isLogon = true;
         this.authSeed = null;
         OKPacket.writeAuthOkToChannel( ctx );

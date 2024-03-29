@@ -152,7 +152,7 @@ public class MySqlSession implements ConcurrentBag.IConcurrentBagEntry {
      * @return
      * @throws NoSuchAlgorithmException
      */
-    private static byte[] password(String pass, HandshakePacket packet) throws NoSuchAlgorithmException {
+    private static byte[] password(String pass, AuthHandshakeRequestPacket packet) throws NoSuchAlgorithmException {
         if (pass == null || pass.length() == 0) {
             return null;
         }
@@ -293,17 +293,17 @@ public class MySqlSession implements ConcurrentBag.IConcurrentBagEntry {
             trueClose();
             return;
         }
-        HandshakePacket handshakePacket = new HandshakePacket();
+        AuthHandshakeRequestPacket handshakePacket = new AuthHandshakeRequestPacket();
         handshakePacket.readPayLoad(buf);
         // 设置字符集编码
         int charsetIndex = (handshakePacket.serverCharsetIndex & 0xff);
         // 发送应答报文给后端
-        AuthPacket packet = new AuthPacket();
+        AuthHandshakeResponsePacket packet = new AuthHandshakeResponsePacket();
         packet.packetId = 1;
         packet.clientCapability = MySQLCapability.initClientFlags();
         packet.maxPacketSize = 8 * 1024 * 1024;
         packet.charsetIndex = charsetIndex;
-        packet.user = mysqlService.getConfig().getUser();
+        packet.username = mysqlService.getConfig().getUser();
         packet.authPluginName = StringUtils.isNotEmpty(handshakePacket.authPluginName) ? handshakePacket.authPluginName : MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
         try {
             packet.password = password(mysqlService.getConfig().getPass(), handshakePacket);
