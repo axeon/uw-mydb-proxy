@@ -5,8 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.mysql.MySqlClusterManager;
-import uw.mydb.mysql.MySqlClusterService;
+import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.EOFPacket;
@@ -247,22 +246,12 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     public void run() {
 
         for (SqlParseResult.SqlInfo sqlInfo : routeResult.getSqlInfos()) {
-            MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService(sqlInfo.getClusterId());
-            if (groupService == null) {
-                logger.warn("无法找到合适的mysqlGroup!");
-                continue;
-            }
-            MySqlSession mysqlSession = null;
-            if (routeResult.isMaster()) {
-                mysqlSession = groupService.getMasterService().getSession(this);
-            } else {
-                mysqlSession = groupService.getLBReadService().getSession(this);
-            }
-            if (mysqlSession == null) {
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId()  );
+            if (mySqlSession == null) {
                 logger.warn("无法找到合适的mysqlSession!");
                 continue;
             }
-            mysqlSession.exeCommand(routeResult.isMaster(), sqlInfo);
+            mySqlSession.exeCommand(routeResult.isMaster(), sqlInfo);
         }
         //等待最长180s
         try {

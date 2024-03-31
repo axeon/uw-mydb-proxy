@@ -33,7 +33,6 @@ public interface MySqlSessionCallback {
      */
     void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf);
 
-
     /**
      * 收到FieldPacket数据包。
      *
@@ -49,7 +48,6 @@ public interface MySqlSessionCallback {
      * @param buf
      */
     void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf);
-
 
     /**
      * 收到RowDataPacket数据包。

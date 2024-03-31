@@ -1,4 +1,4 @@
-package uw.mydb.mysql2.task;
+package uw.mydb.mysql.task;
 
 /**
  * 在服务器内部直接操作mysql数据库的回调信息。

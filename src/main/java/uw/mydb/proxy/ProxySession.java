@@ -9,8 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.constant.GlobalConstants;
-import uw.mydb.mysql.MySqlClusterManager;
-import uw.mydb.mysql.MySqlClusterService;
+import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.*;
@@ -212,8 +211,9 @@ public class ProxySession implements MySqlSessionCallback {
         if (StringUtils.isNotBlank( database )) {
             this.database = database;
             MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
-            MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService( config.getBaseCluster() );
-            groupService.getMasterService().getSession( this ).exeCommand( false, CommandPacket.build( "use " + this.database ) );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster() );
+            mySqlSession.bind( this );
+            mySqlSession.exeCommand( false, CommandPacket.build( "use " + this.database ) );
         } else {
             //报错，找不到这个schema。
             onFailMessage( MySqlErrorCode.ER_NO_DB_ERROR, "No database!" );
@@ -489,27 +489,15 @@ public class ProxySession implements MySqlSessionCallback {
         //压测时，可直接返回ok包的。
         if (routeResult.isSingle()) {
             //单实例执行直接绑定执行即可。
-            MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService( routeResult.getSqlInfo().getClusterId() );
-            if (groupService == null) {
-                onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlGroup!" );
-                onFinish();
-                logger.warn( "无法找到合适的mysqlGroup!" );
-                return;
-            }
-            MySqlSession mysqlSession = null;
-            if (routeResult.isMaster()) {
-                isMasterSql = true;
-                mysqlSession = groupService.getMasterService().getSession( this );
-            } else {
-                mysqlSession = groupService.getLBReadService().getSession( this );
-            }
-            if (mysqlSession == null) {
-                onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlGroup!" );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( routeResult.getSqlInfo().getClusterId()  );
+            if (mySqlSession == null) {
+                onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
                 onFinish();
                 logger.warn( "无法找到合适的mysqlSession!" );
                 return;
             }
-            mysqlSession.exeCommand( routeResult.isMaster(), routeResult.getSqlInfo() );
+            mySqlSession.bind( this );
+            mySqlSession.exeCommand( routeResult.isMaster(), routeResult.getSqlInfo() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
             multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, routeResult ) );

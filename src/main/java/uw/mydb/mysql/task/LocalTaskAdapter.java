@@ -1,12 +1,11 @@
-package uw.mydb.mysql2.task;
+package uw.mydb.mysql.task;
 
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.mysql.MySqlClusterService;
-import uw.mydb.mysql2.MySqlClusterManager;
-import uw.mydb.mysql2.MySqlSession;
-import uw.mydb.mysql2.MySqlSessionCallback;
+import uw.mydb.mysql.MySqlSession;
+import uw.mydb.mysql.MySqlSessionCallback;
+import uw.mydb.mysql.MySqlClient;
 import uw.mydb.protocol.packet.CommandPacket;
 import uw.mydb.protocol.packet.MySqlPacket;
 
@@ -83,13 +82,7 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
         CommandPacket cmd = new CommandPacket();
         cmd.command = MySqlPacket.CMD_QUERY;
         cmd.arg = sql;
-
-        MySqlClusterService groupService = MySqlClusterManager.getMysqlClusterService( mysqlClusterId );
-        if (groupService == null) {
-            logger.warn( "无法找到合适的mysqlGroup!" );
-            return;
-        }
-        MySqlSession mysqlSession = null;// groupService.getMasterService().getSession(this);
+        MySqlSession mysqlSession = MySqlClient.getMySqlSession( mysqlClusterId );
         if (mysqlSession == null) {
             logger.warn( "无法找到合适的mysqlSession!" );
             return;

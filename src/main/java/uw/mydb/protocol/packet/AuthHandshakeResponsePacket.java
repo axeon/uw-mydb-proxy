@@ -52,11 +52,14 @@ public class AuthHandshakeResponsePacket extends MySqlPacket {
             ByteBufUtils.writeBytesWithLenEnc( buf, password );
         }
 
-        if (MySQLCapability.isClientConnectWithDb( clientCapability ) && database != null) {
+        if (database == null) {
+            buf.writeByte( (byte) 0 );
+        }else{
             ByteBufUtils.writeStringWithNull( buf, database );
         }
-
-        if (MySQLCapability.isClientPluginAuth( clientCapability ) && authPluginName != null) {
+        if (authPluginName == null) {
+            buf.writeByte( (byte) 0 );
+        }else{
             ByteBufUtils.writeStringWithNull( buf, authPluginName );
         }
         if (MySQLCapability.isClientConnectAttrs( clientCapability ) && clientConnectAttrs != null && !clientConnectAttrs.isEmpty()) {

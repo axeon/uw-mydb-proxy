@@ -1,4 +1,4 @@
-package uw.mydb.mysql2;
+package uw.mydb.mysql;
 
 
 import io.netty.channel.Channel;
@@ -36,7 +36,6 @@ public class MysqlPoolHandler implements ChannelPoolHandler {
         channel.pipeline().addLast( new MySqlHandler() );
         MySqlSession session = new MySqlSession( mysqlServerConfig, channel );
         channel.attr( MySqlHandler.MYSQL_SESSION ).set( session );
-        //        channel.writeAndFlush( null ).s
         log.info( "channelCreated" );
     }
 }

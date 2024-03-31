@@ -1,4 +1,4 @@
-package uw.mydb.mysql2.task;
+package uw.mydb.mysql.task;
 
 import io.netty.buffer.ByteBuf;
 import uw.mydb.protocol.packet.ErrorPacket;
@@ -13,9 +13,9 @@ import java.util.ArrayList;
  *
  * @author axeon
  */
-public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
+public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
 
-    public SingleListTask(long mysqlClusterId, LocalCmdCallback<ArrayList<String>> localCmdCallback) {
+    public StringArrayListTask(long mysqlClusterId, LocalCmdCallback<ArrayList<String[]>> localCmdCallback) {
         super(mysqlClusterId, localCmdCallback);
         this.data = new ArrayList<>();
     }
@@ -42,7 +42,11 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
         RowDataPacket rowDataPacket = new RowDataPacket(fieldCount);
         rowDataPacket.readPayLoad(buf);
-        data.add(new String(rowDataPacket.fieldValues.get(0)));
+        String[] strings = new String[rowDataPacket.fieldCount];
+        for (int i = 0; i < strings.length; i++) {
+            strings[i] = new String(rowDataPacket.fieldValues.get(i));
+        }
+        data.add(strings);
     }
 
     /**
@@ -57,6 +61,5 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
         errorNo = errorPacket.errorNo;
         errorMessage = errorPacket.message;
     }
-
 
 }

@@ -14,7 +14,7 @@ import static java.util.stream.Collectors.counting;
  *
  * @author axeon
  */
-public class ServerRunInfo {
+public class ProxyRunInfo {
 
     /**
      * 返回jvm内存占用数组。

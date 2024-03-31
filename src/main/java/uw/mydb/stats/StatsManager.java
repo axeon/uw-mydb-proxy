@@ -1,13 +1,9 @@
 package uw.mydb.stats;
 
-import uw.mydb.mysql.MySqlClusterManager;
 import uw.mydb.stats.vo.*;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * 统计的工厂类。
@@ -88,8 +84,7 @@ public class StatsManager {
         SqlStats csp = clientSqlStatsMap.computeIfAbsent( clientIp, s -> new SqlStats() );
         ;
         //获得schema统计表。
-        SqlStats ssp = schemaSqlStatsMap.computeIfAbsent( new StringBuilder( 36 ).append( schema ).append( '.' ).append( table ).toString(),
-                s -> new SqlStats( ) );
+        SqlStats ssp = schemaSqlStatsMap.computeIfAbsent( new StringBuilder( 36 ).append( schema ).append( '.' ).append( table ).toString(), s -> new SqlStats() );
 
         if (isMasterSql) {
             serverSqlStats.addSqlWriteCount( 1 );
@@ -205,8 +200,8 @@ public class StatsManager {
      * 统计慢sql。
      */
     public static void statsSlowSql(String client, String schema, String sql, int routeSize, int rowsCount, long sendBytes, long recvBytes, long exeTime, long exeDate) {
-            SlowSql slowSql = new SlowSql( client, schema, sql, routeSize, rowsCount, sendBytes, recvBytes, exeTime, exeDate );
-            //FIXME axeon@2018/7/12  此处发送slowSql。
+        SlowSql slowSql = new SlowSql( client, schema, sql, routeSize, rowsCount, sendBytes, recvBytes, exeTime, exeDate );
+        //FIXME axeon@2018/7/12  此处发送slowSql。
     }
 
     /**
@@ -214,21 +209,22 @@ public class StatsManager {
      *
      * @return
      */
-    public static ServerRunInfo getServerRunStats() {
+    public static ProxyRunInfo getServerRunStats() {
         //获得按主机分组统计的map。
-        return new ServerRunInfo();
+        return new ProxyRunInfo();
     }
 
     /**
      * 获得mysql服务器状态表。
      */
     public static Map<String, MySqlRunInfo> getMySqlServiceStats() {
-        ArrayList<MySqlRunInfo> list = new ArrayList<>();
-        MySqlClusterManager.getMysqlClusterServiceMap().values().stream().forEach( s -> {
-            s.getMasterServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
-            s.getSlaveServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
-        } );
-        return list.stream().collect( Collectors.toMap( MySqlRunInfo::getName, Function.identity(), (existingValue, newValue) -> existingValue ) );
+//        ArrayList<MySqlRunInfo> list = new ArrayList<>();
+//        MySqlClusterManager.getMysqlClusterServiceMap().values().stream().forEach( s -> {
+//            s.getMasterServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
+//            s.getSlaveServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
+//        } );
+//        return list.stream().collect( Collectors.toMap( MySqlRunInfo::getName, Function.identity(), (existingValue, newValue) -> existingValue ) );
+        return null;
     }
 
 }

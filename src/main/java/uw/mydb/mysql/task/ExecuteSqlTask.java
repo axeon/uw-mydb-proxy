@@ -1,4 +1,4 @@
-package uw.mydb.mysql.tool;
+package uw.mydb.mysql.task;
 
 import io.netty.buffer.ByteBuf;
 import uw.mydb.protocol.packet.ErrorPacket;
