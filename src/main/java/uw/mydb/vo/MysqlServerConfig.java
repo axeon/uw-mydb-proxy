@@ -4,6 +4,7 @@ package uw.mydb.vo;
  * mysql服务器配置
  */
 public class MysqlServerConfig {
+    long id;
     /**
      * 读取权重
      */
@@ -70,6 +71,14 @@ public class MysqlServerConfig {
     @Override
     public String toString() {
         return user + "@" + host + ":" + port;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public int getWeight() {

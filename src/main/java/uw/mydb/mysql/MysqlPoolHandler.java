@@ -1,9 +1,7 @@
 package uw.mydb.mysql;
 
-
 import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPoolHandler;
-import io.netty.channel.pool.FixedChannelPool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.codec.MysqlPacketDecoder;

@@ -1,12 +1,46 @@
 package uw.mydb.vo;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
  * mysql集群配置
  */
 public class MysqlClusterConfig {
+
+    /**
+     * 集群ID。
+     */
+    private long clusterId;
+    /**
+     * 名称
+     */
+    private String clusterName;
+    /**
+     * 复制组类型
+     */
+    private int clusterType;
+    /**
+     * 切换类型
+     */
+    private int switchType;
+    /**
+     * 更新时间戳。
+     */
+    private long lastUpdate;
+    /**
+     * mysql主机列表
+     */
+    private List<MysqlServerConfig> masters = new ArrayList<>();
+    /**
+     * mysql从机列表
+     */
+    private List<MysqlServerConfig> slaves = new ArrayList<>();
+    private volatile int masterPos;
+    private volatile int mixPos;
+    private List<String> masterWeights = new ArrayList<>();
+    private List<String> mixWeights = new ArrayList<>();
     public MysqlClusterConfig() {
     }
 
@@ -20,39 +54,39 @@ public class MysqlClusterConfig {
     }
 
     /**
-     * 集群ID。
+     * 计算master数据。
+     * @return
      */
-    private long clusterId;
+    public String calcMaster() {
+        return masterWeights.get( masterPos++ % masterWeights.size() );
+    }
 
     /**
-     * 名称
+     * 计算混合数据。
+     * @return
      */
-    private String clusterName;
+    public String calcMix() {
+        return mixWeights.get( mixPos++ % mixWeights.size() );
+    }
 
     /**
-     * 复制组类型
+     * 初始化集群访问数据。
      */
-    private int clusterType;
-
-    /**
-     * 切换类型
-     */
-    private int switchType;
-
-    /**
-     * 更新时间戳。
-     */
-    private long lastUpdate;
-
-    /**
-     * mysql主机列表
-     */
-    private List<MysqlServerConfig> masters = new ArrayList<>();
-
-    /**
-     * mysql从机列表
-     */
-    private List<MysqlServerConfig> slaves = new ArrayList<>();
+    public void initClusterWeight() {
+        for (MysqlServerConfig config : masters) {
+            for (int i = 0; i < config.getWeight(); i++) {
+                masterWeights.add( config.toString() );
+                mixWeights.add( config.toString() );
+            }
+        }
+        for (MysqlServerConfig config : slaves) {
+            for (int i = 0; i < config.getWeight(); i++) {
+                mixWeights.add( config.toString() );
+            }
+        }
+        Collections.shuffle( masterWeights );
+        Collections.shuffle( mixWeights );
+    }
 
     public long getClusterId() {
         return clusterId;
