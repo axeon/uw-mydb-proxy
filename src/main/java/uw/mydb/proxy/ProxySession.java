@@ -211,9 +211,8 @@ public class ProxySession implements MySqlSessionCallback {
         if (StringUtils.isNotBlank( database )) {
             this.database = database;
             MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster() );
-            mySqlSession.bind( this );
-            mySqlSession.exeCommand( false, CommandPacket.build( "use " + this.database ) );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster(), true );
+            mySqlSession.exeCommand( this, CommandPacket.build( "use " + this.database ), true );
         } else {
             //报错，找不到这个schema。
             onFailMessage( MySqlErrorCode.ER_NO_DB_ERROR, "No database!" );
@@ -489,15 +488,14 @@ public class ProxySession implements MySqlSessionCallback {
         //压测时，可直接返回ok包的。
         if (routeResult.isSingle()) {
             //单实例执行直接绑定执行即可。
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( routeResult.getSqlInfo().getClusterId()  );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( routeResult.getSqlInfo().getClusterId(), routeResult.isMaster() );
             if (mySqlSession == null) {
                 onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
                 onFinish();
                 logger.warn( "无法找到合适的mysqlSession!" );
                 return;
             }
-            mySqlSession.bind( this );
-            mySqlSession.exeCommand( routeResult.isMaster(), routeResult.getSqlInfo() );
+            mySqlSession.exeCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
             multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, routeResult ) );

@@ -82,12 +82,12 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
         CommandPacket cmd = new CommandPacket();
         cmd.command = MySqlPacket.CMD_QUERY;
         cmd.arg = sql;
-        MySqlSession mysqlSession = MySqlClient.getMySqlSession( mysqlClusterId );
+        MySqlSession mysqlSession = MySqlClient.getMySqlSession( mysqlClusterId,true );
         if (mysqlSession == null) {
             logger.warn( "无法找到合适的mysqlSession!" );
             return;
         }
-        mysqlSession.exeCommand( isMaster, cmd );
+        mysqlSession.exeCommand(this , cmd, isMaster );
     }
 
     /**

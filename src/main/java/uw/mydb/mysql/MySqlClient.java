@@ -62,32 +62,31 @@ public class MySqlClient {
         mysqlClusterConfig.setClusterId( 1 );
         mysqlClusterConfig.setMasters( masterList );
         FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getClusterId(), mysqlClusterConfig, true );
-        MySqlSession mySqlSession = getMySqlSession( 1 );
+        MySqlSession mySqlSession = getMySqlSession( 1, true );
     }
 
     /**
-     * 获得master session。
+     * 获得mysql session。
      *
      * @param clusterId
      * @return
      */
-    public static MySqlSession getMySqlSession(long clusterId) {
+    public static MySqlSession getMySqlSession(long clusterId, boolean isMasterSql) {
         MysqlClusterConfig clusterConfig = FusionCache.get( MysqlClusterConfig.class, clusterId );
         if (clusterConfig == null) {
             return null;
         }
         MysqlServerConfig mysqlServerConfig = clusterConfig.getMasters().get( 0 );
-        FixedChannelPool pool = poolMap.get( mysqlServerConfig );
-        Future<Channel> future = pool.acquire();
-        MySqlSession session = null;
+        FixedChannelPool channelPool = poolMap.get( mysqlServerConfig );
+        Future<Channel> channelFuture = channelPool.acquire();
+        MySqlSession mySqlSession = null;
         try {
-            session = future.get().attr( MySqlHandler.MYSQL_SESSION ).get();
-        } catch (InterruptedException e) {
-            throw new RuntimeException( e );
-        } catch (ExecutionException e) {
-            throw new RuntimeException( e );
+            mySqlSession = channelFuture.get().attr( MySqlHandler.MYSQL_SESSION ).get();
+            mySqlSession.bindChannelPool( channelPool );
+        } catch (Throwable e) {
+            logger.error( e.toString(), e );
         }
-        return session;
+        return mySqlSession;
     }
 
 

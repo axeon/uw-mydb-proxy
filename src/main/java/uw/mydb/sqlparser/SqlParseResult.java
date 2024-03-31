@@ -8,7 +8,7 @@ import uw.mydb.vo.DataTable;
 import java.util.ArrayList;
 
 /**
- * 最终的路由结果。
+ * SQL解析路由结果。
  *
  * @author axeon
  */

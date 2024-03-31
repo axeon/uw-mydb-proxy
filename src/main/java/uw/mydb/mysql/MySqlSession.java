@@ -4,6 +4,7 @@ package uw.mydb.mysql;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.pool.FixedChannelPool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.packet.*;
@@ -93,6 +94,10 @@ public class MySqlSession {
      */
     MySqlSessionCallback sessionCallback;
     /**
+     * channel pool。
+     */
+    private FixedChannelPool channelPool = null;
+    /**
      * 对应的channel。
      */
     private Channel channel;
@@ -170,9 +175,11 @@ public class MySqlSession {
     /**
      * 异步执行一条sql。
      *
+     * @param sessionCallback
      * @param command
      */
-    public void exeCommand(boolean isMasterSql, CommandPacket command) {
+    public void exeCommand(MySqlSessionCallback sessionCallback, CommandPacket command, boolean isMasterSql) {
+        bindCallback( sessionCallback );
         this.isMasterSql = isMasterSql;
         ByteBuf buf = channel.alloc().buffer();
         this.command = command;
@@ -183,11 +190,22 @@ public class MySqlSession {
     }
 
     /**
+     * 绑定channelPool。
+     *
+     * @param channelPool
+     */
+    public void bindChannelPool(FixedChannelPool channelPool) {
+        this.channelPool = channelPool;
+    }
+
+    /**
      * 异步执行一条sql。
      *
+     * @param sessionCallback
      * @param sqlInfo
      */
-    public void exeCommand(boolean isMasterSql, SqlParseResult.SqlInfo sqlInfo) {
+    public void exeCommand(MySqlSessionCallback sessionCallback, SqlParseResult.SqlInfo sqlInfo, boolean isMasterSql) {
+        bindCallback( sessionCallback );
         this.isMasterSql = isMasterSql;
         this.database = sqlInfo.getDatabase();
         this.table = sqlInfo.getTable();
@@ -199,43 +217,9 @@ public class MySqlSession {
         channel.writeAndFlush( buf );
     }
 
-    /**
-     * 绑定到前端session。
-     *
-     * @param sessionCallback
-     */
-    public void bind(MySqlSessionCallback sessionCallback) {
-        this.sessionCallback = sessionCallback;
-        this.lastAccess = SystemClock.now();
-    }
-
-    /**
-     * 解绑。
-     */
-    public void unbind() {
-        long now = SystemClock.now();
-        exeTime = (now - this.lastAccess);
-        this.lastAccess = now;
-
-        //最后统计mysql执行信息。
-//        StatsManager.statsMysql( mysqlService.getGroupName(), mysqlService.getName(), database, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, sendBytes,
-//                recvBytes );
-
-        if (this.sessionCallback != null) {
-            //再执行解绑
-            this.sessionCallback.onFinish();
-            this.sessionCallback = null;
-        }
-        //数据归零
-        command = null;
-        isMasterSql = false;
-        isExeSuccess = true;
-        this.exeTime = 0;
-        this.dataRowsCount = 0;
-        this.affectRowsCount = 0;
-        this.recvBytes = 0;
-        this.sendBytes = 0;
-
+    @Override
+    public String toString() {
+        return getClass().getName() + "@" + Integer.toHexString( hashCode() ) + ":" + getState();
     }
 
     /**
@@ -281,7 +265,7 @@ public class MySqlSession {
                 trueClose();
                 break;
             default:
-                logger.warn( "收到未知的登录数据包！status={}",status );
+                logger.warn( "收到未知的登录数据包！status={}", status );
         }
     }
 
@@ -335,14 +319,14 @@ public class MySqlSession {
             case MySqlPacket.PACKET_OK:
                 sessionCallback.receiveOkPacket( packetId, buf );
                 //收到数据就可以解绑了。
-                unbind();
+                unbindCallback();
                 break;
             case MySqlPacket.PACKET_ERROR:
                 //直接转发走
                 sessionCallback.receiveErrorPacket( packetId, buf );
                 isExeSuccess = false;
                 //都报错了，直接解绑
-                unbind();
+                unbindCallback();
                 break;
             case MySqlPacket.PACKET_EOF:
                 //包长度小于9才可能是EOF，否则可能是数据包。
@@ -356,7 +340,7 @@ public class MySqlSession {
                         sessionCallback.receiveRowDataEOFPacket( packetId, buf );
                         //确定没有更多数据了，再解绑，此处可能有问题！
                         if (!eof.hasStatusFlag( MySqlPacket.SERVER_MORE_RESULTS_EXISTS )) {
-                            unbind();
+                            unbindCallback();
                         } else {
                             resultStatus = RESULT_INIT;
                         }
@@ -416,11 +400,6 @@ public class MySqlSession {
         STATE_UPDATER.set( this, newState );
     }
 
-    @Override
-    public String toString() {
-        return getClass().getName() + "@" + Integer.toHexString( hashCode() ) + ":" + getState();
-    }
-
     /**
      * 生成密码数据。
      *
@@ -455,6 +434,47 @@ public class MySqlSession {
         System.arraycopy( packet.authPluginDataPartOne, 0, seed, 0, sl1 );
         System.arraycopy( packet.authPluginDataPartTwo, 0, seed, sl1, sl2 );
         return seed;
+    }
+
+    /**
+     * 绑定到前端session。
+     *
+     * @param sessionCallback
+     */
+    private void bindCallback(MySqlSessionCallback sessionCallback) {
+        this.sessionCallback = sessionCallback;
+        this.lastAccess = SystemClock.now();
+    }
+
+    /**
+     * 解绑。
+     */
+    private void unbindCallback() {
+        long now = SystemClock.now();
+        exeTime = (now - this.lastAccess);
+        this.lastAccess = now;
+        //最后统计mysql执行信息。
+//        StatsManager.statsMysql( mysqlService.getGroupName(), mysqlService.getName(), database, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, sendBytes,
+//                recvBytes );
+
+        //数据归零
+        command = null;
+        isMasterSql = false;
+        isExeSuccess = true;
+        this.exeTime = 0;
+        this.dataRowsCount = 0;
+        this.affectRowsCount = 0;
+        this.recvBytes = 0;
+        this.sendBytes = 0;
+
+        if (this.sessionCallback != null) {
+            //再执行解绑
+            this.sessionCallback.onFinish();
+            this.sessionCallback = null;
+        }
+        if (channelPool != null) {
+            channelPool.release( channel );
+        }
     }
 
     /**

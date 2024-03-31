@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
 
-    private static final Logger logger = LoggerFactory.getLogger(ProxyMultiNodeHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger( ProxyMultiNodeHandler.class );
 
     /**
      * 包阶段：初始。
@@ -51,7 +51,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     /**
      * 行数
      */
-    private AtomicLong affectedRows = new AtomicLong(-1);
+    private AtomicLong affectedRows = new AtomicLong( -1 );
 
     /**
      * 门栓
@@ -61,17 +61,17 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     /**
      * packet序列。
      */
-    private AtomicInteger packetSeq = new AtomicInteger(0);
+    private AtomicInteger packetSeq = new AtomicInteger( 0 );
 
     /**
      * 是否已经进入data传输。
      */
-    private AtomicInteger packetStep = new AtomicInteger(PACKET_STEP_INIT);
+    private AtomicInteger packetStep = new AtomicInteger( PACKET_STEP_INIT );
 
     /**
      * 错误计数。
      */
-    private AtomicInteger errorCount = new AtomicInteger(0);
+    private AtomicInteger errorCount = new AtomicInteger( 0 );
 
     /**
      * 第一个错误包。
@@ -115,7 +115,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     public ProxyMultiNodeHandler(ChannelHandlerContext ctx, SqlParseResult routeResult) {
         this.ctx = ctx;
         this.routeResult = routeResult;
-        countDownLatch = new CountDownLatch(routeResult.getSqlInfos().size());
+        countDownLatch = new CountDownLatch( routeResult.getSqlInfos().size() );
     }
 
     /**
@@ -126,11 +126,11 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
         OKPacket okPacket = new OKPacket();
-        okPacket.readPayLoad(buf);
+        okPacket.readPayLoad( buf );
         if (okPacket.affectedRows > 0) {
-            affectedRows.addAndGet(okPacket.affectedRows);
+            affectedRows.addAndGet( okPacket.affectedRows );
         } else {
-            affectedRows.compareAndSet(-1, 0);
+            affectedRows.compareAndSet( -1, 0 );
         }
     }
 
@@ -141,9 +141,9 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      */
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {
-        if (errorCount.compareAndSet(0, 1)) {
+        if (errorCount.compareAndSet( 0, 1 )) {
             this.errorPacket = new ErrorPacket();
-            errorPacket.readPayLoad(buf);
+            errorPacket.readPayLoad( buf );
         }
         errorCount.incrementAndGet();
     }
@@ -158,9 +158,9 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         if (packetStep.get() == PACKET_STEP_EOF_FIELD) {
             return;
         }
-        if (packetSeq.compareAndSet(0, packetId)) {
-            sendBytes.addAndGet(buf.readableBytes());
-            ctx.write(buf.retain());
+        if (packetSeq.compareAndSet( 0, packetId )) {
+            sendBytes.addAndGet( buf.readableBytes() );
+            ctx.write( buf.retain() );
         }
     }
 
@@ -174,9 +174,9 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         if (packetStep.get() == PACKET_STEP_EOF_FIELD) {
             return;
         }
-        if (packetSeq.compareAndSet(packetId - 1, packetId)) {
-            sendBytes.addAndGet(buf.readableBytes());
-            ctx.write(buf.retain());
+        if (packetSeq.compareAndSet( packetId - 1, packetId )) {
+            sendBytes.addAndGet( buf.readableBytes() );
+            ctx.write( buf.retain() );
         }
     }
 
@@ -187,9 +187,9 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      */
     @Override
     public synchronized void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
-        if (packetStep.compareAndSet(PACKET_STEP_INIT, PACKET_STEP_EOF_FIELD)) {
-            sendBytes.addAndGet(buf.readableBytes());
-            ctx.write(buf.retain());
+        if (packetStep.compareAndSet( PACKET_STEP_INIT, PACKET_STEP_EOF_FIELD )) {
+            sendBytes.addAndGet( buf.readableBytes() );
+            ctx.write( buf.retain() );
             packetSeq.incrementAndGet();
         }
     }
@@ -201,11 +201,11 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      */
     @Override
     public synchronized void receiveRowDataPacket(byte packetId, ByteBuf buf) {
-        sendBytes.addAndGet(buf.readableBytes());
+        sendBytes.addAndGet( buf.readableBytes() );
         dataRowsCount.incrementAndGet();
         packetId = (byte) (packetSeq.incrementAndGet());
-        buf.setByte(3, packetId);
-        ctx.write(buf.retain());
+        buf.setByte( 3, packetId );
+        ctx.write( buf.retain() );
     }
 
     /**
@@ -216,14 +216,6 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     @Override
     public void receiveRowDataEOFPacket(byte packetId, ByteBuf buf) {
         //在最后汇总输出，可以不用管了。
-    }
-
-    /**
-     * 通知解绑定。
-     */
-    @Override
-    public void onFinish() {
-        countDownLatch.countDown();
     }
 
     /**
@@ -238,26 +230,33 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         errorPacket.packetId = 1;
         errorPacket.errorNo = errorNo;
         errorPacket.message = info;
-        errorPacket.writeToChannel(ctx);
+        errorPacket.writeToChannel( ctx );
         ctx.flush();
+    }
+
+    /**
+     * 通知解绑定。
+     */
+    @Override
+    public void onFinish() {
+        countDownLatch.countDown();
     }
 
     @Override
     public void run() {
-
         for (SqlParseResult.SqlInfo sqlInfo : routeResult.getSqlInfos()) {
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId()  );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), routeResult.isMaster() );
             if (mySqlSession == null) {
-                logger.warn("无法找到合适的mysqlSession!");
+                logger.warn( "无法找到合适的mysqlSession!" );
                 continue;
             }
-            mySqlSession.exeCommand(routeResult.isMaster(), sqlInfo);
+            mySqlSession.exeCommand(this , sqlInfo, routeResult.isMaster() );
         }
         //等待最长180s
         try {
-            countDownLatch.await(180, TimeUnit.SECONDS);
+            countDownLatch.await( 180, TimeUnit.SECONDS );
         } catch (InterruptedException e) {
-            logger.error(e.getLocalizedMessage(), e);
+            logger.error( e.getLocalizedMessage(), e );
         }
         //如下代码必须要异步线程中跑，否则会出问题。
         //开始返回最后的包。
@@ -267,8 +266,8 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             eofPacket.packetId = (byte) packetSeq.incrementAndGet();
             eofPacket.warningCount = errorCount.get();
             eofPacket.statusFlag = 0x22;
-            eofPacket.writeToChannel(ctx);
-            sendBytes.addAndGet(eofPacket.getPacketLength());
+            eofPacket.writeToChannel( ctx );
+            sendBytes.addAndGet( eofPacket.getPacketLength() );
         } else {
             if (affectedRows.get() > -1) {
                 //说明有ok包。
@@ -276,12 +275,12 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
                 okPacket.packetId = 1;
                 okPacket.affectedRows = affectedRows.get();
                 okPacket.warningCount = errorCount.get();
-                okPacket.writeToChannel(ctx);
-                sendBytes.addAndGet(okPacket.getPacketLength());
+                okPacket.writeToChannel( ctx );
+                sendBytes.addAndGet( okPacket.getPacketLength() );
             } else {
                 //说明全部就是错误包啦，直接返回第一個error包
-                errorPacket.writeToChannel(ctx);
-                sendBytes.addAndGet(errorPacket.getPacketLength());
+                errorPacket.writeToChannel( ctx );
+                sendBytes.addAndGet( errorPacket.getPacketLength() );
                 isExeSuccess = false;
             }
         }
