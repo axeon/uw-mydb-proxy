@@ -7,6 +7,7 @@ import uw.mydb.constant.MysqlClusterType;
  */
 public class MysqlServerConfig {
 
+
     /**
      * 服务器类型。
      */

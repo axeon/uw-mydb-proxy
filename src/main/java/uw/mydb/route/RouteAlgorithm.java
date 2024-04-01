@@ -33,10 +33,14 @@ public abstract class RouteAlgorithm {
     public abstract void config();
 
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    public abstract String name();
+
+    /**
+     * 路由描述。
      */
     public abstract String description();
-
 
     /**
      * 根据给定的值，计算出归属表名。

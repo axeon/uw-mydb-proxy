@@ -43,12 +43,21 @@ public class RouteDatabaseByPreset extends RouteAlgorithm {
     }
 
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    @Override
+    public String name() {
+        return "预配置分库路由";
+    }
+
+    /**
+     * 路由描述。
      */
     @Override
     public String description() {
-        return null;
+        return "根据预先配置的信息进行分库。";
     }
+
 
     @Override
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {

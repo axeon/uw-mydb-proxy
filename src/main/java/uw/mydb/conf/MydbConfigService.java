@@ -37,8 +37,6 @@ public class MydbConfigService {
             public MydbProxyConfig load(Long key) throws Exception {
                 return agentClient.getForEntity( mydbCenter + "/agent/mydb/getProxyConfig?configId=" + configId, MydbProxyConfig.class ).getValue();
             }
-        }, (key, oldValue, newValue) -> {
-
         } );
 
         //table配置缓存 key: tableName value:TableConfig
@@ -47,9 +45,7 @@ public class MydbConfigService {
             public TableConfig load(String key) throws Exception {
                 return agentClient.getForEntity( mydbCenter + "/agent/mydb/getTableConfig?configId=" + configId + "&tableName=" + key, TableConfig.class ).getValue();
             }
-        }, (key, oldValue, newValue) -> {
-
-        } );
+        });
 
         //route配置缓存 key: routeId value:RouteConfig
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
@@ -78,7 +74,7 @@ public class MydbConfigService {
                 DataNode node = new DataNode( key );
                 return agentClient.getForEntity( mydbCenter + "/agent/mydb/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(),
                         new TypeReference<Set<String>>() {
-                        } ).getValue();
+                } ).getValue();
             }
         }, (key, oldValue, newValue) -> {
 
@@ -91,9 +87,7 @@ public class MydbConfigService {
                 return agentClient.getForEntity( mydbCenter + "/agent/mydb/getSaasNode?configId=" + configId + "&tableName=" + key, new TypeReference<List<DataNode>>() {
                 } ).getValue();
             }
-        }, (key, oldValue, newValue) -> {
-
-        } );
+        });
     }
 
     /**
@@ -101,7 +95,7 @@ public class MydbConfigService {
      */
     public static boolean checkTableExists(DataTable dataTable) {
         Set<String> tableSet = FusionCache.get( DataTable.class, dataTable.getClusterId() + "." + dataTable.getDatabase() );
-        if (!tableSet.contains( dataTable.getTable() )){
+        if (!tableSet.contains( dataTable.getTable() )) {
             //通知服务器创建表。
             //创建成功则加入set。
         }

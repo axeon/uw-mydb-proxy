@@ -23,8 +23,17 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
         dataNode = new DataNode(Long.parseLong( this.routeConfig.getRouteParamMap().get( "clusterId" )),this.routeConfig.getRouteParamMap().get( "database" ) );
     }
 
+
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    @Override
+    public String name() {
+        return "关键字分表路由";
+    }
+
+    /**
+     * 路由描述。
      */
     @Override
     public String description() {

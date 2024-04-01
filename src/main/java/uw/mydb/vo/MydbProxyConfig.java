@@ -28,11 +28,6 @@ public class MydbProxyConfig {
     private String password;
 
     /**
-     * mysql cluster ids。
-     */
-    private String mysqlClusters;
-
-    /**
      * 基础cluster。
      */
     private long baseCluster;
@@ -72,14 +67,6 @@ public class MydbProxyConfig {
 
     public void setPassword(String password) {
         this.password = password;
-    }
-
-    public String getMysqlClusters() {
-        return mysqlClusters;
-    }
-
-    public void setMysqlClusters(String mysqlClusters) {
-        this.mysqlClusters = mysqlClusters;
     }
 
     public long getBaseCluster() {

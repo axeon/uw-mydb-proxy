@@ -57,7 +57,15 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
     }
 
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    @Override
+    public String name() {
+        return "自动日期分表路由";
+    }
+
+    /**
+     * 路由描述。
      */
     @Override
     public String description() {

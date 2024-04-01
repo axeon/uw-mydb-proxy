@@ -39,8 +39,17 @@ public class RouteTableByMod extends RouteAlgorithm {
         }
     }
 
+
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    @Override
+    public String name() {
+        return "余数分表路由";
+    }
+
+    /**
+     * 路由描述。
      */
     @Override
     public String description() {

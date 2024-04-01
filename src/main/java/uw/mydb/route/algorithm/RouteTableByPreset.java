@@ -33,13 +33,22 @@ public class RouteTableByPreset extends RouteAlgorithm {
                 logger.error( "参数配置错误！key:[{}], value:[{}]", kv.getKey(), kv.getValue() );
                 continue;
             }
-            routeMap.put( kv.getKey(), new DataTable( new DataNode(Long.parseLong( data[0] ), data[1]), data[2] ) );
+            routeMap.put( kv.getKey(), new DataTable( new DataNode( Long.parseLong( data[0] ), data[1] ), data[2] ) );
 
         }
     }
 
+
     /**
-     * 使用描述。
+     * 路由名称。
+     */
+    @Override
+    public String name() {
+        return "预配置分表路由";
+    }
+
+    /**
+     * 路由描述。
      */
     @Override
     public String description() {
