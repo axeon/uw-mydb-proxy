@@ -14,6 +14,8 @@ import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
+import uw.mydb.mysql.task.LocalCmdCallback;
+import uw.mydb.mysql.task.SingleListTask;
 import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
 
@@ -34,6 +36,7 @@ public class MySqlClient {
      * poolMap。
      */
     public static ChannelPoolMap<MysqlServerConfig, FixedChannelPool> poolMap;
+
     /**
      * acceptor线程。
      */
@@ -58,15 +61,22 @@ public class MySqlClient {
         mysqlServerConfig.setPassword( "mysqlRootPassword" );
         ArrayList<MysqlServerConfig> serverList = new ArrayList();
         serverList.add( mysqlServerConfig );
-
         MysqlClusterConfig mysqlClusterConfig = new MysqlClusterConfig();
         mysqlClusterConfig.setClusterId( 1 );
         mysqlClusterConfig.setServerList( serverList );
-
         mysqlClusterConfig.calcServerWeight();
-
         FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getClusterId(), mysqlClusterConfig, true );
-        MySqlSession mySqlSession = getMySqlSession( 1, true );
+        new SingleListTask( 1, new LocalCmdCallback<ArrayList<String>>() {
+            @Override
+            public void onSuccess(ArrayList<String> data) {
+
+            }
+
+            @Override
+            public void onFailure(int errorNo, String message) {
+
+            }
+        } ).run( "show databases" );
     }
 
     /**

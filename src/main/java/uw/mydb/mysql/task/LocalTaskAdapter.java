@@ -66,19 +66,10 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
     }
 
     /**
-     * 设置sql。
-     *
-     * @param sql
-     */
-    public LocalTaskAdapter setSql(String sql) {
-        this.sql = sql;
-        return this;
-    }
-
-    /**
      * 执行sql。
      */
-    public void run() {
+    public void run(String sql) {
+        this.sql = sql;
         CommandPacket cmd = new CommandPacket();
         cmd.command = MySqlPacket.CMD_QUERY;
         cmd.arg = sql;

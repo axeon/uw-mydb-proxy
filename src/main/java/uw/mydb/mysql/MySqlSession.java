@@ -16,7 +16,6 @@ import uw.mydb.util.SystemClock;
 import uw.mydb.vo.MysqlServerConfig;
 
 import java.security.NoSuchAlgorithmException;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /**
  * Mysql的会话实例。
@@ -28,44 +27,42 @@ public class MySqlSession {
     /**
      * 删除状态。
      */
-    public static final int STATE_REMOVED = -2;
-
-    /**
-     * 标记删除状态
-     */
-    public static final int STATE_RESERVED = -1;
+    public static final int SESSION_CLOSED = -1;
 
     /**
      * 初始状态，此状态不可用
      */
-    public static final int STATE_INIT = 0;
+    public static final int SESSION_INIT = 0;
 
     /**
      * 验证中状态，此状态不可用。
      */
-    public static final int STATE_AUTH = 1;
+    public static final int SESSION_AUTH = 1;
+
     /**
      * 正常状态。
      */
-    public static final int STATE_NORMAL = 2;
+    public static final int SESSION_NORMAL = 2;
 
     /**
      * 使用中。。。
      */
-    public static final int STATE_USING = 3;
+    public static final int SESSION_USING = 3;
+
+    /**
+     * 结果集初始状态
+     */
+    public static final int RESULT_INIT = 0;
+
+    /**
+     * 结果集开始状态
+     */
+    public static final int RESULT_START = 1;
 
     /**
      * 结果集中间状态
      */
     public static final int RESULT_FIELD = 2;
-    /**
-     * 结果集初始状态
-     */
-    public static final int RESULT_INIT = 0;
-    /**
-     * 结果集开始状态
-     */
-    public static final int RESULT_START = 1;
 
     /**
      * logger
@@ -73,42 +70,39 @@ public class MySqlSession {
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger( MySqlSession.class );
 
     /**
-     * 并发状态更新。
-     */
-    private static final AtomicIntegerFieldUpdater<MySqlSession> STATE_UPDATER;
-
-    static {
-        STATE_UPDATER = AtomicIntegerFieldUpdater.newUpdater( MySqlSession.class, "state" );
-    }
-
-    /**
      * 创建时间.
      */
-    final long createTime = SystemClock.now();
+    private final long createTime = SystemClock.now();
+
     /**
      * 开始使用时间.
      */
-    long lastAccess = createTime;
+    private long lastAccess = createTime;
+
     /**
      * 前端对应的ctx。
      */
-    MySqlSessionCallback sessionCallback;
+    private MySqlSessionCallback sessionCallback;
+
     /**
      * channel pool。
      */
     private FixedChannelPool channelPool = null;
+
     /**
      * 对应的channel。
      */
     private Channel channel;
+
     /**
      * mysql服务器配置。
      */
     private MysqlServerConfig mysqlServerConfig;
+
     /**
      * 连接状态。
      */
-    private volatile int state = STATE_INIT;
+    private volatile int sessionStatus = SESSION_INIT;
 
     /**
      * 结果集状态。
@@ -219,7 +213,7 @@ public class MySqlSession {
 
     @Override
     public String toString() {
-        return getClass().getName() + "@" + Integer.toHexString( hashCode() ) + ":" + getState();
+        return getClass().getName() + "@" + Integer.toHexString( hashCode() ) + ":" + getSessionState();
     }
 
     /**
@@ -253,7 +247,7 @@ public class MySqlSession {
                 logger.info( "PACKET_OK" );
                 OKPacket okPacket = new OKPacket();
                 okPacket.readPayLoad( buf );
-                setState( STATE_NORMAL );
+                setSessionState( SESSION_NORMAL );
                 break;
             case MySqlPacket.PACKET_ERROR:
                 logger.info( "PACKET_ERROR" );
@@ -261,7 +255,7 @@ public class MySqlSession {
                 ErrorPacket errorPacket = new ErrorPacket();
                 errorPacket.readPayLoad( buf );
                 logger.error( "MySQL[{}]服务器验证阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
-                setState( STATE_REMOVED );
+                setSessionState( SESSION_CLOSED );
                 trueClose();
                 break;
             default:
@@ -281,7 +275,7 @@ public class MySqlSession {
             errorPacket.readPayLoad( buf );
             logger.error( "MySQL[{}]服务器握手阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
             //报错了，直接关闭吧。
-            setState( STATE_REMOVED );
+            setSessionState( SESSION_CLOSED );
             trueClose();
             return;
         }
@@ -302,7 +296,7 @@ public class MySqlSession {
         handshakeResponsePacket.writeToChannel( ctx );
         ctx.flush();
         //进入验证模式。
-        setState( STATE_AUTH );
+        setSessionState( SESSION_AUTH );
     }
 
     /**
@@ -386,18 +380,7 @@ public class MySqlSession {
      */
     protected void trueClose() {
         this.channel.close();
-    }
-
-    protected boolean compareAndSet(int expectState, int newState) {
-        return STATE_UPDATER.compareAndSet( this, expectState, newState );
-    }
-
-    protected int getState() {
-        return STATE_UPDATER.get( this );
-    }
-
-    protected void setState(int newState) {
-        STATE_UPDATER.set( this, newState );
+        sessionStatus = SESSION_CLOSED;
     }
 
     /**
@@ -437,6 +420,24 @@ public class MySqlSession {
     }
 
     /**
+     * 获得session状态。
+     *
+     * @return
+     */
+    protected int getSessionState() {
+        return sessionStatus;
+    }
+
+    /**
+     * 设置状态。
+     *
+     * @param state
+     */
+    private void setSessionState(int state) {
+        this.sessionStatus = state;
+    }
+
+    /**
      * 绑定到前端session。
      *
      * @param sessionCallback
@@ -444,6 +445,7 @@ public class MySqlSession {
     private void bindCallback(MySqlSessionCallback sessionCallback) {
         this.sessionCallback = sessionCallback;
         this.lastAccess = SystemClock.now();
+        setSessionState( SESSION_USING );
     }
 
     /**
@@ -475,6 +477,8 @@ public class MySqlSession {
         if (channelPool != null) {
             channelPool.release( channel );
         }
+        setSessionState( SESSION_NORMAL );
+
     }
 
     /**
