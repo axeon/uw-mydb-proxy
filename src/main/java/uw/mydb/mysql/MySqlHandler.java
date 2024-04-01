@@ -1,7 +1,6 @@
 package uw.mydb.mysql;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
@@ -41,36 +40,7 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
             return;
         }
         //拿到消息
-        ByteBuf buf = (ByteBuf) msg;
-        switch (session.getSessionState()) {
-            case MySqlSession.SESSION_INIT:
-                //初始阶段，此时需要发送验证包
-                logger.info( "收到mysql初始化信息" );
-                session.handleHandshake( ctx, buf );
-                break;
-            case MySqlSession.SESSION_AUTH:
-                logger.info( "收到mysql验证结果信息" );
-                //验证阶段。
-                session.handleAuthResponse( ctx, buf );
-                break;
-            case MySqlSession.SESSION_NORMAL:
-                //闲置idle接收到的信息
-                logger.warn( "!!!状态[NORMAL]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
-                break;
-            case MySqlSession.SESSION_USING:
-                //开始接受业务数据。
-                session.handleCommandResponse( ctx, buf );
-                break;
-            case MySqlSession.SESSION_CLOSED:
-                //验证失败信息，直接关闭链接吧。
-                logger.warn( "!!!状态[REMOVED]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
-                ctx.close();
-                break;
-            default:
-                logger.warn( "!!!状态[" + session.getSessionState() + "]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
-                ctx.close();
-                //这时候基本上就是登录失败了，直接关连接就好了。
-        }
+        session.handleResponse( ctx, (ByteBuf) msg );
         super.channelRead( ctx, msg );
     }
 
@@ -81,6 +51,5 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
         ctx.close();
         session.trueClose();
     }
-
 
 }

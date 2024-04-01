@@ -78,7 +78,7 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
             logger.warn( "无法找到合适的mysqlSession!" );
             return;
         }
-        mysqlSession.exeCommand(this , cmd, isMaster );
+        mysqlSession.setCommand(this , cmd, isMaster );
     }
 
     /**

@@ -23,7 +23,7 @@ import java.util.List;
  *
  * @author axeon
  */
-public class RowDataPacket extends MySqlPacket {
+public class ResultSetRowDataPacket extends MySqlPacket {
 
     private static final byte NULL_MARK = (byte) 251;
 
@@ -33,10 +33,10 @@ public class RowDataPacket extends MySqlPacket {
 
     public int fieldCount;
 
-    public RowDataPacket() {
+    public ResultSetRowDataPacket() {
     }
 
-    public RowDataPacket(int fieldCount) {
+    public ResultSetRowDataPacket(int fieldCount) {
         this.fieldCount = fieldCount;
         this.fieldValues = new ArrayList<byte[]>(fieldCount);
     }
@@ -59,9 +59,9 @@ public class RowDataPacket extends MySqlPacket {
         for (int i = 0; i < fieldCount; i++) {
             byte[] fv = fieldValues.get(i);
             if (fv == null) {
-                buf.writeByte(RowDataPacket.NULL_MARK);
+                buf.writeByte( ResultSetRowDataPacket.NULL_MARK);
             } else if (fv.length == 0) {
-                buf.writeByte(RowDataPacket.EMPTY_MARK);
+                buf.writeByte( ResultSetRowDataPacket.EMPTY_MARK);
             } else {
                 ByteBufUtils.writeBytesWithLenEnc(buf, fv);
             }

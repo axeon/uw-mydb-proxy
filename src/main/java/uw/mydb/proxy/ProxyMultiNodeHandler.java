@@ -8,7 +8,6 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
-import uw.mydb.protocol.packet.EOFPacket;
 import uw.mydb.protocol.packet.ErrorPacket;
 import uw.mydb.protocol.packet.OKPacket;
 import uw.mydb.sqlparser.SqlParseResult;
@@ -250,7 +249,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 continue;
             }
-            mySqlSession.exeCommand(this , sqlInfo, routeResult.isMaster() );
+            mySqlSession.setCommand(this , sqlInfo, routeResult.isMaster() );
         }
         //等待最长180s
         try {
@@ -262,10 +261,10 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         //开始返回最后的包。
         if (packetStep.get() > PACKET_STEP_INIT) {
             //输出eof包。
-            EOFPacket eofPacket = new EOFPacket();
+            OKPacket eofPacket = new OKPacket();
             eofPacket.packetId = (byte) packetSeq.incrementAndGet();
             eofPacket.warningCount = errorCount.get();
-            eofPacket.statusFlag = 0x22;
+            eofPacket.serverStatus = 0x22;
             eofPacket.writeToChannel( ctx );
             sendBytes.addAndGet( eofPacket.getPacketLength() );
         } else {

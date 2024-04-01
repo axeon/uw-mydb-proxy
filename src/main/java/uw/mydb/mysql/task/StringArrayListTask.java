@@ -3,7 +3,7 @@ package uw.mydb.mysql.task;
 import io.netty.buffer.ByteBuf;
 import uw.mydb.protocol.packet.ErrorPacket;
 import uw.mydb.protocol.packet.ResultSetHeaderPacket;
-import uw.mydb.protocol.packet.RowDataPacket;
+import uw.mydb.protocol.packet.ResultSetRowDataPacket;
 
 import java.util.ArrayList;
 
@@ -40,7 +40,7 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
      */
     @Override
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
-        RowDataPacket rowDataPacket = new RowDataPacket(fieldCount);
+        ResultSetRowDataPacket rowDataPacket = new ResultSetRowDataPacket(fieldCount);
         rowDataPacket.readPayLoad(buf);
         String[] strings = new String[rowDataPacket.fieldCount];
         for (int i = 0; i < strings.length; i++) {

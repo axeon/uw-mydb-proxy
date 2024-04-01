@@ -26,7 +26,7 @@ import uw.mydb.util.ByteBufUtils;
  *
  * @author axeon
  */
-public class FieldPacket extends MySqlPacket {
+public class ResultSetFieldPacket extends MySqlPacket {
     private static final byte[] DEFAULT_CATALOG = "def".getBytes();
     private static final byte[] FILLER = new byte[2];
 

@@ -61,6 +61,10 @@ public class OKPacket extends MySqlPacket {
         ctx.writeAndFlush(byteBuf);
     }
 
+    public boolean hasStatusFlag(long flag) {
+        return ((this.serverStatus & flag) == flag);
+    }
+
     @Override
     protected void write(ByteBuf buf) {
         ByteBufUtils.writeLenEncInt(buf, packetType);

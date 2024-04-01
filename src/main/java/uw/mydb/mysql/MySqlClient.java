@@ -69,12 +69,14 @@ public class MySqlClient {
         new SingleListTask( 1, new LocalCmdCallback<ArrayList<String>>() {
             @Override
             public void onSuccess(ArrayList<String> data) {
-
+                for (String line : data) {
+                    logger.info( "db:{}", line );
+                }
             }
 
             @Override
             public void onFailure(int errorNo, String message) {
-
+                logger.error( "errorNo[{}]:{}", errorNo, message );
             }
         } ).run( "show databases" );
     }

@@ -2,6 +2,7 @@ package uw.mydb.mysql;
 
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.pool.FixedChannelPool;
@@ -30,7 +31,7 @@ public class MySqlSession {
     public static final int SESSION_CLOSED = -1;
 
     /**
-     * 初始状态，此状态不可用
+     * 初始状态，此状态不可用。
      */
     public static final int SESSION_INIT = 0;
 
@@ -45,24 +46,24 @@ public class MySqlSession {
     public static final int SESSION_NORMAL = 2;
 
     /**
-     * 使用中。。。
+     * 使用中状态。
      */
     public static final int SESSION_USING = 3;
 
     /**
-     * 结果集初始状态
+     * 结果集初始状态。
      */
     public static final int RESULT_INIT = 0;
 
     /**
-     * 结果集开始状态
+     * 结果集列状态。
      */
-    public static final int RESULT_START = 1;
+    public static final int RESULT_FIELD = 1;
 
     /**
-     * 结果集中间状态
+     * 结果集数据状态。
      */
-    public static final int RESULT_FIELD = 2;
+    public static final int RESULT_DATA = 2;
 
     /**
      * logger
@@ -80,7 +81,7 @@ public class MySqlSession {
     private long lastAccess = createTime;
 
     /**
-     * 前端对应的ctx。
+     * 回调对象。
      */
     private MySqlSessionCallback sessionCallback;
 
@@ -160,27 +161,20 @@ public class MySqlSession {
      */
     private CommandPacket command;
 
+    /**
+     * result set fieldCount.
+     */
+    private int resultFieldCount = 0;
+
+    /**
+     * fieldPos。
+     */
+    private int resultFieldPos = 0;
+
 
     public MySqlSession(MysqlServerConfig mysqlServerConfig, Channel channel) {
         this.mysqlServerConfig = mysqlServerConfig;
         this.channel = channel;
-    }
-
-    /**
-     * 异步执行一条sql。
-     *
-     * @param sessionCallback
-     * @param command
-     */
-    public void exeCommand(MySqlSessionCallback sessionCallback, CommandPacket command, boolean isMasterSql) {
-        bindCallback( sessionCallback );
-        this.isMasterSql = isMasterSql;
-        ByteBuf buf = channel.alloc().buffer();
-        this.command = command;
-        this.command.writePayLoad( buf );
-        //标记发送字节数。
-        sendBytes += buf.readableBytes();
-        channel.writeAndFlush( buf );
     }
 
     /**
@@ -196,19 +190,32 @@ public class MySqlSession {
      * 异步执行一条sql。
      *
      * @param sessionCallback
+     * @param command
+     */
+    public void setCommand(MySqlSessionCallback sessionCallback, CommandPacket command, boolean isMasterSql) {
+        bindCallback( sessionCallback );
+        this.isMasterSql = isMasterSql;
+        this.command = command;
+        if (getSessionState() > SESSION_NORMAL) {
+            exeCommand();
+        }
+    }
+
+    /**
+     * 异步执行一条sql。
+     *
+     * @param sessionCallback
      * @param sqlInfo
      */
-    public void exeCommand(MySqlSessionCallback sessionCallback, SqlParseResult.SqlInfo sqlInfo, boolean isMasterSql) {
+    public void setCommand(MySqlSessionCallback sessionCallback, SqlParseResult.SqlInfo sqlInfo, boolean isMasterSql) {
         bindCallback( sessionCallback );
         this.isMasterSql = isMasterSql;
         this.database = sqlInfo.getDatabase();
         this.table = sqlInfo.getTable();
-        ByteBuf buf = channel.alloc().buffer();
         this.command = sqlInfo.genPacket();
-        this.command.writePayLoad( buf );
-        //标记发送字节数。
-        sendBytes += buf.readableBytes();
-        channel.writeAndFlush( buf );
+        if (getSessionState() > SESSION_NORMAL) {
+            exeCommand();
+        }
     }
 
     @Override
@@ -217,50 +224,39 @@ public class MySqlSession {
     }
 
     /**
-     * 处理验证返回结果。
+     * 处理命令返回结果。
      *
      * @param buf
      */
-    protected void handleAuthResponse(ChannelHandlerContext ctx, ByteBuf buf) {
-        byte status = buf.getByte( 4 );
-        switch (status) {
-            case MySqlPacket.PACKET_AUTH_SWITCH:
-                logger.info( "PACKET_AUTH_SWITCH" );
-                AuthSwitchRequestPacket authSwitchRequestPacket = new AuthSwitchRequestPacket();
-                authSwitchRequestPacket.readPayLoad( buf );
-                AuthSwitchResponsePacket authSwitchResponsePacket = new AuthSwitchResponsePacket();
-                authSwitchResponsePacket.packetId = ++authSwitchRequestPacket.packetId;
-                authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPassword(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
-                authSwitchResponsePacket.writeToChannel( ctx );
-                ctx.flush();
+    protected void handleResponse(ChannelHandlerContext ctx, ByteBuf buf) {
+        switch (getSessionState()) {
+            case MySqlSession.SESSION_INIT:
+                //初始阶段，此时需要发送验证包
+                handleHandshake( ctx, buf );
                 break;
-            case MySqlPacket.PACKET_AUTH_MORE_DATA:
-                logger.info( "PACKET_AUTH_MORE_DATA" );
-                AuthMoreDataPacket packet = new AuthMoreDataPacket();
-                packet.readPayLoad( buf );
-//                AuthSwitchResponsePacket authSwitchResponsePacket2 = new AuthSwitchResponsePacket();
-//                authSwitchResponsePacket2.packetId =2;
-//                authSwitchResponsePacket2.writeToChannel( ctx );
-//                ctx.flush();
+            case MySqlSession.SESSION_AUTH:
+                //验证阶段。
+                handleAuthResponse( ctx, buf );
                 break;
-            case MySqlPacket.PACKET_OK:
-                logger.info( "PACKET_OK" );
-                OKPacket okPacket = new OKPacket();
-                okPacket.readPayLoad( buf );
-                setSessionState( SESSION_NORMAL );
+            case MySqlSession.SESSION_NORMAL:
+                //闲置idle接收到的信息
+                logger.warn( "!!!状态[NORMAL]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
                 break;
-            case MySqlPacket.PACKET_ERROR:
-                logger.info( "PACKET_ERROR" );
-                //报错了，直接关闭吧。
-                ErrorPacket errorPacket = new ErrorPacket();
-                errorPacket.readPayLoad( buf );
-                logger.error( "MySQL[{}]服务器验证阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
-                setSessionState( SESSION_CLOSED );
-                trueClose();
+            case MySqlSession.SESSION_USING:
+                //开始接受业务数据。
+                handleCommandResponse( ctx, buf );
+                break;
+            case MySqlSession.SESSION_CLOSED:
+                //验证失败信息，直接关闭链接吧。
+                logger.warn( "!!!状态[REMOVED]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
+                ctx.close();
                 break;
             default:
-                logger.warn( "收到未知的登录数据包！status={}", status );
+                logger.warn( "!!!状态[" + getSessionState() + "]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
+                ctx.close();
+                //这时候基本上就是登录失败了，直接关连接就好了。
         }
+
     }
 
     /**
@@ -300,6 +296,51 @@ public class MySqlSession {
     }
 
     /**
+     * 处理验证返回结果。
+     *
+     * @param buf
+     */
+    protected void handleAuthResponse(ChannelHandlerContext ctx, ByteBuf buf) {
+        byte status = buf.getByte( 4 );
+        switch (status) {
+            case MySqlPacket.PACKET_AUTH_SWITCH:
+                AuthSwitchRequestPacket authSwitchRequestPacket = new AuthSwitchRequestPacket();
+                authSwitchRequestPacket.readPayLoad( buf );
+                AuthSwitchResponsePacket authSwitchResponsePacket = new AuthSwitchResponsePacket();
+                authSwitchResponsePacket.packetId = ++authSwitchRequestPacket.packetId;
+                authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPassword(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
+//                authSwitchResponsePacket.writeToChannel( ctx );
+//                ctx.flush();
+                break;
+            case MySqlPacket.PACKET_AUTH_MORE_DATA:
+                AuthMoreDataPacket packet = new AuthMoreDataPacket();
+                packet.readPayLoad( buf );
+//                AuthSwitchResponsePacket authSwitchResponsePacket2 = new AuthSwitchResponsePacket();
+//                authSwitchResponsePacket2.packetId =2;
+//                authSwitchResponsePacket2.writeToChannel( ctx );
+//                ctx.flush();
+                break;
+            case MySqlPacket.PACKET_OK:
+                OKPacket okPacket = new OKPacket();
+                okPacket.readPayLoad( buf );
+                setSessionState( SESSION_USING );
+                exeCommand();
+                break;
+            case MySqlPacket.PACKET_ERROR:
+                logger.info( "验证失败！" );
+                //报错了，直接关闭吧。
+                ErrorPacket errorPacket = new ErrorPacket();
+                errorPacket.readPayLoad( buf );
+                logger.error( "MySQL[{}]服务器验证阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
+                setSessionState( SESSION_CLOSED );
+                trueClose();
+                break;
+            default:
+                logger.warn( "收到未知的登录数据包！status={}", status );
+        }
+    }
+
+    /**
      * 处理命令返回结果。
      *
      * @param buf
@@ -311,9 +352,22 @@ public class MySqlSession {
         byte status = buf.getByte( 4 );
         switch (status) {
             case MySqlPacket.PACKET_OK:
-                sessionCallback.receiveOkPacket( packetId, buf );
-                //收到数据就可以解绑了。
-                unbindCallback();
+            case MySqlPacket.PACKET_EOF:
+                if (resultStatus == RESULT_DATA) {
+                    OKPacket ok = new OKPacket();
+                    ok.readPayLoad( buf );
+                    buf.resetReaderIndex();
+                    sessionCallback.receiveRowDataEOFPacket( packetId, buf );
+                    //确定没有更多数据了，再解绑，此处可能有问题！
+                    if (!ok.hasStatusFlag( MySqlPacket.SERVER_MORE_RESULTS_EXISTS )) {
+                        unbindCallback();
+                    } else {
+                        resultStatus = RESULT_INIT;
+                    }
+                } else {
+                    //直接解绑吧。
+                    unbindCallback();
+                }
                 break;
             case MySqlPacket.PACKET_ERROR:
                 //直接转发走
@@ -322,37 +376,23 @@ public class MySqlSession {
                 //都报错了，直接解绑
                 unbindCallback();
                 break;
-            case MySqlPacket.PACKET_EOF:
-                //包长度小于9才可能是EOF，否则可能是数据包。
-                if (buf.readableBytes() <= 9) {
-                    //此时要判断resultStatus，确定结束才可以解绑
-                    if (checkResultEnd()) {
-                        EOFPacket eof = new EOFPacket();
-                        eof.readPayLoad( buf );
-                        //之前读过了，必须要重置一下。
-                        buf.resetReaderIndex();
-                        sessionCallback.receiveRowDataEOFPacket( packetId, buf );
-                        //确定没有更多数据了，再解绑，此处可能有问题！
-                        if (!eof.hasStatusFlag( MySqlPacket.SERVER_MORE_RESULTS_EXISTS )) {
-                            unbindCallback();
-                        } else {
-                            resultStatus = RESULT_INIT;
-                        }
-                    } else {
-                        sessionCallback.receiveFieldDataEOFPacket( packetId, buf );
-                    }
-                    break;
-                }
             default:
                 switch (resultStatus) {
                     case RESULT_INIT:
-                        //此时是ResultSetHeader
-                        setResultStart();
+                        ResultSetHeaderPacket headerPacket = new ResultSetHeaderPacket();
+                        headerPacket.readPayLoad( buf );
+                        resultFieldCount = headerPacket.fieldCount;
+                        buf.resetReaderIndex();
+                        resultStatus = RESULT_FIELD;
                         sessionCallback.receiveResultSetHeaderPacket( packetId, buf );
                         break;
-                    case RESULT_START:
+                    case RESULT_FIELD:
                         //field区
                         sessionCallback.receiveFieldDataPacket( packetId, buf );
+                        resultFieldPos++;
+                        if (resultFieldPos >= resultFieldCount) {
+                            resultStatus = RESULT_DATA;
+                        }
                         break;
                     default:
                         //数据区
@@ -381,6 +421,24 @@ public class MySqlSession {
     protected void trueClose() {
         this.channel.close();
         sessionStatus = SESSION_CLOSED;
+    }
+
+    /**
+     * 获得session状态。
+     *
+     * @return
+     */
+    protected int getSessionState() {
+        return sessionStatus;
+    }
+
+    /**
+     * 设置状态。
+     *
+     * @param state
+     */
+    private void setSessionState(int state) {
+        this.sessionStatus = state;
     }
 
     /**
@@ -420,21 +478,16 @@ public class MySqlSession {
     }
 
     /**
-     * 获得session状态。
-     *
-     * @return
+     * 执行指令。
      */
-    protected int getSessionState() {
-        return sessionStatus;
-    }
-
-    /**
-     * 设置状态。
-     *
-     * @param state
-     */
-    private void setSessionState(int state) {
-        this.sessionStatus = state;
+    private void exeCommand() {
+        if (this.command != null) {
+            ByteBuf buf = channel.alloc().buffer();
+            this.command.writePayLoad( buf );
+            //标记发送字节数。
+            sendBytes += buf.readableBytes();
+            channel.writeAndFlush( buf );
+        }
     }
 
     /**
@@ -445,7 +498,9 @@ public class MySqlSession {
     private void bindCallback(MySqlSessionCallback sessionCallback) {
         this.sessionCallback = sessionCallback;
         this.lastAccess = SystemClock.now();
-        setSessionState( SESSION_USING );
+        if (this.sessionStatus == SESSION_NORMAL) {
+            setSessionState( SESSION_USING );
+        }
     }
 
     /**
@@ -481,23 +536,4 @@ public class MySqlSession {
 
     }
 
-    /**
-     * 设置结果集开始。
-     */
-    private void setResultStart() {
-        resultStatus = RESULT_START;
-    }
-
-    /**
-     * 检查结果集状态。
-     */
-    private boolean checkResultEnd() {
-        if (resultStatus == RESULT_START) {
-            resultStatus = RESULT_FIELD;
-            return false;
-        } else {
-            resultStatus = RESULT_INIT;
-            return true;
-        }
-    }
 }

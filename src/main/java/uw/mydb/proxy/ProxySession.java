@@ -212,7 +212,7 @@ public class ProxySession implements MySqlSessionCallback {
             this.database = database;
             MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster(), true );
-            mySqlSession.exeCommand( this, CommandPacket.build( "use " + this.database ), true );
+            mySqlSession.setCommand( this, CommandPacket.build( "use " + this.database ), true );
         } else {
             //报错，找不到这个schema。
             onFailMessage( MySqlErrorCode.ER_NO_DB_ERROR, "No database!" );
@@ -495,7 +495,7 @@ public class ProxySession implements MySqlSessionCallback {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 return;
             }
-            mySqlSession.exeCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
+            mySqlSession.setCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
             multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, routeResult ) );

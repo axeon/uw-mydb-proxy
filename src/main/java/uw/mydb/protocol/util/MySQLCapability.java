@@ -426,6 +426,7 @@ public class MySQLCapability {
         flag |= MySQLCapability.CLIENT_SECURE_CONNECTION;
         flag |= MySQLCapability.CLIENT_PLUGIN_AUTH;
         flag |= MySQLCapability.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA;
+        flag |= MySQLCapability.CLIENT_DEPRECATE_EOF;
         return flag;
     }
 
