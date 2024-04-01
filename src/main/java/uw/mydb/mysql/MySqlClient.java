@@ -20,7 +20,6 @@ import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
 
 import java.util.ArrayList;
-import java.util.concurrent.ExecutionException;
 
 
 /**
@@ -54,7 +53,7 @@ public class MySqlClient {
             //此处要重新加载mysqlCluster信息。
         } );
         MysqlServerConfig mysqlServerConfig = new MysqlServerConfig();
-        mysqlServerConfig.setHost( "192.168.88.21" );
+        mysqlServerConfig.setHost( "dev.xili.pub" );
         mysqlServerConfig.setPort( 3308 );
         mysqlServerConfig.setWeight( 1 );
         mysqlServerConfig.setUsername( "root" );
@@ -79,8 +78,8 @@ public class MySqlClient {
                 logger.error( "errorNo[{}]:{}", errorNo, message );
             }
         } ).run( "show databases" );
-        Thread.sleep( 3000 );
-        stop();
+//        Thread.sleep( 3000 );
+//        stop();
     }
 
     /**

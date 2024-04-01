@@ -125,12 +125,12 @@ public class MySqlSession {
     /**
      * 发送字节数。
      */
-    private long sendBytes;
+    private long txBytes;
 
     /**
      * 接收字节数。
      */
-    private long recvBytes;
+    private long rxBytes;
 
     /**
      * 执行sql所在的数据库
@@ -230,7 +230,7 @@ public class MySqlSession {
                 break;
             case MySqlSession.SESSION_NORMAL:
                 //闲置idle接收到的信息
-                log.warn( "!!!状态[NORMAL]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
+                log.warn( "!!!状态[SESSION_NORMAL]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
                 break;
             case MySqlSession.SESSION_USING:
                 //开始接受业务数据。
@@ -238,7 +238,7 @@ public class MySqlSession {
                 break;
             case MySqlSession.SESSION_CLOSED:
                 //验证失败信息，直接关闭链接吧。
-                log.warn( "!!!状态[REMOVED]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
+                log.warn( "!!!状态[SESSION_CLOSED]未处理信息:" + ByteBufUtil.prettyHexDump( buf ) );
                 ctx.close();
                 break;
             default:
@@ -282,7 +282,7 @@ public class MySqlSession {
         handshakeResponsePacket.writeToChannel( ctx );
         ctx.flush();
         //进入验证模式。
-        sessionStatus =SESSION_AUTH;
+        sessionStatus = SESSION_AUTH;
     }
 
     /**
@@ -299,16 +299,19 @@ public class MySqlSession {
                 AuthSwitchResponsePacket authSwitchResponsePacket = new AuthSwitchResponsePacket();
                 authSwitchResponsePacket.packetId = ++authSwitchRequestPacket.packetId;
                 authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPassword(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
-//                authSwitchResponsePacket.writeToChannel( ctx );
-//                ctx.flush();
+                authSwitchResponsePacket.writeToChannel( ctx );
+                ctx.flush();
                 break;
             case MySqlPacket.PACKET_AUTH_MORE_DATA:
-                AuthMoreDataPacket packet = new AuthMoreDataPacket();
-                packet.readPayLoad( buf );
-//                AuthSwitchResponsePacket authSwitchResponsePacket2 = new AuthSwitchResponsePacket();
-//                authSwitchResponsePacket2.packetId =2;
-//                authSwitchResponsePacket2.writeToChannel( ctx );
-//                ctx.flush();
+                AuthMoreDataPacket authMoreDataPacket = new AuthMoreDataPacket();
+                authMoreDataPacket.readPayLoad( buf );
+                //data 3:成功，2:请求public key，4:请求完整验证。
+                if (authMoreDataPacket.data!=0x03) {
+                    //快速返回失败信息。
+                    authMoreDataPacket.packetId++;
+                    authMoreDataPacket.writeToChannel( ctx );
+                    ctx.flush();
+                }
                 break;
             case MySqlPacket.PACKET_OK:
                 OkPacket okPacket = new OkPacket();
@@ -336,19 +339,19 @@ public class MySqlSession {
      */
     private void handleCommandResponse(ChannelHandlerContext ctx, ByteBuf buf) {
         //标记接收字节数。
-        recvBytes += buf.readableBytes();
+        rxBytes += buf.readableBytes();
         byte packetId = buf.getByte( 3 );
         byte status = buf.getByte( 4 );
         switch (status) {
             case MySqlPacket.PACKET_OK:
             case MySqlPacket.PACKET_EOF:
                 if (resultStatus == RESULT_DATA) {
-                    OkPacket ok = new OkPacket();
-                    ok.readPayLoad( buf );
+                    OkPacket okPacket = new OkPacket();
+                    okPacket.readPayLoad( buf );
                     buf.resetReaderIndex();
                     sessionCallback.receiveRowDataEOFPacket( packetId, buf );
                     //确定没有更多数据了，再解绑，此处可能有问题！
-                    if (!ok.hasStatusFlag( MySqlPacket.SERVER_MORE_RESULTS_EXISTS )) {
+                    if (!okPacket.hasStatusFlag( MySqlPacket.SERVER_MORE_RESULTS_EXISTS )) {
                         unbindCallback();
                     } else {
                         resultStatus = RESULT_INIT;
@@ -413,7 +416,7 @@ public class MySqlSession {
             ByteBuf buf = channel.alloc().buffer();
             this.command.writePayLoad( buf );
             //标记发送字节数。
-            sendBytes += buf.readableBytes();
+            txBytes += buf.readableBytes();
             channel.writeAndFlush( buf );
         }
     }
@@ -475,15 +478,15 @@ public class MySqlSession {
         long exeTime = (now - this.lastAccess);
         this.lastAccess = now;
         //最后统计mysql执行信息。
-        StatsManager.statsMysql( 1, 1, database, table, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, sendBytes, recvBytes );
+        StatsManager.statsMysql( 1, 1, database, table, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );
         //数据归零
         this.command = null;
         this.isMasterSql = false;
         this.isExeSuccess = true;
         this.dataRowsCount = 0;
         this.affectRowsCount = 0;
-        this.recvBytes = 0;
-        this.sendBytes = 0;
+        this.rxBytes = 0;
+        this.txBytes = 0;
         this.resultStatus = RESULT_INIT;
         this.resultFieldCount = 0;
         this.resultFieldPos = 0;
