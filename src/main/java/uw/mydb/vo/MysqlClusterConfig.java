@@ -1,5 +1,7 @@
 package uw.mydb.vo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,60 +34,76 @@ public class MysqlClusterConfig {
     /**
      * mysql主机列表
      */
-    private List<MysqlServerConfig> masters = new ArrayList<>();
+    private List<MysqlServerConfig> serverList = new ArrayList<>();
+
     /**
-     * mysql从机列表
+     * 主服务器索引位置。
      */
-    private List<MysqlServerConfig> slaves = new ArrayList<>();
-    private volatile int masterPos;
-    private volatile int mixPos;
-    private List<String> masterWeights = new ArrayList<>();
-    private List<String> mixWeights = new ArrayList<>();
+    @JsonIgnore
+    private volatile int serverMasterWeightPos;
+
+    /**
+     * 所有服务器索引位置。
+     */
+    @JsonIgnore
+    private volatile int serverAllWeightPos;
+
+    /**
+     * 主服务器列表。
+     */
+    @JsonIgnore
+    private volatile List<MysqlServerConfig> serverMasterWeightList;
+
+    /**
+     * 所有服务器列表。
+     */
+    @JsonIgnore
+    private volatile List<MysqlServerConfig> serverAllWeightList;
+
+
     public MysqlClusterConfig() {
     }
 
-    public MysqlClusterConfig(long clusterId, String clusterName, int clusterType, int switchType, List<MysqlServerConfig> masters, List<MysqlServerConfig> slaves) {
+    public MysqlClusterConfig(long clusterId, String clusterName, int clusterType, int switchType, long lastUpdate, List<MysqlServerConfig> serverList) {
         this.clusterId = clusterId;
         this.clusterName = clusterName;
         this.clusterType = clusterType;
         this.switchType = switchType;
-        this.masters = masters;
-        this.slaves = slaves;
+        this.lastUpdate = lastUpdate;
+        this.serverList = serverList;
     }
 
     /**
-     * 计算master数据。
+     * 获取服务器配置。
+     *
      * @return
      */
-    public String calcMaster() {
-        return masterWeights.get( masterPos++ % masterWeights.size() );
+    public MysqlServerConfig fetchServerConfig(boolean isMaster) {
+        if (isMaster){
+            return serverMasterWeightList.get( serverMasterWeightPos++ % serverMasterWeightList.size() );
+        }else {
+            return serverAllWeightList.get( serverAllWeightPos++ % serverAllWeightList.size() );
+        }
     }
 
     /**
-     * 计算混合数据。
-     * @return
+     * 计算服务器权重。
      */
-    public String calcMix() {
-        return mixWeights.get( mixPos++ % mixWeights.size() );
-    }
-
-    /**
-     * 初始化集群访问数据。
-     */
-    public void initClusterWeight() {
-        for (MysqlServerConfig config : masters) {
-            for (int i = 0; i < config.getWeight(); i++) {
-                masterWeights.add( config.toString() );
-                mixWeights.add( config.toString() );
+    public void calcServerWeight() {
+        if (serverMasterWeightList == null || serverAllWeightList == null) {
+            List<MysqlServerConfig> serverMasterWeightList = new ArrayList<>();
+            List<MysqlServerConfig> serverAllWeightList = new ArrayList<>();
+            for (MysqlServerConfig config : serverList) {
+                for (int i = 0; i < config.getWeight(); i++) {
+                    serverMasterWeightList.add( config );
+                    serverAllWeightList.add( config );
+                }
             }
+            Collections.shuffle( serverMasterWeightList );
+            Collections.shuffle( serverAllWeightList );
+            this.serverMasterWeightList = serverMasterWeightList;
+            this.serverAllWeightList = serverAllWeightList;
         }
-        for (MysqlServerConfig config : slaves) {
-            for (int i = 0; i < config.getWeight(); i++) {
-                mixWeights.add( config.toString() );
-            }
-        }
-        Collections.shuffle( masterWeights );
-        Collections.shuffle( mixWeights );
     }
 
     public long getClusterId() {
@@ -120,20 +138,12 @@ public class MysqlClusterConfig {
         this.switchType = switchType;
     }
 
-    public List<MysqlServerConfig> getMasters() {
-        return masters;
+    public List<MysqlServerConfig> getServerList() {
+        return serverList;
     }
 
-    public void setMasters(List<MysqlServerConfig> masters) {
-        this.masters = masters;
-    }
-
-    public List<MysqlServerConfig> getSlaves() {
-        return slaves;
-    }
-
-    public void setSlaves(List<MysqlServerConfig> slaves) {
-        this.slaves = slaves;
+    public void setServerList(List<MysqlServerConfig> serverList) {
+        this.serverList = serverList;
     }
 
     public long getLastUpdate() {

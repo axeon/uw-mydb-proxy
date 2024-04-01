@@ -236,7 +236,7 @@ public class MySqlSession {
                 authSwitchRequestPacket.readPayLoad( buf );
                 AuthSwitchResponsePacket authSwitchResponsePacket = new AuthSwitchResponsePacket();
                 authSwitchResponsePacket.packetId = ++authSwitchRequestPacket.packetId;
-                authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPass(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
+                authSwitchResponsePacket.data = buildPassword( mysqlServerConfig.getPassword(), authSwitchRequestPacket.authPluginName, authSwitchRequestPacket.authPluginData );
                 authSwitchResponsePacket.writeToChannel( ctx );
                 ctx.flush();
                 break;
@@ -295,10 +295,10 @@ public class MySqlSession {
         handshakeResponsePacket.clientCapability = MySQLCapability.initClientFlags();
         handshakeResponsePacket.maxPacketSize = 16 * 1024 * 1024;
         handshakeResponsePacket.charsetIndex = charsetIndex;
-        handshakeResponsePacket.username = mysqlServerConfig.getUser();
+        handshakeResponsePacket.username = mysqlServerConfig.getUsername();
         handshakeResponsePacket.authPluginName = StringUtils.isNotBlank( handshakePacket.authPluginName ) ? handshakePacket.authPluginName :
                 MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
-        handshakeResponsePacket.password = buildPassword( mysqlServerConfig.getPass(), handshakeResponsePacket.authPluginName, buildAuthSeed( handshakePacket ) );
+        handshakeResponsePacket.password = buildPassword( mysqlServerConfig.getPassword(), handshakeResponsePacket.authPluginName, buildAuthSeed( handshakePacket ) );
         handshakeResponsePacket.writeToChannel( ctx );
         ctx.flush();
         //进入验证模式。

@@ -1,50 +1,62 @@
 package uw.mydb.vo;
 
+import uw.mydb.constant.MysqlClusterType;
+
 /**
  * mysql服务器配置
  */
 public class MysqlServerConfig {
-    long id;
+
+    /**
+     * 服务器类型。
+     */
+    private int serverType = MysqlClusterType.MASTER.getValue();
+
     /**
      * 读取权重
      */
     private int weight = 1;
+
     /**
      * 主机
      */
     private String host;
+
     /**
      * 端口号
      */
     private int port;
+
     /**
      * 用户名
      */
-    private String user;
+    private String username;
+
     /**
      * 密码
      */
-    private String pass;
-    /**
-     * 线程数。
-     */
-    private int threadNum = 0;
+    private String password;
+
     /**
      * 最大连接数
      */
     private int connMax = 1000;
+
     /**
      * 最小连接数
      */
     private int connMin = 1;
+
     /**
      * 连接闲时超时秒数.
      */
     private int connIdleTimeout = 180;
+
     /**
      * 连接忙时超时秒数.
      */
     private int connBusyTimeout = 180;
+
     /**
      * 连接最大寿命秒数.
      */
@@ -53,14 +65,14 @@ public class MysqlServerConfig {
     public MysqlServerConfig() {
     }
 
-    public MysqlServerConfig(int weight, String host, int port, String user, String pass, int threadNum, int connMin, int connMax, int connIdleTimeout, int connBusyTimeout,
-                             int connMaxAge) {
+    public MysqlServerConfig(int serverType, int weight, String host, int port, String username, String password, int connMax, int connMin, int connIdleTimeout,
+                             int connBusyTimeout, int connMaxAge) {
+        this.serverType = serverType;
         this.weight = weight;
         this.host = host;
         this.port = port;
-        this.user = user;
-        this.pass = pass;
-        this.threadNum = threadNum;
+        this.username = username;
+        this.password = password;
         this.connMax = connMax;
         this.connMin = connMin;
         this.connIdleTimeout = connIdleTimeout;
@@ -70,15 +82,15 @@ public class MysqlServerConfig {
 
     @Override
     public String toString() {
-        return user + "@" + host + ":" + port;
+        return username + "@" + host + ":" + port;
     }
 
-    public long getId() {
-        return id;
+    public int getServerType() {
+        return serverType;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setServerType(int serverType) {
+        this.serverType = serverType;
     }
 
     public int getWeight() {
@@ -105,28 +117,20 @@ public class MysqlServerConfig {
         this.port = port;
     }
 
-    public String getUser() {
-        return user;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
-    public String getPass() {
-        return pass;
+    public String getPassword() {
+        return password;
     }
 
-    public void setPass(String pass) {
-        this.pass = pass;
-    }
-
-    public int getThreadNum() {
-        return threadNum;
-    }
-
-    public void setThreadNum(int threadNum) {
-        this.threadNum = threadNum;
+    public void setPassword(String password) {
+        this.password = password;
     }
 
     public int getConnMax() {

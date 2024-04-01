@@ -54,13 +54,17 @@ public class MySqlClient {
         mysqlServerConfig.setHost( "192.168.88.21" );
         mysqlServerConfig.setPort( 3308 );
         mysqlServerConfig.setWeight( 1 );
-        mysqlServerConfig.setUser( "root" );
-        mysqlServerConfig.setPass( "mysqlRootPassword" );
-        ArrayList masterList = new ArrayList();
-        masterList.add( mysqlServerConfig );
+        mysqlServerConfig.setUsername( "root" );
+        mysqlServerConfig.setPassword( "mysqlRootPassword" );
+        ArrayList<MysqlServerConfig> serverList = new ArrayList();
+        serverList.add( mysqlServerConfig );
+
         MysqlClusterConfig mysqlClusterConfig = new MysqlClusterConfig();
         mysqlClusterConfig.setClusterId( 1 );
-        mysqlClusterConfig.setMasters( masterList );
+        mysqlClusterConfig.setServerList( serverList );
+
+        mysqlClusterConfig.calcServerWeight();
+
         FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getClusterId(), mysqlClusterConfig, true );
         MySqlSession mySqlSession = getMySqlSession( 1, true );
     }
@@ -71,17 +75,18 @@ public class MySqlClient {
      * @param clusterId
      * @return
      */
-    public static MySqlSession getMySqlSession(long clusterId, boolean isMasterSql) {
+    public static MySqlSession getMySqlSession(long clusterId, boolean isMaster) {
         MysqlClusterConfig clusterConfig = FusionCache.get( MysqlClusterConfig.class, clusterId );
         if (clusterConfig == null) {
             return null;
         }
-        MysqlServerConfig mysqlServerConfig = clusterConfig.getMasters().get( 0 );
+        MysqlServerConfig mysqlServerConfig = clusterConfig.fetchServerConfig( isMaster );
         FixedChannelPool channelPool = poolMap.get( mysqlServerConfig );
         Future<Channel> channelFuture = channelPool.acquire();
         MySqlSession mySqlSession = null;
         try {
             mySqlSession = channelFuture.get().attr( MySqlHandler.MYSQL_SESSION ).get();
+            //绑定连接池，这个非常重要。
             mySqlSession.bindChannelPool( channelPool );
         } catch (Throwable e) {
             logger.error( e.toString(), e );

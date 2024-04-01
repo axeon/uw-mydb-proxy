@@ -5,6 +5,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+import uw.mydb.mysql.MySqlClient;
+import uw.mydb.proxy.ProxyServer;
 
 
 /**
@@ -26,6 +28,8 @@ public class MydbSpringAutoConfiguration {
      */
     @PreDestroy
     public void destroy() {
-        log.info( "uw.mydb destroy configuration..." );
+        ProxyServer.stop();
+        MySqlClient.stop();
+        log.info( "uw-mydb destroy configuration..." );
     }
 }

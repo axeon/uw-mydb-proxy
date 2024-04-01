@@ -11,12 +11,12 @@ public enum MysqlClusterType {
     /**
      * 主。
      */
-    MASTER( 0, "主" ),
+    MASTER( 1, "主" ),
 
     /**
      * 从
      */
-    SLAVE( 1, "从" );
+    SLAVE( 0, "从" );
 
     /**
      * 参数值

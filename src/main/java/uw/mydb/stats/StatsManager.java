@@ -209,7 +209,7 @@ public class StatsManager {
      *
      * @return
      */
-    public static ProxyRunInfo getServerRunStats() {
+    public static ProxyRunInfo getProxyRunStats() {
         //获得按主机分组统计的map。
         return new ProxyRunInfo();
     }
