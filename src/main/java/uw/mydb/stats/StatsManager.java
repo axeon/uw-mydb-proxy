@@ -143,20 +143,13 @@ public class StatsManager {
         }
     }
 
-    /**
-     * 统计来源于mysql的数据。
-     */
-    public static final void statsMysql(StatsInfo stats) {
-        statsMysql( stats.info1, stats.info2, stats.info3, stats.isMasterSql, stats.isExeSuccess, stats.exeTime, stats.dataRowsCount, stats.affectRowsCount, stats.sendBytes,
-                stats.recvBytes );
-    }
 
     /**
      * 统计来源于mysql的数据。
      */
-    public static final void statsMysql(String mysqlGroup, String mysql, String database, boolean isMasterSql, boolean isExeSuccess, long exeTime, int dataRowsCount,
+    public static final void statsMysql(long mysqlClusterId, long mysqlServerId, String database,String table, boolean isMasterSql, boolean isExeSuccess, long exeTime, int dataRowsCount,
                                         int affectRowsCount, long sendBytes, long recvBytes) {
-        StringBuilder mysqlHost = new StringBuilder( 100 ).append( mysqlGroup ).append( '$' ).append( mysql );
+        StringBuilder mysqlHost = new StringBuilder( 100 ).append( database ).append( '$' ).append( table );
         //获得mysql统计表
         SqlStats msp = mysqlStatsMap.computeIfAbsent( mysqlHost.toString(), s -> new SqlStats() );
         if (isMasterSql) {
@@ -192,8 +185,6 @@ public class StatsManager {
         mdsp.addAffectRowsCount( affectRowsCount );
         mdsp.addSendBytes( sendBytes );
         mdsp.addRecvBytes( recvBytes );
-
-
     }
 
     /**
@@ -212,19 +203,6 @@ public class StatsManager {
     public static ProxyRunInfo getProxyRunStats() {
         //获得按主机分组统计的map。
         return new ProxyRunInfo();
-    }
-
-    /**
-     * 获得mysql服务器状态表。
-     */
-    public static Map<String, MySqlRunInfo> getMySqlServiceStats() {
-//        ArrayList<MySqlRunInfo> list = new ArrayList<>();
-//        MySqlClusterManager.getMysqlClusterServiceMap().values().stream().forEach( s -> {
-//            s.getMasterServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
-//            s.getSlaveServices().stream().forEach( x -> list.add( new MySqlRunInfo( x ) ) );
-//        } );
-//        return list.stream().collect( Collectors.toMap( MySqlRunInfo::getName, Function.identity(), (existingValue, newValue) -> existingValue ) );
-        return null;
     }
 
 }

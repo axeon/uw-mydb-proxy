@@ -212,7 +212,7 @@ public class ProxySession implements MySqlSessionCallback {
             this.database = database;
             MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster(), true );
-            mySqlSession.setCommand( this, CommandPacket.build( "use " + this.database ), true );
+            mySqlSession.addCommand( this, CommandPacket.build( "use " + this.database ), true );
         } else {
             //报错，找不到这个schema。
             onFailMessage( MySqlErrorCode.ER_NO_DB_ERROR, "No database!" );
@@ -312,7 +312,7 @@ public class ProxySession implements MySqlSessionCallback {
         this.user = authPacket.username;
         this.isLogon = true;
         this.authSeed = null;
-        OKPacket.writeAuthOkToChannel( ctx );
+        OkPacket.writeAuthOkToChannel( ctx );
     }
 
     /**
@@ -323,7 +323,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
         sendBytes += buf.readableBytes();
-        OKPacket okPacket = new OKPacket();
+        OkPacket okPacket = new OkPacket();
         okPacket.readPayLoad( buf );
         affectRowsCount += okPacket.affectedRows;
         buf.resetReaderIndex();
@@ -495,7 +495,7 @@ public class ProxySession implements MySqlSessionCallback {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 return;
             }
-            mySqlSession.setCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
+            mySqlSession.addCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
             multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, routeResult ) );
@@ -508,7 +508,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param ctx
      */
     public void ping(ChannelHandlerContext ctx) {
-        OKPacket.writeOkToChannel( ctx );
+        OkPacket.writeOkToChannel( ctx );
     }
 
     /**
@@ -571,7 +571,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void heartbeat(ChannelHandlerContext ctx, ByteBuf buf) {
-        OKPacket.writeOkToChannel( ctx );
+        OkPacket.writeOkToChannel( ctx );
         onFinish();
     }
 

@@ -42,7 +42,7 @@ public class MySqlClient {
      */
     private static EventLoopGroup eventLoopGroup = null;
 
-    public static void main(String[] args) throws InterruptedException, ExecutionException {
+    public static void main(String[] args) throws InterruptedException {
         MySqlClient.start();
         //mysql配置缓存 key: mysql clusterId value: mysqlClusterConfig
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
@@ -79,6 +79,8 @@ public class MySqlClient {
                 logger.error( "errorNo[{}]:{}", errorNo, message );
             }
         } ).run( "show databases" );
+        Thread.sleep( 3000 );
+        stop();
     }
 
     /**
@@ -105,7 +107,6 @@ public class MySqlClient {
         }
         return mySqlSession;
     }
-
 
     /**
      * 启动服务器

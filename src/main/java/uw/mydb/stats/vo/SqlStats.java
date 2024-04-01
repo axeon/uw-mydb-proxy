@@ -15,164 +15,117 @@ public class SqlStats {
     /**
      * 读请求sql执行次数。
      */
-    protected AtomicLong sqlReadCount = new AtomicLong();
+    protected transient int sqlReadCount;
 
     /**
      * 写请求sql执行次数。
      */
-    protected AtomicLong sqlWriteCount = new AtomicLong();
+    protected transient int sqlWriteCount;
 
     /**
      * 执行成功次数。
      */
-    protected AtomicLong exeSuccessCount = new AtomicLong();
+    protected transient int exeSuccessCount;
 
     /**
      * 执行失败次数。
      */
-    protected AtomicLong exeFailureCount = new AtomicLong();
+    protected transient int exeFailureCount;
 
     /**
      * 数据行计数。
      */
-    protected AtomicLong dataRowsCount = new AtomicLong();
+    protected transient int dataRowsCount;
 
     /**
      * 受影响行计数。
      */
-    protected AtomicLong affectRowsCount = new AtomicLong();
+    protected transient int affectRowsCount;
 
     /**
      * 执行消耗时间。
      */
-    protected AtomicLong exeTime = new AtomicLong();
+    protected transient long exeTime;
 
     /**
      * 发送字节数。
      */
-    protected AtomicLong sendBytes = new AtomicLong();
+    protected transient long sendBytes;
 
     /**
      * 接收字节数。
      */
-    protected AtomicLong recvBytes = new AtomicLong();
+    protected transient long recvBytes;
 
-
-    public void addSqlReadCount(long sqlCount) {
-        this.sqlReadCount.addAndGet(sqlCount);
+    public int getSqlReadCount() {
+        return sqlReadCount;
     }
 
-    public void addSqlWriteCount(long sqlCount) {
-        this.sqlWriteCount.addAndGet(sqlCount);
+    public void addSqlReadCount(int sqlReadCount) {
+        this.sqlReadCount += sqlReadCount;
     }
 
-    public void addExeSuccessCount(long exeSuccessCount) {
-        this.exeSuccessCount.addAndGet(exeSuccessCount);
+    public int getSqlWriteCount() {
+        return sqlWriteCount;
     }
 
-    public void addExeFailureCount(long exeFailureCount) {
-        this.exeFailureCount.addAndGet(exeFailureCount);
+    public void addSqlWriteCount(int sqlWriteCount) {
+        this.sqlWriteCount += sqlWriteCount;
     }
 
-    public void addDataRowsCount(long dataRowsCount) {
-        this.dataRowsCount.addAndGet(dataRowsCount);
+    public int getExeSuccessCount() {
+        return exeSuccessCount;
     }
 
-    public void addAffectRowsCount(long affectRowsCount) {
-        this.affectRowsCount.addAndGet(affectRowsCount);
+    public void addExeSuccessCount(int exeSuccessCount) {
+        this.exeSuccessCount += exeSuccessCount;
     }
 
-    public void addExeTime(long exeTime) {
-        this.exeTime.addAndGet(exeTime);
+    public int getExeFailureCount() {
+        return exeFailureCount;
     }
 
-    public void addSendBytes(long sendBytes) {
-        this.sendBytes.addAndGet(sendBytes);
+    public void addExeFailureCount(int exeFailureCount) {
+        this.exeFailureCount += exeFailureCount;
     }
 
-    public void addRecvBytes(long recvBytes) {
-        this.recvBytes.addAndGet(recvBytes);
+    public int getDataRowsCount() {
+        return dataRowsCount;
     }
 
-    public long getSqlReadCount() {
-        return sqlReadCount.get();
+    public void addDataRowsCount(int dataRowsCount) {
+        this.dataRowsCount += dataRowsCount;
     }
 
-    @JsonIgnore
-    public long getAndClearSqlReadCount() {
-        return sqlReadCount.getAndSet(0);
+    public int getAffectRowsCount() {
+        return affectRowsCount;
     }
 
-
-    public long getSqlWriteCount() {
-        return sqlWriteCount.get();
-    }
-
-    @JsonIgnore
-    public long getAndClearSqlWriteCount() {
-        return sqlWriteCount.getAndSet(0);
-    }
-
-    public long getDataRowsCount() {
-        return dataRowsCount.get();
-    }
-
-    @JsonIgnore
-    public long getAndClearDataRowsCount() {
-        return dataRowsCount.getAndSet(0);
-    }
-
-    public long getAffectRowsCount() {
-        return affectRowsCount.get();
-    }
-
-    @JsonIgnore
-    public long getAndClearAffectRowsCount() {
-        return affectRowsCount.getAndSet(0);
-    }
-
-    public long getExeSuccessCount() {
-        return exeSuccessCount.get();
-    }
-
-    @JsonIgnore
-    public long getAndClearExeSuccessCount() {
-        return exeSuccessCount.getAndSet(0);
-    }
-
-    @JsonIgnore
-    public long getAndClearExeFailureCount() {
-        return exeFailureCount.getAndSet(0);
-    }
-
-    public long getExeFailureCount() {
-        return exeFailureCount.get();
+    public void addAffectRowsCount(int affectRowsCount) {
+        this.affectRowsCount += affectRowsCount;
     }
 
     public long getExeTime() {
-        return exeTime.get();
+        return exeTime;
     }
 
-    @JsonIgnore
-    public long getAndClearExeTime() {
-        return exeTime.getAndSet(0);
+    public void addExeTime(long exeTime) {
+        this.exeTime += exeTime;
     }
 
     public long getSendBytes() {
-        return sendBytes.get();
+        return sendBytes;
     }
 
-    @JsonIgnore
-    public long getAndClearSendBytes() {
-        return sendBytes.getAndSet(0);
+    public void addSendBytes(long sendBytes) {
+        this.sendBytes += sendBytes;
     }
 
     public long getRecvBytes() {
-        return recvBytes.get();
+        return recvBytes;
     }
 
-    @JsonIgnore
-    public long getAndClearRecvBytes() {
-        return recvBytes.getAndSet(0);
+    public void addRecvBytes(long recvBytes) {
+        this.recvBytes += recvBytes;
     }
 }

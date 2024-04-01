@@ -25,9 +25,10 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
      */
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        logger.info( "channelInactive" );
         MySqlSession session = ctx.channel().attr( MYSQL_SESSION ).get();
-        session.trueClose();
+        if (session!=null) {
+            session.trueClose();
+        }
         super.channelInactive( ctx );
     }
 
@@ -48,8 +49,9 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught( ctx, cause );
         MySqlSession session = ctx.channel().attr( MYSQL_SESSION ).get();
-        ctx.close();
-        session.trueClose();
+        if (session!=null) {
+            session.trueClose();
+        }
     }
 
 }

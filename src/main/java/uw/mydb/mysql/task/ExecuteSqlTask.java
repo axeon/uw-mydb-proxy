@@ -2,7 +2,7 @@ package uw.mydb.mysql.task;
 
 import io.netty.buffer.ByteBuf;
 import uw.mydb.protocol.packet.ErrorPacket;
-import uw.mydb.protocol.packet.OKPacket;
+import uw.mydb.protocol.packet.OkPacket;
 
 /**
  * 执行数据库操作的任务。
@@ -25,7 +25,7 @@ public class ExecuteSqlTask extends LocalTaskAdapter<Long> {
      */
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
-        OKPacket okPacket = new OKPacket();
+        OkPacket okPacket = new OkPacket();
         okPacket.readPayLoad(buf);
         data = okPacket.affectedRows;
     }

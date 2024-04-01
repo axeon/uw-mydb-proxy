@@ -9,7 +9,7 @@ import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.ErrorPacket;
-import uw.mydb.protocol.packet.OKPacket;
+import uw.mydb.protocol.packet.OkPacket;
 import uw.mydb.sqlparser.SqlParseResult;
 
 import java.util.concurrent.CountDownLatch;
@@ -124,7 +124,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      */
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
-        OKPacket okPacket = new OKPacket();
+        OkPacket okPacket = new OkPacket();
         okPacket.readPayLoad( buf );
         if (okPacket.affectedRows > 0) {
             affectedRows.addAndGet( okPacket.affectedRows );
@@ -249,7 +249,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 continue;
             }
-            mySqlSession.setCommand(this , sqlInfo, routeResult.isMaster() );
+            mySqlSession.addCommand(this , sqlInfo, routeResult.isMaster() );
         }
         //等待最长180s
         try {
@@ -261,7 +261,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         //开始返回最后的包。
         if (packetStep.get() > PACKET_STEP_INIT) {
             //输出eof包。
-            OKPacket eofPacket = new OKPacket();
+            OkPacket eofPacket = new OkPacket();
             eofPacket.packetId = (byte) packetSeq.incrementAndGet();
             eofPacket.warningCount = errorCount.get();
             eofPacket.serverStatus = 0x22;
@@ -270,7 +270,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         } else {
             if (affectedRows.get() > -1) {
                 //说明有ok包。
-                OKPacket okPacket = new OKPacket();
+                OkPacket okPacket = new OkPacket();
                 okPacket.packetId = 1;
                 okPacket.affectedRows = affectedRows.get();
                 okPacket.warningCount = errorCount.get();

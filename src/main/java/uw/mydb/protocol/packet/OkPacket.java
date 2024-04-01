@@ -19,7 +19,7 @@ import uw.mydb.util.ByteBufUtils;
  *
  * @author axeon
  */
-public class OKPacket extends MySqlPacket {
+public class OkPacket extends MySqlPacket {
     public static final byte[] OK = new byte[]{7, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0};
     public static final byte[] AUTH_OK = new byte[]{7, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0};
 
@@ -37,7 +37,7 @@ public class OKPacket extends MySqlPacket {
      * @param ctx
      */
     public static void writeOkToChannel(ChannelHandlerContext ctx) {
-        ByteBuf byteBuf = ctx.alloc().buffer(OKPacket.OK.length).writeBytes(OKPacket.OK);
+        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.OK.length).writeBytes( OkPacket.OK);
         ctx.writeAndFlush(byteBuf);
     }
 
@@ -47,7 +47,7 @@ public class OKPacket extends MySqlPacket {
      * @param channel
      */
     public static void writeOkToChannel(Channel channel) {
-        ByteBuf byteBuf = channel.alloc().buffer(OKPacket.OK.length).writeBytes(OKPacket.OK);
+        ByteBuf byteBuf = channel.alloc().buffer( OkPacket.OK.length).writeBytes( OkPacket.OK);
         channel.writeAndFlush(byteBuf);
     }
 
@@ -57,7 +57,7 @@ public class OKPacket extends MySqlPacket {
      * @param ctx
      */
     public static void writeAuthOkToChannel(ChannelHandlerContext ctx) {
-        ByteBuf byteBuf = ctx.alloc().buffer(OKPacket.AUTH_OK.length).writeBytes(OKPacket.AUTH_OK);
+        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.AUTH_OK.length).writeBytes( OkPacket.AUTH_OK);
         ctx.writeAndFlush(byteBuf);
     }
 

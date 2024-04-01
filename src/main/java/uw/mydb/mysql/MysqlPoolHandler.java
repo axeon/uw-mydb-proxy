@@ -7,6 +7,10 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.codec.MysqlPacketDecoder;
 import uw.mydb.vo.MysqlServerConfig;
 
+/**
+ * mysql连接池handler。
+ *
+ */
 public class MysqlPoolHandler implements ChannelPoolHandler {
 
     private static final Logger log = LoggerFactory.getLogger( MysqlPoolHandler.class );
@@ -22,12 +26,10 @@ public class MysqlPoolHandler implements ChannelPoolHandler {
 
     @Override
     public void channelReleased(Channel channel) throws Exception {
-        log.info( "channelReleased" );
     }
 
     @Override
     public void channelAcquired(Channel channel) throws Exception {
-        log.info( "channelAcquired" );
     }
 
     @Override
@@ -36,6 +38,5 @@ public class MysqlPoolHandler implements ChannelPoolHandler {
         channel.pipeline().addLast( new MySqlHandler() );
         MySqlSession session = new MySqlSession( mysqlServerConfig, channel );
         channel.attr( MySqlHandler.MYSQL_SESSION ).set( session );
-        log.info( "channelCreated" );
     }
 }
