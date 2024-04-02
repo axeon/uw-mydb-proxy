@@ -61,10 +61,10 @@ public class MySqlClient {
         ArrayList<MysqlServerConfig> serverList = new ArrayList();
         serverList.add( mysqlServerConfig );
         MysqlClusterConfig mysqlClusterConfig = new MysqlClusterConfig();
-        mysqlClusterConfig.setClusterId( 1 );
+        mysqlClusterConfig.setId( 1 );
         mysqlClusterConfig.setServerList( serverList );
         mysqlClusterConfig.calcServerWeight();
-        FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getClusterId(), mysqlClusterConfig, true );
+        FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getId(), mysqlClusterConfig, true );
         new SingleListTask( 1, new LocalCmdCallback<ArrayList<String>>() {
             @Override
             public void onSuccess(ArrayList<String> data) {

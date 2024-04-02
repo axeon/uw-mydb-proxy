@@ -10,7 +10,7 @@ public class MydbProxyConfig {
     /**
      * 配置ID
      */
-    private long configId;
+    private long id;
 
     /**
      * 配置名。
@@ -37,12 +37,12 @@ public class MydbProxyConfig {
      */
     private long lastUpdate;
 
-    public long getConfigId() {
-        return configId;
+    public long getId() {
+        return id;
     }
 
-    public void setConfigId(long configId) {
-        this.configId = configId;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getConfigName() {

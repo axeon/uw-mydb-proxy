@@ -14,23 +14,23 @@ public class MysqlClusterConfig {
     /**
      * 集群ID。
      */
-    private long clusterId;
+    private long id;
+
     /**
      * 名称
      */
     private String clusterName;
+
     /**
      * 复制组类型
      */
     private int clusterType;
+
     /**
      * 切换类型
      */
     private int switchType;
-    /**
-     * 更新时间戳。
-     */
-    private long lastUpdate;
+
     /**
      * mysql主机列表
      */
@@ -64,12 +64,11 @@ public class MysqlClusterConfig {
     public MysqlClusterConfig() {
     }
 
-    public MysqlClusterConfig(long clusterId, String clusterName, int clusterType, int switchType, long lastUpdate, List<MysqlServerConfig> serverList) {
-        this.clusterId = clusterId;
+    public MysqlClusterConfig(long id, String clusterName, int clusterType, int switchType, List<MysqlServerConfig> serverList) {
+        this.id = id;
         this.clusterName = clusterName;
         this.clusterType = clusterType;
         this.switchType = switchType;
-        this.lastUpdate = lastUpdate;
         this.serverList = serverList;
     }
 
@@ -106,12 +105,12 @@ public class MysqlClusterConfig {
         }
     }
 
-    public long getClusterId() {
-        return clusterId;
+    public long getId() {
+        return id;
     }
 
-    public void setClusterId(long clusterId) {
-        this.clusterId = clusterId;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getClusterName() {
@@ -146,11 +145,4 @@ public class MysqlClusterConfig {
         this.serverList = serverList;
     }
 
-    public long getLastUpdate() {
-        return lastUpdate;
-    }
-
-    public void setLastUpdate(long lastUpdate) {
-        this.lastUpdate = lastUpdate;
-    }
 }

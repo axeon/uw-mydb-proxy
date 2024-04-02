@@ -7,6 +7,15 @@ import uw.mydb.constant.MysqlClusterType;
  */
 public class MysqlServerConfig {
 
+    /**
+     * 服务器配置ID
+     */
+    private long id;
+
+    /**
+     * 所在集群ID
+     */
+    private long clusterId;
 
     /**
      * 服务器类型。
@@ -39,14 +48,14 @@ public class MysqlServerConfig {
     private String password;
 
     /**
-     * 最大连接数
-     */
-    private int connMax = 1000;
-
-    /**
      * 最小连接数
      */
     private int connMin = 1;
+
+    /**
+     * 最大连接数
+     */
+    private int connMax = 1000;
 
     /**
      * 连接闲时超时秒数.
@@ -66,16 +75,17 @@ public class MysqlServerConfig {
     public MysqlServerConfig() {
     }
 
-    public MysqlServerConfig(int serverType, int weight, String host, int port, String username, String password, int connMax, int connMin, int connIdleTimeout,
-                             int connBusyTimeout, int connMaxAge) {
+    public MysqlServerConfig(long id, long clusterId, int serverType, int weight, String host, int port, String username, String password, int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
+        this.id = id;
+        this.clusterId = clusterId;
         this.serverType = serverType;
         this.weight = weight;
         this.host = host;
         this.port = port;
         this.username = username;
         this.password = password;
-        this.connMax = connMax;
         this.connMin = connMin;
+        this.connMax = connMax;
         this.connIdleTimeout = connIdleTimeout;
         this.connBusyTimeout = connBusyTimeout;
         this.connMaxAge = connMaxAge;
@@ -84,6 +94,22 @@ public class MysqlServerConfig {
     @Override
     public String toString() {
         return username + "@" + host + ":" + port;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
+    }
+
+    public long getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(long clusterId) {
+        this.clusterId = clusterId;
     }
 
     public int getServerType() {
@@ -134,20 +160,20 @@ public class MysqlServerConfig {
         this.password = password;
     }
 
-    public int getConnMax() {
-        return connMax;
-    }
-
-    public void setConnMax(int connMax) {
-        this.connMax = connMax;
-    }
-
     public int getConnMin() {
         return connMin;
     }
 
     public void setConnMin(int connMin) {
         this.connMin = connMin;
+    }
+
+    public int getConnMax() {
+        return connMax;
+    }
+
+    public void setConnMax(int connMax) {
+        this.connMax = connMax;
     }
 
     public int getConnIdleTimeout() {
