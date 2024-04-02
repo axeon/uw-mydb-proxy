@@ -1,5 +1,6 @@
 package uw.mydb.conf;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
@@ -29,21 +30,21 @@ public class MydbConfigService {
     /**
      * Task配置文件
      */
-    private MydbProperties taskProperties;
+    private static MydbProperties taskProperties;
 
     /**
      * Rest模板类
      */
-    private RestTemplate restTemplate;
+    private static RestTemplate restTemplate;
 
     protected MydbConfigService(MydbProperties taskProperties, RestTemplate restTemplate) {
-        this.taskProperties = taskProperties;
-        this.restTemplate = restTemplate;
+        MydbConfigService.taskProperties = taskProperties;
+        MydbConfigService.restTemplate = restTemplate;
         //Proxy配置缓存 key: routeId value:ProxyConfig
         FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), new CacheDataLoader<Long, MydbProxyConfig>() {
             @Override
             public MydbProxyConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getProxyConfig?configKey=" + taskProperties.getConfigKey(),
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getProxyConfig?configKey=" + taskProperties.getConfigKey(),
                         MydbProxyConfig.class );
             }
         } );
@@ -52,7 +53,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( TableConfig.class, 10000, 0L ), new CacheDataLoader<String, TableConfig>() {
             @Override
             public TableConfig load(String key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getTableConfig?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getTableConfig?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
             }
         } );
 
@@ -60,7 +61,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
             @Override
             public RouteConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key, RouteConfig.class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key, RouteConfig.class );
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载route配置。
@@ -70,7 +71,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载mysqlCluster信息。
@@ -81,7 +82,7 @@ public class MydbConfigService {
             @Override
             public String[] load(String key) throws Exception {
                 DataNode node = new DataNode( key );
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
             }
         }, (key, oldValue, newValue) -> {
 
@@ -91,7 +92,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, DataNode[]>() {
             @Override
             public DataNode[] load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key
                         , DataNode[].class );
             }
         } );
@@ -100,11 +101,16 @@ public class MydbConfigService {
     /**
      * 检查是否存在指定DataTable。
      */
-    public static boolean checkTableExists(DataTable dataTable) {
+    public static boolean checkTableExists(String tableConfigName, DataTable dataTable) {
         Set<String> tableSet = FusionCache.get( DataTable.class, dataTable.getClusterId() + "." + dataTable.getDatabase() );
         if (!tableSet.contains( dataTable.getTable() )) {
-            //通知服务器创建表。
             //创建成功则加入set。
+            String createdTable =
+                    MydbConfigService.restTemplate.postForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() +
+                            "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
+            if (StringUtils.isNotBlank( createdTable )) {
+                tableSet.add( createdTable );
+            }
         }
         return true;
     }

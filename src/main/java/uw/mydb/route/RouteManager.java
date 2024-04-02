@@ -111,12 +111,12 @@ public class RouteManager {
             }
         }
 
-        //TODO 检查schema情况
+        // 检查schema情况
         if (routeInfoData.isSingle()) {
-            MydbConfigService.checkTableExists( routeInfoData.getRouteResult() );
+            MydbConfigService.checkTableExists( tableConfig.getTableName(), routeInfoData.getRouteResult() );
         } else {
             for (DataTable dataTable : routeInfoData.getRouteResults()) {
-                MydbConfigService.checkTableExists( dataTable );
+                MydbConfigService.checkTableExists( tableConfig.getTableName(), dataTable );
             }
         }
         return routeInfoData;
