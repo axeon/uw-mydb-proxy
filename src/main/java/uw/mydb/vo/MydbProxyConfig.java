@@ -8,9 +8,9 @@ package uw.mydb.vo;
 public class MydbProxyConfig {
 
     /**
-     * 配置ID
+     * 配置Key
      */
-    private long id;
+    private String configKey;
 
     /**
      * 配置名。
@@ -37,12 +37,12 @@ public class MydbProxyConfig {
      */
     private long lastUpdate;
 
-    public long getId() {
-        return id;
+    public String getConfigKey() {
+        return configKey;
     }
 
-    public void setId(long id) {
-        this.id = id;
+    public void setConfigKey(String configKey) {
+        this.configKey = configKey;
     }
 
     public String getConfigName() {

@@ -26,5 +26,29 @@ public class MydbProperties {
      * 端口号。
      */
     private int proxyPort;
+    
 
+    public String getMydbCenterHost() {
+        return mydbCenterHost;
+    }
+
+    public void setMydbCenterHost(String mydbCenterHost) {
+        this.mydbCenterHost = mydbCenterHost;
+    }
+
+    public String getConfigKey() {
+        return configKey;
+    }
+
+    public void setConfigKey(String configKey) {
+        this.configKey = configKey;
+    }
+
+    public int getProxyPort() {
+        return proxyPort;
+    }
+
+    public void setProxyPort(int proxyPort) {
+        this.proxyPort = proxyPort;
+    }
 }

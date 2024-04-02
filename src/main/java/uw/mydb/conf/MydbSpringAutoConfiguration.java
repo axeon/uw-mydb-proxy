@@ -3,8 +3,11 @@ package uw.mydb.conf;
 import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.client.RestTemplate;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.proxy.ProxyServer;
 
@@ -31,5 +34,10 @@ public class MydbSpringAutoConfiguration {
         ProxyServer.stop();
         MySqlClient.stop();
         log.info( "uw-mydb destroy configuration..." );
+    }
+
+    @Bean
+    public MydbConfigService mydbConfigService(final MydbProperties mydbProperties, @Qualifier("tokenRestTemplate") final RestTemplate restTemplate) {
+        return new MydbConfigService( mydbProperties, restTemplate );
     }
 }

@@ -1,8 +1,8 @@
 package uw.mydb.conf;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.web.client.RestTemplate;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
 import uw.httpclient.http.HttpConfig;
@@ -10,7 +10,6 @@ import uw.httpclient.http.HttpInterface;
 import uw.httpclient.json.JsonInterfaceHelper;
 import uw.mydb.vo.*;
 
-import java.util.List;
 import java.util.Set;
 
 /**
@@ -26,16 +25,26 @@ public class MydbConfigService {
     private static final HttpInterface agentClient =
             new JsonInterfaceHelper( HttpConfig.builder().connectTimeout( 30000 ).readTimeout( 30000 ).writeTimeout( 30000 ).retryOnConnectionFailure( true ).build() );
 
-    private static String mydbCenter;
 
-    private static long configId;
+    /**
+     * Task配置文件
+     */
+    private MydbProperties taskProperties;
 
-    static {
+    /**
+     * Rest模板类
+     */
+    private RestTemplate restTemplate;
+
+    protected MydbConfigService(MydbProperties taskProperties, RestTemplate restTemplate) {
+        this.taskProperties = taskProperties;
+        this.restTemplate = restTemplate;
         //Proxy配置缓存 key: routeId value:ProxyConfig
         FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), new CacheDataLoader<Long, MydbProxyConfig>() {
             @Override
             public MydbProxyConfig load(Long key) throws Exception {
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getProxyConfig?configId=" + configId, MydbProxyConfig.class ).getValue();
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getProxyConfig?configKey=" + taskProperties.getConfigKey(),
+                        MydbProxyConfig.class );
             }
         } );
 
@@ -43,15 +52,15 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( TableConfig.class, 10000, 0L ), new CacheDataLoader<String, TableConfig>() {
             @Override
             public TableConfig load(String key) throws Exception {
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getTableConfig?configId=" + configId + "&tableName=" + key, TableConfig.class ).getValue();
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getTableConfig?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
             }
-        });
+        } );
 
         //route配置缓存 key: routeId value:RouteConfig
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
             @Override
             public RouteConfig load(Long key) throws Exception {
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getRouteConfig?configId=" + configId + "&routeId=" + key, RouteConfig.class ).getValue();
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key, RouteConfig.class );
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载route配置。
@@ -61,33 +70,31 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getMysqlCluster?configId=" + configId + "&clusterId=" + key, MysqlClusterConfig.class ).getValue();
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载mysqlCluster信息。
         } );
 
-        //schema meta缓存 key: clusterId.database value: Set<tableName>
-        FusionCache.config( new FusionCache.Config( DataTable.class, 10000, 0L ), new CacheDataLoader<String, Set<String>>() {
+        //schema meta缓存 key: clusterId.database value: tableName[]
+        FusionCache.config( new FusionCache.Config( DataTable.class, 10000, 0L ), new CacheDataLoader<String, String[]>() {
             @Override
-            public Set<String> load(String key) throws Exception {
+            public String[] load(String key) throws Exception {
                 DataNode node = new DataNode( key );
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(),
-                        new TypeReference<Set<String>>() {
-                } ).getValue();
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
             }
         }, (key, oldValue, newValue) -> {
 
         } );
 
-        //saas node缓存 key:saasId value: DataNode
-        FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, List<DataNode>>() {
+        //saas node缓存 key:saasId value: DataNode[]
+        FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, DataNode[]>() {
             @Override
-            public List<DataNode> load(Long key) throws Exception {
-                return agentClient.getForEntity( mydbCenter + "/agent/mydb/getSaasNode?configId=" + configId + "&tableName=" + key, new TypeReference<List<DataNode>>() {
-                } ).getValue();
+            public DataNode[] load(Long key) throws Exception {
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/agent/mydb/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key
+                        , DataNode[].class );
             }
-        });
+        } );
     }
 
     /**
@@ -105,11 +112,11 @@ public class MydbConfigService {
     /**
      * 获得proxy配置。
      *
-     * @param configId
+     * @param configKey
      * @return
      */
-    public static MydbProxyConfig getProxyConfig(String configId) {
-        return FusionCache.get( MydbProxyConfig.class, configId );
+    public static MydbProxyConfig getProxyConfig(String configKey) {
+        return FusionCache.get( MydbProxyConfig.class, configKey );
     }
 
     /**
@@ -146,17 +153,6 @@ public class MydbConfigService {
      */
     public static MysqlClusterConfig getMysqlCluster(long clusterId) {
         return FusionCache.get( MysqlClusterConfig.class, clusterId );
-    }
-
-    /**
-     * 设置初始化参数。
-     *
-     * @param mydbCenter
-     * @param configId
-     */
-    protected static final void initProperties(String mydbCenter, long configId) {
-        MydbConfigService.mydbCenter = mydbCenter;
-        MydbConfigService.configId = configId;
     }
 
 
