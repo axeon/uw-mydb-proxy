@@ -15,12 +15,12 @@ public class MydbProperties {
     /**
      * mydb center主机。
      */
-    private String mydbCenterHost;
+    private String mydbCenterHost="http://uw-mydb-center";
 
     /**
      * 配置Key。
      */
-    private String configKey;
+    private String configKey = "default";
 
     /**
      * 端口号。

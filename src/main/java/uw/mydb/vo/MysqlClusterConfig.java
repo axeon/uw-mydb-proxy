@@ -88,11 +88,14 @@ public class MysqlClusterConfig {
     /**
      * 计算服务器权重。
      */
-    public void calcServerWeight() {
+    public void initServerWeightList() {
         if (serverMasterWeightList == null || serverAllWeightList == null) {
             List<MysqlServerConfig> serverMasterWeightList = new ArrayList<>();
             List<MysqlServerConfig> serverAllWeightList = new ArrayList<>();
             for (MysqlServerConfig config : serverList) {
+                if (config.getWeight()<1){
+                    config.setWeight( 1 );
+                }
                 for (int i = 0; i < config.getWeight(); i++) {
                     serverMasterWeightList.add( config );
                     serverAllWeightList.add( config );

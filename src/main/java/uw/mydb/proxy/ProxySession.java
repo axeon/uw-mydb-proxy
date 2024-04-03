@@ -13,8 +13,8 @@ import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.*;
-import uw.mydb.protocol.util.MySQLCapability;
-import uw.mydb.protocol.util.MySqlErrorCode;
+import uw.mydb.protocol.constant.MySQLCapability;
+import uw.mydb.protocol.constant.MySqlErrorCode;
 import uw.mydb.sqlparser.SqlParseResult;
 import uw.mydb.sqlparser.SqlParser;
 import uw.mydb.stats.StatsManager;
@@ -73,12 +73,12 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 发送字节数。
      */
-    private long sendBytes;
+    private long txBytes;
 
     /**
      * 接收字节数。
      */
-    private long recvBytes;
+    private long rxBytes;
 
     /**
      * 是否是只读sql
@@ -134,12 +134,6 @@ public class ProxySession implements MySqlSessionCallback {
      * 字符集索引
      */
     private int charsetIndex;
-
-    /**
-     * 是否改变的authPlugin
-     */
-    private boolean isChangeAuthPlugin;
-
 
     /**
      * auth验证的seed
@@ -320,7 +314,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         OkPacket okPacket = new OkPacket();
         okPacket.readPayLoad( buf );
         affectRowsCount += okPacket.affectedRows;
@@ -335,7 +329,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         ctx.write( buf.retain() );
         isExeSuccess = false;
     }
@@ -347,7 +341,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         ctx.write( buf.retain() );
     }
 
@@ -358,7 +352,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveFieldDataPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         ctx.write( buf.retain() );
     }
 
@@ -369,7 +363,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         ctx.write( buf.retain() );
     }
 
@@ -380,7 +374,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         dataRowsCount++;
         ctx.write( buf.retain() );
     }
@@ -392,7 +386,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void receiveRowDataEOFPacket(byte packetId, ByteBuf buf) {
-        sendBytes += buf.readableBytes();
+        txBytes += buf.readableBytes();
         ctx.write( buf.retain() );
     }
 
@@ -424,8 +418,8 @@ public class ProxySession implements MySqlSessionCallback {
             String statsSql = routeResult.getSql();
             int statsRouteSize = (routeResult.isSingle() ? 1 : routeResult.getSqlInfos().size());
             //开始统计。
-            StatsManager.statsMydb( host, database, statsTable, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, sendBytes, recvBytes );
-            StatsManager.statsSlowSql( host, database, statsSql, statsRouteSize, Math.max( dataRowsCount, affectRowsCount ), sendBytes, recvBytes, exeTime, queryStartTime );
+            StatsManager.statsMydb( host, database, statsTable, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );
+            StatsManager.statsSlowSql( host, database, statsSql, statsRouteSize, Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeTime, queryStartTime );
         }
         //数据归零
         routeResult = null;
@@ -434,8 +428,8 @@ public class ProxySession implements MySqlSessionCallback {
         this.exeTime = 0;
         this.dataRowsCount = 0;
         this.affectRowsCount = 0;
-        this.recvBytes = 0;
-        this.sendBytes = 0;
+        this.rxBytes = 0;
+        this.txBytes = 0;
         //最后才能flush，否则会出问题！！！
         this.ctx.flush();
     }
@@ -460,7 +454,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void query(ChannelHandlerContext ctx, ByteBuf buf) {
-        recvBytes += buf.readableBytes();
+        rxBytes += buf.readableBytes();
         queryStartTime = SystemClock.now();
         //如果schema没有任何表分区定义，则直接转发到默认库。
         //读取sql
@@ -470,7 +464,6 @@ public class ProxySession implements MySqlSessionCallback {
         if (logger.isTraceEnabled()) {
             logger.trace( "接收到SQL: {}", sql );
         }
-        //进行sql解析
         //根据解析结果判定，当前支持1.单实例执行；2.多实例执行
         SqlParser parser = new SqlParser( this, sql );
         routeResult = parser.parse();

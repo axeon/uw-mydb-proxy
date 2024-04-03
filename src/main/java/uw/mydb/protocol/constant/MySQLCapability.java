@@ -1,4 +1,4 @@
-package uw.mydb.protocol.util;
+package uw.mydb.protocol.constant;
 
 /**
  * Capabilities标识定义
@@ -415,18 +415,31 @@ public class MySQLCapability {
         flag |= MySQLCapability.CLIENT_FOUND_ROWS;
         flag |= MySQLCapability.CLIENT_LONG_FLAG;
         flag |= MySQLCapability.CLIENT_CONNECT_WITH_DB;
-        // flag |= Capability.CLIENT_NO_SCHEMA;
-        flag |= MySQLCapability.CLIENT_ODBC;
+//        flag |= MySQLCapability.CLIENT_NO_SCHEMA;
+//        flag |= MySQLCapability.CLIENT_COMPRESS;
+//        flag |= MySQLCapability.CLIENT_ODBC;
         flag |= MySQLCapability.CLIENT_LOCAL_FILES;
         flag |= MySQLCapability.CLIENT_IGNORE_SPACE;
         flag |= MySQLCapability.CLIENT_PROTOCOL_41;
         flag |= MySQLCapability.CLIENT_INTERACTIVE;
+//        flag |= MySQLCapability.CLIENT_SSL;
         flag |= MySQLCapability.CLIENT_IGNORE_SIGPIPE;
         flag |= MySQLCapability.CLIENT_TRANSACTIONS;
+//        flag |= MySQLCapability.CLIENT_RESERVED;
         flag |= MySQLCapability.CLIENT_SECURE_CONNECTION;
+        flag |= MySQLCapability.CLIENT_MULTI_STATEMENTS;
+        flag |= MySQLCapability.CLIENT_MULTI_RESULTS;
+        flag |= MySQLCapability.CLIENT_PS_MULTI_RESULTS;
         flag |= MySQLCapability.CLIENT_PLUGIN_AUTH;
+//        flag |= MySQLCapability.CLIENT_CONNECT_ATTRS ;
         flag |= MySQLCapability.CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA;
+//        flag |= MySQLCapability.CLIENT_CAN_HANDLE_EXPIRED_PASSWORDS;
+        flag |= MySQLCapability.CLIENT_SESSION_TRACK;
         flag |= MySQLCapability.CLIENT_DEPRECATE_EOF;
+//        flag |= MySQLCapability.CLIENT_OPTIONAL_RESULTSET_METADATA;
+//        flag |= MySQLCapability.CLIENT_ZSTD_COMPRESSION_ALGORITHM;
+//        flag |= MySQLCapability.CLIENT_QUERY_ATTRIBUTES;
+//        flag |= MySQLCapability.MULTI_FACTOR_AUTHENTICATION;
         return flag;
     }
 

@@ -5,7 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.constant.MydbRouteMatchMode;
-import uw.mydb.protocol.util.MySqlErrorCode;
+import uw.mydb.protocol.constant.MySqlErrorCode;
 import uw.mydb.proxy.ProxySession;
 import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.route.RouteManager;
@@ -1104,7 +1104,6 @@ public class SqlParser {
         //没有匹配到表名，直接给默认schema了。
         if (subSqls.size() <= 1 && mainTableRouteData == null) {
             sqlInfo = new SqlParseResult.SqlInfo( srcSql );
-            // TODO 此处写死了有问题
             sqlInfo.setDataTable( new DataTable( new DataNode(1,database),null ) );
             this.parseResult.setSqlInfo( sqlInfo );
             return;

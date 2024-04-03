@@ -1,4 +1,4 @@
-package uw.mydb.protocol.util;
+package uw.mydb.protocol.constant;
 
 import uw.mydb.protocol.packet.CommandPacket;
 import uw.mydb.protocol.packet.MySqlPacket;

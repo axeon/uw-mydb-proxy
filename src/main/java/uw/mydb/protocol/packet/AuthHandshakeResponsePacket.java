@@ -1,7 +1,7 @@
 package uw.mydb.protocol.packet;
 
 import io.netty.buffer.ByteBuf;
-import uw.mydb.protocol.util.MySQLCapability;
+import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.util.ByteBufUtils;
 
 import java.util.HashMap;

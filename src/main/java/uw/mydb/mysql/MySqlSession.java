@@ -8,8 +8,8 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.pool.FixedChannelPool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
+import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.packet.*;
-import uw.mydb.protocol.util.MySQLCapability;
 import uw.mydb.sqlparser.SqlParseResult;
 import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
@@ -173,15 +173,6 @@ public class MySqlSession {
     }
 
     /**
-     * 绑定channelPool。
-     *
-     * @param channelPool
-     */
-    protected void bindChannelPool(FixedChannelPool channelPool) {
-        this.channelPool = channelPool;
-    }
-
-    /**
      * 异步执行一条sql。
      *
      * @param sessionCallback
@@ -211,6 +202,15 @@ public class MySqlSession {
         if (sessionStatus > SESSION_NORMAL) {
             executeCommand();
         }
+    }
+
+    /**
+     * 绑定channelPool。
+     *
+     * @param channelPool
+     */
+    protected void bindChannelPool(FixedChannelPool channelPool) {
+        this.channelPool = channelPool;
     }
 
     /**
@@ -250,6 +250,19 @@ public class MySqlSession {
     }
 
     /**
+     * 真正关闭连接。
+     */
+    protected void trueClose() {
+        sessionStatus = SESSION_CLOSED;
+        this.channel.close();
+        try {
+            this.channelPool.release( this.channel );
+        } catch (Throwable e) {
+            log.error( e.getMessage(), e );
+        }
+    }
+
+    /**
      * 处理握手流程。
      *
      * @param buf
@@ -261,7 +274,7 @@ public class MySqlSession {
             errorPacket.readPayLoad( buf );
             log.error( "MySQL[{}]服务器握手阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
             //报错了，直接关闭吧。
-            sessionStatus =SESSION_CLOSED;
+            sessionStatus = SESSION_CLOSED;
             trueClose();
             return;
         }
@@ -306,7 +319,7 @@ public class MySqlSession {
                 AuthMoreDataPacket authMoreDataPacket = new AuthMoreDataPacket();
                 authMoreDataPacket.readPayLoad( buf );
                 //data 3:成功，2:请求public key，4:请求完整验证。
-                if (authMoreDataPacket.data!=0x03) {
+                if (authMoreDataPacket.data != 0x03) {
                     //快速返回失败信息。
                     authMoreDataPacket.packetId++;
                     authMoreDataPacket.writeToChannel( ctx );
@@ -316,7 +329,7 @@ public class MySqlSession {
             case MySqlPacket.PACKET_OK:
                 OkPacket okPacket = new OkPacket();
                 okPacket.readPayLoad( buf );
-                sessionStatus =SESSION_USING;
+                sessionStatus = SESSION_USING;
                 executeCommand();
                 break;
             case MySqlPacket.PACKET_ERROR:
@@ -324,7 +337,7 @@ public class MySqlSession {
                 ErrorPacket errorPacket = new ErrorPacket();
                 errorPacket.readPayLoad( buf );
                 log.error( "MySQL[{}]服务器验证阶段报错{}:{}", mysqlServerConfig.toString(), errorPacket.errorNo, errorPacket.message );
-                sessionStatus =SESSION_CLOSED;
+                sessionStatus = SESSION_CLOSED;
                 trueClose();
                 break;
             default:
@@ -357,6 +370,7 @@ public class MySqlSession {
                         resultStatus = RESULT_INIT;
                     }
                 } else {
+                    sessionCallback.receiveOkPacket( packetId, buf );
                     //直接解绑吧。
                     unbindCallback();
                 }
@@ -392,19 +406,6 @@ public class MySqlSession {
                         dataRowsCount++;
                         break;
                 }
-        }
-    }
-
-    /**
-     * 真正关闭连接。
-     */
-    protected void trueClose() {
-        sessionStatus = SESSION_CLOSED;
-        this.channel.close();
-        try {
-            this.channelPool.release( this.channel );
-        }catch (Throwable e){
-            log.error( e.getMessage(), e );
         }
     }
 

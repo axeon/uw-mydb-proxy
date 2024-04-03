@@ -26,10 +26,16 @@ public class MysqlPoolHandler implements ChannelPoolHandler {
 
     @Override
     public void channelReleased(Channel channel) throws Exception {
+        if (log.isTraceEnabled()) {
+            log.trace( "channel[{}] Released" );
+        }
     }
 
     @Override
     public void channelAcquired(Channel channel) throws Exception {
+        if (log.isTraceEnabled()) {
+            log.trace( "channel[{}] Acquired" );
+        }
     }
 
     @Override

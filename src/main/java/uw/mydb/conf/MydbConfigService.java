@@ -72,7 +72,9 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                MysqlClusterConfig clusterConfig =  restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                clusterConfig.initServerWeightList();
+                return clusterConfig;
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载mysqlCluster信息。

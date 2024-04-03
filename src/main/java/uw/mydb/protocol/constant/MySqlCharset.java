@@ -1,4 +1,4 @@
-package uw.mydb.protocol.util;
+package uw.mydb.protocol.constant;
 
 /**
  * MySQL字符集
