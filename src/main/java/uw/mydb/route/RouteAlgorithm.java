@@ -5,7 +5,9 @@ import uw.mydb.vo.RouteConfig;
 import uw.mydb.vo.TableConfig;
 
 import java.security.PrivilegedActionException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * 动态分表算法，一般来说表是完全动态创建的。
@@ -131,9 +133,24 @@ public abstract class RouteAlgorithm {
         private RouteKeyValue value;
 
         /**
-         * 参数对。
+         * key，用于优化内存占用。
          */
-        private Map<String, RouteKeyValue> params;
+        private String key1;
+
+        /**
+         * value，用于优化内存占用。
+         */
+        private RouteKeyValue value1;
+
+        /**
+         * key，用于优化内存占用。
+         */
+        private String key2;
+
+        /**
+         * value，用于优化内存占用。
+         */
+        private RouteKeyValue value2;
 
         /**
          * 检查是否有key。
@@ -141,7 +158,7 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public boolean checkKeyExists() {
-            if (key != null || params != null) {
+            if (key != null) {
                 return true;
             } else {
                 return false;
@@ -154,18 +171,17 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public String keyString() {
+            StringBuilder sb = new StringBuilder();
             if (key != null) {
-                return key;
-            } else {
-                StringBuilder sb = new StringBuilder();
-                for (String key : params.keySet()) {
-                    sb.append( key ).append( "," );
-                }
-                if (sb.charAt( sb.length() - 1 ) == ',') {
-                    sb.deleteCharAt( sb.length() - 1 );
-                }
-                return sb.toString();
+                sb.append( key );
             }
+            if (key1 != null) {
+                sb.append( ',' ).append( key1 );
+            }
+            if (key2 != null) {
+                sb.append( ',' ).append( key2 );
+            }
+            return sb.toString();
         }
 
         /**
@@ -177,12 +193,11 @@ public abstract class RouteAlgorithm {
             if (value != null) {
                 return value.isEmpty();
             }
-            if (params != null) {
-                for (RouteKeyValue rkv : params.values()) {
-                    if (rkv.isEmpty()) {
-                        return true;
-                    }
-                }
+            if (value1 != null) {
+                return value1.isEmpty();
+            }
+            if (value2 != null) {
+                return value2.isEmpty();
             }
             return false;
         }
@@ -193,7 +208,7 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public boolean isSingle() {
-            return params == null;
+            return key2 == null;
         }
 
         /**
@@ -210,12 +225,17 @@ public abstract class RouteAlgorithm {
          *
          * @return
          */
-        public Collection<RouteKeyValue> getValues() {
-            if (params != null) {
-                return params.values();
-            } else {
-                return null;
+        public RouteKeyValue[] getValues() {
+            if (key == null) {
+                return new RouteKeyValue[0];
             }
+            if (key1 == null) {
+                return new RouteKeyValue[]{value};
+            }
+            if (key2 == null) {
+                return new RouteKeyValue[]{value, value1};
+            }
+            return new RouteKeyValue[]{value, value1, value2};
         }
 
         /**
@@ -227,16 +247,12 @@ public abstract class RouteAlgorithm {
             if (this.key == null) {
                 this.key = key;
                 this.value = new RouteKeyValue();
-            } else {
-                if (!this.key.equals( key )) {
-                    if (params == null) {
-                        params = new HashMap<>();
-                        params.put( this.key, this.value );
-                        this.key = null;
-                        this.value = null;
-                    }
-                    params.put( key, new RouteKeyValue() );
-                }
+            } else if (this.key1 == null) {
+                this.key1 = key;
+                this.value1 = new RouteKeyValue();
+            } else if (this.key2 == null) {
+                this.key2 = key;
+                this.value2 = new RouteKeyValue();
             }
         }
 
@@ -247,20 +263,20 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public RouteKeyValue getValue(String key) {
-            if (params != null) {
-                return params.get( key );
-            }
-
             if (this.key == null) {
                 return null;
-            }
-
-            if (this.key.equals( key )) {
+            } else if (this.key.equals( key )) {
                 return value;
-            } else {
-                return null;
             }
-
+            if (key1 == null) {
+                return null;
+            } else if (this.key1.equals( key )) {
+                return value1;
+            }
+            if (this.key2.equals( key )) {
+                return value2;
+            }
+            return null;
         }
     }
 
@@ -410,7 +426,7 @@ public abstract class RouteAlgorithm {
         /**
          * 针对范围运行有时候只有一个值来进行优化。
          */
-        public void calcType() {
+        public void guessType() {
             if (value1 == null || value2 == null) {
                 type = SINGLE;
                 if (value1 == null && value2 != null) {

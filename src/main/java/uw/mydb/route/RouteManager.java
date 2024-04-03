@@ -24,14 +24,13 @@ public class RouteManager {
      */
     private static Map<Long, ArrayList<RouteAlgorithm>> routeAlgorithmMap = new ConcurrentHashMap<>();
 
-
     /**
      * 构造路由keyData。
      *
      * @param tableConfig
      * @return
      */
-    public static RouteAlgorithm.RouteKeyData buildRouteKeyData(RouteAlgorithm.RouteKeyData keyData, TableConfig tableConfig) {
+    public static RouteAlgorithm.RouteKeyData buildRouteKeyData(RouteAlgorithm.RouteKeyData routeKeyData, TableConfig tableConfig) {
         if (tableConfig == null) {
             return null;
         }
@@ -43,16 +42,16 @@ public class RouteManager {
         if (routeConfig.getParentId() > 0) {
             RouteConfig parentRoute = MydbConfigService.getRouteConfig( routeConfig.getParentId() );
             if (parentRoute != null) {
-                if (keyData.getValue( parentRoute.getRouteKey() ) == null) {
-                    keyData.initKey( parentRoute.getRouteKey() );
+                if (routeKeyData.getValue( parentRoute.getRouteKey() ) == null) {
+                    routeKeyData.initKey( parentRoute.getRouteKey() );
                 }
             }
         }
         //加载本级路由信息。
-        if (keyData.getValue( routeConfig.getRouteKey() ) == null) {
-            keyData.initKey( routeConfig.getRouteKey() );
+        if (routeKeyData.getValue( routeConfig.getRouteKey() ) == null) {
+            routeKeyData.initKey( routeConfig.getRouteKey() );
         }
-        return keyData;
+        return routeKeyData;
     }
 
     /**
@@ -73,33 +72,33 @@ public class RouteManager {
             return routeInfoData;
         }
         for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
-            RouteAlgorithm.RouteKeyValue value = keyData.getValue( routeAlgorithm.getRouteKey() );
+            RouteAlgorithm.RouteKeyValue routeKeyValue = keyData.getValue( routeAlgorithm.getRouteKey() );
             //优化一下calcType。
-            value.calcType();
-            if (value.getType() == RouteAlgorithm.RouteKeyValue.SINGLE) {
-                routeInfo = routeAlgorithm.calculate( tableConfig, routeInfo, value.getValue1() );
+            routeKeyValue.guessType();
+            if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.SINGLE) {
+                routeInfo = routeAlgorithm.calculate( tableConfig, routeInfo, routeKeyValue.getValue1() );
                 routeInfoData.setSingle( routeInfo );
-            } else if (value.getType() == RouteAlgorithm.RouteKeyValue.RANGE) {
+            } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.RANGE) {
                 Set<DataTable> set = new HashSet<>();
                 if (routeInfoData.isSingle()) {
-                    List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( routeInfoData.getRouteResult() ), value.getValue1(),
-                            value.getValue2() );
+                    List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( routeInfoData.getRouteResult() ), routeKeyValue.getValue1(),
+                            routeKeyValue.getValue2() );
                     set.addAll( list );
                 } else {
-                    for (DataTable ri : routeInfoData.getRouteResults()) {
-                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( ri ), value.getValue1(), value.getValue2() );
+                    for (DataTable dataTable : routeInfoData.getRouteResults()) {
+                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( dataTable ), routeKeyValue.getValue1(), routeKeyValue.getValue2() );
                         set.addAll( list );
                     }
                 }
                 routeInfoData.setAll( set );
-            } else if (value.getType() == RouteAlgorithm.RouteKeyValue.MULTI) {
+            } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.MULTI) {
                 Set<DataTable> set = new HashSet<>();
                 if (routeInfoData.isSingle()) {
-                    Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( routeInfoData.getRouteResult() ), value.getValues() );
+                    Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( routeInfoData.getRouteResult() ), routeKeyValue.getValues() );
                     set.addAll( map.values() );
                 } else {
-                    for (DataTable ri : routeInfoData.getRouteResults()) {
-                        Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( ri ), value.getValues() );
+                    for (DataTable dataTable : routeInfoData.getRouteResults()) {
+                        Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( dataTable ), routeKeyValue.getValues() );
                         set.addAll( map.values() );
                     }
                 }
@@ -124,16 +123,13 @@ public class RouteManager {
 
     /**
      * 获得所有表的信息。
+     * 直接通过服务器端库表系统来查询。
      *
      * @param tableConfig
      * @return
      */
     public static List<DataTable> getAllRouteList(TableConfig tableConfig) throws RouteAlgorithm.RouteException {
-        List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         List<DataTable> routeInfo = new ArrayList<>();
-        for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
-            routeInfo = routeAlgorithm.getAllRouteList( tableConfig, routeInfo );
-        }
         return routeInfo;
     }
 
@@ -143,7 +139,7 @@ public class RouteManager {
      * @param routeId
      * @return
      */
-    private static ArrayList<RouteAlgorithm> getRouteAlgorithmList(long routeId) {
+    private static List<RouteAlgorithm> getRouteAlgorithmList(long routeId) {
         return routeAlgorithmMap.computeIfAbsent( routeId, key -> {
             ArrayList<RouteAlgorithm> algorithmList = new ArrayList<>();
             long loadRouteId = routeId;

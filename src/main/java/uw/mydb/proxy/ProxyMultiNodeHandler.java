@@ -114,7 +114,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     public ProxyMultiNodeHandler(ChannelHandlerContext ctx, SqlParseResult routeResult) {
         this.ctx = ctx;
         this.routeResult = routeResult;
-        countDownLatch = new CountDownLatch( routeResult.getSqlInfos().size() );
+        countDownLatch = new CountDownLatch( routeResult.getSqlInfoList().size() );
     }
 
     /**
@@ -243,7 +243,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
 
     @Override
     public void run() {
-        for (SqlParseResult.SqlInfo sqlInfo : routeResult.getSqlInfos()) {
+        for (SqlParseResult.SqlInfo sqlInfo : routeResult.getSqlInfoList()) {
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), routeResult.isMaster() );
             if (mySqlSession == null) {
                 logger.warn( "无法找到合适的mysqlSession!" );

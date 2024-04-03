@@ -36,6 +36,11 @@ public class TableConfig {
     public TableConfig() {
     }
 
+    public TableConfig(String tableName, long baseCluster, String baseDatabase) {
+        this.tableName = tableName;
+        this.baseNode = new DataNode( baseCluster, baseDatabase );
+    }
+
     public TableConfig(String tableName, String tableDesc, long baseCluster, String baseDatabase, long routeId, int matchType) {
         this.tableName = tableName;
         this.tableDesc = tableDesc;

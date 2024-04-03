@@ -5,7 +5,7 @@ import uw.mydb.protocol.packet.CommandPacket;
 import uw.mydb.protocol.packet.MySqlPacket;
 import uw.mydb.vo.DataTable;
 
-import java.util.ArrayList;
+import java.util.List;
 
 /**
  * SQL解析路由结果。
@@ -14,7 +14,7 @@ import java.util.ArrayList;
  */
 public class SqlParseResult {
 
-    private static final org.slf4j.Logger logger = LoggerFactory.getLogger(SqlParseResult.class);
+    private static final org.slf4j.Logger logger = LoggerFactory.getLogger( SqlParseResult.class );
 
     /**
      * 原始的sql语句。
@@ -24,7 +24,7 @@ public class SqlParseResult {
     /**
      * schema名。
      */
-    private String schema;
+    private String database;
 
     /**
      * 表名。
@@ -59,24 +59,19 @@ public class SqlParseResult {
     /**
      * 多sql结果。
      */
-    private ArrayList<SqlInfo> sqlInfos = null;
+    private List<SqlInfo> sqlInfoList = null;
 
-    public SqlParseResult(String schema, String sql) {
-        this.schema = schema;
+    public SqlParseResult(String database, String sql) {
+        this.database = database;
         this.sql = sql;
     }
 
-    /**
-     * 获得sql。
-     *
-     * @return
-     */
     public String getSql() {
         return sql;
     }
 
-    public String getSchema() {
-        return schema;
+    public String getDatabase() {
+        return database;
     }
 
     public String getTable() {
@@ -104,7 +99,7 @@ public class SqlParseResult {
      */
     public void setErrorInfo(int errorCode, String errorMessage) {
         if (errorCode > 0) {
-            logger.warn("SQL_PARSE_ERR[{}]: {}", errorCode, errorMessage);
+            logger.warn( "SQL_PARSE_ERR[{}]: {}", errorCode, errorMessage );
         }
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;
@@ -173,12 +168,12 @@ public class SqlParseResult {
         this.sqlInfo = sqlInfo;
     }
 
-    public ArrayList<SqlInfo> getSqlInfos() {
-        return sqlInfos;
+    public List<SqlInfo> getSqlInfoList() {
+        return sqlInfoList;
     }
 
-    public void setSqlInfos(ArrayList<SqlInfo> sqlInfos) {
-        this.sqlInfos = sqlInfos;
+    public void setSqlInfoList(List<SqlInfo> sqlInfoList) {
+        this.sqlInfoList = sqlInfoList;
     }
 
     /**
@@ -199,7 +194,7 @@ public class SqlParseResult {
         private String newSql;
 
         public SqlInfo(int sqlSize) {
-            newSqlBuf = new StringBuilder(sqlSize);
+            newSqlBuf = new StringBuilder( sqlSize );
         }
 
         public SqlInfo(String sql) {
@@ -234,7 +229,7 @@ public class SqlParseResult {
         }
 
         public SqlInfo appendSql(String text) {
-            this.newSqlBuf.append(text);
+            this.newSqlBuf.append( text );
             return this;
         }
 
@@ -249,7 +244,7 @@ public class SqlParseResult {
             packet.arg = getNewSql();
 
             if (logger.isTraceEnabled()) {
-                logger.trace("MySQL执行: {}", getNewSql());
+                logger.trace( "MySQL执行: {}", getNewSql() );
             }
             return packet;
         }
