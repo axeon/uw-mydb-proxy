@@ -210,8 +210,7 @@ public class ProxySession implements MySqlSessionCallback {
     public void setDatabase(String database) {
         if (StringUtils.isNotBlank( database )) {
             this.database = database;
-            MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( config.getBaseCluster(), true );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( MydbConfigService.getProxyConfig().getBaseCluster(), true );
             mySqlSession.addCommand( this, CommandPacket.build( "use " + this.database ), true );
         } else {
             //报错，找不到这个schema。
@@ -255,8 +254,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void auth(ChannelHandlerContext ctx, ByteBuf buf) {
-        MydbProxyConfig config = MydbConfigService.getProxyConfig( "" );
-
+        MydbProxyConfig config = MydbConfigService.getProxyConfig();
         AuthHandshakeResponsePacket authPacket = new AuthHandshakeResponsePacket();
         authPacket.readPayLoad( buf );
         String authPluginName = authPacket.authPluginName;

@@ -18,6 +18,6 @@ spring:
         service: ${spring.application.name}
         ip: ${APP_HOST:}
         server-addr: ${spring.cloud.nacos.config.server-addr}
-        namespace: ${spring.cloud.nacos.config.namespace}
+        namespace: test
         username: ${spring.cloud.nacos.config.username}
         password: ${spring.cloud.nacos.config.password}

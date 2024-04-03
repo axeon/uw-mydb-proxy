@@ -8,6 +8,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.LoggerFactory;
+import uw.mydb.conf.MydbConfigService;
 
 /**
  * 代理服务器。
@@ -46,7 +47,7 @@ public class ProxyServer {
                 .option( ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT )
                 .childHandler( new ProxyHandlerFactory() );
         //此处写死了，应该可配置。
-        bootstrap.bind( "0.0.0.0", 3300 ).sync();
+        bootstrap.bind( "0.0.0.0", MydbConfigService.getMydbProperties().getProxyPort() ).sync();
         logger.info( "mydb proxy server started!" );
     }
 

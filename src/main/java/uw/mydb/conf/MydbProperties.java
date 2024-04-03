@@ -25,8 +25,8 @@ public class MydbProperties {
     /**
      * 端口号。
      */
-    private int proxyPort;
-    
+    private int proxyPort = 3300;
+
 
     public String getMydbCenterHost() {
         return mydbCenterHost;

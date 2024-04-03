@@ -30,7 +30,7 @@ public class MydbConfigService {
     /**
      * Task配置文件
      */
-    private static MydbProperties taskProperties;
+    private static MydbProperties mydbProperties;
 
     /**
      * Rest模板类
@@ -38,12 +38,12 @@ public class MydbConfigService {
     private static RestTemplate restTemplate;
 
     protected MydbConfigService(MydbProperties taskProperties, RestTemplate restTemplate) {
-        MydbConfigService.taskProperties = taskProperties;
+        MydbConfigService.mydbProperties = taskProperties;
         MydbConfigService.restTemplate = restTemplate;
         //Proxy配置缓存 key: routeId value:ProxyConfig
-        FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), new CacheDataLoader<Long, MydbProxyConfig>() {
+        FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), new CacheDataLoader<String, MydbProxyConfig>() {
             @Override
-            public MydbProxyConfig load(Long key) throws Exception {
+            public MydbProxyConfig load(String key) throws Exception {
                 return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getProxyConfig?configKey=" + taskProperties.getConfigKey(),
                         MydbProxyConfig.class );
             }
@@ -61,7 +61,8 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
             @Override
             public RouteConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key, RouteConfig.class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key
+                        , RouteConfig.class );
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载route配置。
@@ -106,7 +107,7 @@ public class MydbConfigService {
         if (!tableSet.contains( dataTable.getTable() )) {
             //创建成功则加入set。
             String createdTable =
-                    MydbConfigService.restTemplate.postForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() +
+                    MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + mydbProperties.getConfigKey() +
                             "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
             if (StringUtils.isNotBlank( createdTable )) {
                 tableSet.add( createdTable );
@@ -116,13 +117,21 @@ public class MydbConfigService {
     }
 
     /**
-     * 获得proxy配置。
+     * 获得mydb配置文件。
      *
-     * @param configKey
      * @return
      */
-    public static MydbProxyConfig getProxyConfig(String configKey) {
-        return FusionCache.get( MydbProxyConfig.class, configKey );
+    public static MydbProperties getMydbProperties() {
+        return mydbProperties;
+    }
+
+    /**
+     * 获得proxy配置。
+     *
+     * @return
+     */
+    public static MydbProxyConfig getProxyConfig() {
+        return FusionCache.get( MydbProxyConfig.class, mydbProperties.getConfigKey() );
     }
 
     /**
