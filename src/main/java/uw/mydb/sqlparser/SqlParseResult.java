@@ -184,7 +184,8 @@ public class SqlParseResult {
         private DataTable dataTable;
 
         /**
-         * sql信息。
+         * sql拼接builder。
+         * 本来只是个中间体，为了减少不必要的转换，作为变量使用。
          */
         private StringBuilder newSqlBuf;
 
@@ -244,7 +245,7 @@ public class SqlParseResult {
             packet.arg = getNewSql();
 
             if (logger.isTraceEnabled()) {
-                logger.trace( "MySQL执行: {}", getNewSql() );
+                logger.trace( "MySQL执行: {}", packet.arg );
             }
             return packet;
         }
