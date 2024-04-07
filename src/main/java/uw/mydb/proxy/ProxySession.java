@@ -415,7 +415,7 @@ public class ProxySession implements MySqlSessionCallback {
         this.exeTime = SystemClock.now() - queryStartTime;
         if (routeResult != null) {
             String statsTable = routeResult.getTable();
-            String statsSql = routeResult.getSql();
+            String statsSql = routeResult.getSourceSql();
             int statsRouteSize = (routeResult.isSingle() ? 1 : routeResult.getSqlInfoList().size());
             //开始统计。
             StatsManager.statsMydb( host, database, statsTable, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );

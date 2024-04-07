@@ -8,18 +8,27 @@ public class TableConfig {
      * 表名。
      */
     private String tableName;
+
     /**
      * 表信息。
      */
     private String tableDesc;
+
+    /**
+     * 表别名，解析时会使用。
+     */
+    private String aliasName;
+
     /**
      * 路由设置。
      */
     private long routeId;
+
     /**
      * 基础节点。
      */
     private DataNode baseNode;
+
     /**
      * 匹配类型。
      * MATCH_FIX精确匹配：必须有匹配值，才能匹配，否则返回无法匹配。
@@ -69,6 +78,13 @@ public class TableConfig {
         this.tableDesc = tableDesc;
     }
 
+    public String getAliasName() {
+        return aliasName;
+    }
+
+    public void setAliasName(String aliasName) {
+        this.aliasName = aliasName;
+    }
 
     public long getRouteId() {
         return routeId;

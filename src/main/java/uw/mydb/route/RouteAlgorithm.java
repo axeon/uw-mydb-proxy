@@ -118,7 +118,7 @@ public abstract class RouteAlgorithm {
     }
 
     /**
-     * 存放路由Key。
+     * 存放路由Key和匹配到的数据。
      */
     public static class RouteKeyData {
 

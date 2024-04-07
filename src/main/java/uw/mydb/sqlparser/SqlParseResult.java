@@ -19,17 +19,23 @@ public class SqlParseResult {
     /**
      * 原始的sql语句。
      */
-    private String sql;
+    private String sourceSql;
 
     /**
      * schema名。
      */
-    private String database;
+    private String sourceDatabase;
 
     /**
      * 表名。
      */
     private String table;
+
+    /**
+     * 是否是DML。
+     * 默认为true。
+     */
+    private boolean isDML = true;
 
     /**
      * 错误编码。
@@ -61,17 +67,17 @@ public class SqlParseResult {
      */
     private List<SqlInfo> sqlInfoList = null;
 
-    public SqlParseResult(String database, String sql) {
-        this.database = database;
-        this.sql = sql;
+    public SqlParseResult(String sourceDatabase, String sourceSql) {
+        this.sourceDatabase = sourceDatabase;
+        this.sourceSql = sourceSql;
     }
 
-    public String getSql() {
-        return sql;
+    public String getSourceSql() {
+        return sourceSql;
     }
 
-    public String getDatabase() {
-        return database;
+    public String getSourceDatabase() {
+        return sourceDatabase;
     }
 
     public String getTable() {
@@ -80,6 +86,14 @@ public class SqlParseResult {
 
     public void setTable(String table) {
         this.table = table;
+    }
+
+    public boolean isDML() {
+        return isDML;
+    }
+
+    public void setDML(boolean DML) {
+        isDML = DML;
     }
 
     /**

@@ -16,7 +16,10 @@ import uw.mydb.vo.DataNode;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.TableConfig;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import static uw.mydb.constant.MydbRouteMatchMode.MATCH_DEFAULT;
 import static uw.mydb.sqlparser.parser.Token.*;
@@ -36,16 +39,6 @@ public class SqlParser {
      * 代理session
      */
     private ProxySession proxySession;
-
-    /**
-     * sql所在的schema
-     */
-    private String databaseSource;
-
-    /**
-     * 原始sql语句。
-     */
-    private String sqlSource;
 
     /**
      * lexer解析器。
@@ -77,25 +70,18 @@ public class SqlParser {
      */
     private TableRouteData mainTableRouteData;
 
-    /**
-     * 路由信息Map，除了主路由之外的子表路由。
-     */
-    private Map<String, TableRouteData> tableRouteDataMap;
 
     /**
-     * table列表。
+     * 路由信息列表，除了主路由之外的子表路由。
      */
-    private List<String> tableList;
+    private List<TableRouteData> tableRouteDataList;
+
 
     /**
      * sql解析结果。
      */
     private SqlParseResult parseResult;
 
-    /**
-     * 是否是DML.
-     */
-    private boolean isDML;
 
     /**
      * 单sql结果。
@@ -115,10 +101,8 @@ public class SqlParser {
      */
     public SqlParser(ProxySession proxySession, String sqlSource) {
         this.proxySession = proxySession;
-        this.databaseSource = proxySession.getDatabase();
-        this.sqlSource = sqlSource;
         this.lexer = new Lexer( sqlSource, false, true );
-        this.parseResult = new SqlParseResult( databaseSource, sqlSource );
+        this.parseResult = new SqlParseResult( proxySession.getDatabase(), sqlSource );
     }
 
     /**
@@ -128,8 +112,6 @@ public class SqlParser {
      * @param sqlSource
      */
     public SqlParser(String databaseSource, String sqlSource) {
-        this.databaseSource = databaseSource;
-        this.sqlSource = sqlSource;
         this.lexer = new Lexer( sqlSource, false, true );
         this.parseResult = new SqlParseResult( databaseSource, sqlSource );
     }
@@ -155,39 +137,39 @@ public class SqlParser {
             }
             switch (lexer.token()) {
                 case SELECT:
-                    this.isDML = true;
                     this.parseResult.setMasterIfNull( false );
                     parseSelect( lexer );
                     break;
                 case INSERT:
-                    this.isDML = true;
                     parseInsert( lexer );
                     break;
                 case UPDATE:
-                    this.isDML = true;
                     parseUpdate( lexer );
                     break;
                 case DELETE:
-                    this.isDML = true;
                     parseDelete( lexer );
                     break;
                 case REPLACE:
-                    this.isDML = true;
                     parseReplace( lexer );
                     break;
                 case CREATE:
+                    this.parseResult.setDML( false );
                     parseCreate( lexer );
                     break;
                 case ALTER:
+                    this.parseResult.setDML( false );
                     parseAlter( lexer );
                     break;
                 case DROP:
+                    this.parseResult.setDML( false );
                     parseDrop( lexer );
                     break;
                 case TRUNCATE:
+                    this.parseResult.setDML( false );
                     parseTruncate( lexer );
                     break;
                 case EXPLAIN:
+                    this.parseResult.setDML( false );
                     parseExplain( lexer );
                     break;
                 case USE:
@@ -199,7 +181,7 @@ public class SqlParser {
                     } else {
                         //此时应该是不可用，抛错吧。
                         //剩下的类型都不支持，直接返回报错吧。
-                        parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + sqlSource );
+                        parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + parseResult.getSourceSql() );
                     }
                     break;
             }
@@ -318,7 +300,7 @@ public class SqlParser {
             //表名
             splitSubSql( lexer );
             String tableName = lexer.stringVal();
-            putRouteData( null, tableName, null );
+            putTableRouteData( null, tableName, null );
         }
         if (!lexer.isEOF()) {
             lexer.skipToEOF();
@@ -350,7 +332,7 @@ public class SqlParser {
             parseTableName( lexer );
         } else {
             //通过设置parseResult，不让cmdQuery再返回数据。
-            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + sqlSource );
+            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + parseResult.getSourceSql() );
             return;
         }
         if (!lexer.isEOF()) {
@@ -373,7 +355,7 @@ public class SqlParser {
             parseTableName( lexer );
         } else {
             //通过设置parseResult，不让cmdQuery再返回数据。
-            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + sqlSource );
+            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + parseResult.getSourceSql() );
             return;
         }
         if (!lexer.isEOF()) {
@@ -407,7 +389,7 @@ public class SqlParser {
         } else {
             //剩下的类型都不支持，直接返回报错吧。
             //通过设置parseResult，不让cmdQuery再返回数据。
-            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + sqlSource );
+            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORTED CMD: " + parseResult.getSourceSql() );
             return;
         }
         if (!lexer.isEOF()) {
@@ -497,7 +479,7 @@ public class SqlParser {
         tableRouteData.tableConfig = MydbConfigService.getTableConfig( table );
         //如果不是配置项的，route=null，而且没有keyData
         if (tableRouteData.tableConfig == null) {
-            tableRouteData.tableConfig = new TableConfig( table, 1, this.databaseSource );
+            tableRouteData.tableConfig = new TableConfig( table, 1, parseResult.getSourceDatabase() );
         }
         //如果有route信息的，拉一下routeKeyData。
         if (tableRouteData.tableConfig.getRouteId() > 0) {
@@ -507,81 +489,56 @@ public class SqlParser {
     }
 
     /**
-     * 检查是否有数据库表配置匹配
-     * 一些情况下，是匹配不到任何table的，这时候就不用匹配keyData了。
-     *
-     * @return
-     */
-    private boolean checkTableRouteExists() {
-        if (mainTableRouteData != null && mainTableRouteData.tableConfig.getRouteId() > 0) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * 检查是否有路由Key匹配。
-     * 一些情况下，是匹配不到任何table的，这时候就不用匹配keyData了。
-     *
-     * @return
-     */
-    private boolean checkRouteKeyExists() {
-        return routeKeyData.checkKeyExists();
-    }
-
-    /**
      * 获得RouteData。
      *
      * @param table
      * @return
      */
     private TableRouteData getRouteData(String table) {
-        TableRouteData tableRouteData = null;
         if (mainTableRouteData != null) {
-            if (mainTableRouteData.tableConfig.getTableName().equals( table )) {
+            if (mainTableRouteData.tableConfig.getTableName().equals( table ) || mainTableRouteData.tableConfig.getAliasName().equals( table )) {
                 return mainTableRouteData;
             }
         }
-        if (tableRouteDataMap != null) {
-            tableRouteData = tableRouteDataMap.get( table );
-            if (tableRouteData != null) {
-                return tableRouteData;
+        if (tableRouteDataList != null) {
+            for (TableRouteData tableRouteData : tableRouteDataList) {
+                if (tableRouteData.tableConfig.getTableName().equals( table ) || tableRouteData.tableConfig.getAliasName().equals( table )) {
+                    return tableRouteData;
+                }
             }
         }
-        return tableRouteData;
+        return null;
     }
 
     /**
      * 防止RouteData信息。
      */
-    private void putRouteData(String database, String tableName, String aliasName) {
+    private void putTableRouteData(String database, String tableName, String aliasName) {
         TableRouteData tableRouteData = getRouteData( tableName );
         if (tableRouteData == null) {
             //构造新的
-            tableRouteData = buildRouteData( tableName );
-            tableRouteData.database = database;
+            tableRouteData = new TableRouteData();
+            tableRouteData.tableConfig = MydbConfigService.getTableConfig( tableName );
+            //如果不是配置项的，route=null，而且没有keyData
+            if (tableRouteData.tableConfig == null) {
+                tableRouteData.tableConfig = new TableConfig( tableName, 1, database );
+            }
+            //如果有route信息的，拉一下routeKeyData。
+            if (tableRouteData.tableConfig.getRouteId() > 0) {
+                RouteManager.buildRouteKeyData( routeKeyData, tableRouteData.tableConfig );
+            }
+            if (aliasName != null) {
+                tableRouteData.tableConfig.setAliasName( aliasName );
+            }
         }
         //优先放mainRouteData
         if (mainTableRouteData == null) {
             mainTableRouteData = tableRouteData;
         } else {
-            //多表的，放集合内
-            if (tableList == null) {
-                tableList = new ArrayList<>();
+            if (this.tableRouteDataList == null) {
+                this.tableRouteDataList = new ArrayList<>();
             }
-            tableList.add( tableName );
-            if (tableRouteDataMap == null) {
-                tableRouteDataMap = new HashMap<>();
-            }
-            tableRouteDataMap.put( tableName, tableRouteData );
-        }
-        //添加别名
-        if (aliasName != null) {
-            if (tableRouteDataMap == null) {
-                tableRouteDataMap = new HashMap<>();
-            }
-            tableRouteDataMap.put( aliasName, tableRouteData );
+            tableRouteDataList.add( tableRouteData );
         }
     }
 
@@ -605,7 +562,7 @@ public class SqlParser {
                 tableName = lexer.stringVal();
                 lexer.nextToken();
             }
-            putRouteData( schemaName, tableName, null );
+            putTableRouteData( schemaName, tableName, null );
         }
     }
 
@@ -624,7 +581,7 @@ public class SqlParser {
         //解析表名
         parseTableName( lexer );
         //原计划在这做优化，可能导致子查询不能重写
-        if (!checkRouteKeyExists()) {
+        if (!routeKeyData.checkKeyExists()) {
             lexer.skipToEOF();
             splitSubSql( lexer );
             return;
@@ -893,21 +850,21 @@ public class SqlParser {
                         aliasName = lexer.stringVal();
                     }
                     //注册表到routeData
-                    putRouteData( database, tableName, aliasName );
+                    putTableRouteData( database, tableName, aliasName );
                     lexer.skipTo( Token.SET, Token.WHERE, Token.JOIN, Token.COMMA );
                     break;
                 case JOIN:
                     //此处截断sql
                     splitSubSql( lexer );
-                    String schemaJoin = null, tableJoin = null, aliasJoin = null;
+                    String databaseJoin = null, tableJoin = null, aliasJoin = null;
                     //说明是表名，进入检查。
                     tableJoin = lexer.stringVal();
                     lexer.nextToken();
                     if (lexer.token() == Token.DOT) {
                         lexer.nextToken();
-                        //刚刚是库名，现在是表名了
-                        schemaJoin = tableJoin;
+                        databaseJoin = tableJoin;
                         setLexerPos();
+                        //刚刚是库名，现在是表名了
                         tableJoin = lexer.stringVal();
                         lexer.nextToken();
                     }
@@ -920,7 +877,7 @@ public class SqlParser {
                         aliasJoin = lexer.stringVal();
                     }
 
-                    putRouteData( schemaJoin, tableJoin, aliasJoin );
+                    putTableRouteData( databaseJoin, tableJoin, aliasJoin );
                     //其他的就跳走吧，不管了。
                     lexer.skipTo( Token.SET, Token.WHERE, Token.JOIN, Token.COMMA );
                     break;
@@ -941,6 +898,7 @@ public class SqlParser {
      * 增加子sql
      */
     private void splitSubSql(Lexer lexer) {
+        String sqlSource = parseResult.getSourceSql();
         if (lexerPos >= sqlSource.length() - 1) {
             return;
         }
@@ -968,43 +926,38 @@ public class SqlParser {
     private void calculateRouteInfo() {
         //检查有没有hint，hint是强行匹配的
         if (hintRouteInfo != null) {
+            Set<DataTable> routeInfos = new HashSet<>();
             //此处强行指定路由。
             if ("*".equalsIgnoreCase( hintRouteInfo )) {
                 // 匹配全部路由
                 if (mainTableRouteData.tableConfig.getRouteId() > 0) {
-                    this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO, "NO TABLE ROUTE INFO: " + sqlSource );
-                    return;
+                    try {
+                        List<DataTable> list = RouteManager.getAllRouteList( mainTableRouteData.tableConfig );
+                        routeInfos.addAll( list );
+                    } catch (RouteAlgorithm.RouteException e) {
+                        this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO, "EXCEPTION:" + e.toString() + ", NO TABLE ROUTE INFO: " + parseResult.getSourceSql() );
+                        return;
+                    }
                 }
-                List<DataTable> list = null;
-                try {
-                    list = RouteManager.getAllRouteList( mainTableRouteData.tableConfig );
-                } catch (RouteAlgorithm.RouteException e) {
-                    this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO, "NO TABLE ROUTE INFO: " + sqlSource );
-                    return;
-                }
-                //对于要写数据，可能会是ddl操作或者重要操作，考虑也更新默认schema.
-                if (parseResult.isMaster()) {
-                    list.add( new DataTable( mainTableRouteData.tableConfig.getBaseNode(), mainTableRouteData.tableConfig.getTableName() ) );
-                }
-                RouteAlgorithm.RouteResultData routeInfoData = new RouteAlgorithm.RouteResultData();
-                routeInfoData.setAll( new HashSet<>( list ) );
-                mainTableRouteData.routeInfoData = routeInfoData;
+
             } else {
                 //指定路由列表
-                HashSet<DataTable> list = new HashSet<>();
                 String[] routes = hintRouteInfo.split( "," );
                 for (String route : routes) {
                     String[] rs = route.split( "\\." );
                     if (rs.length == 2) {
-                        list.add( new DataTable( new DataNode( Long.parseLong( rs[0] ), rs[1] ), null ) );
+                        routeInfos.add( new DataTable( new DataNode( Long.parseLong( rs[0] ), rs[1] ), mainTableRouteData.tableConfig.getTableName() ) );
                     }
                 }
-                RouteAlgorithm.RouteResultData routeInfoData = new RouteAlgorithm.RouteResultData();
-                routeInfoData.setAll( list );
-                mainTableRouteData.routeInfoData = routeInfoData;
             }
+            //对于要写数据，可能会是ddl操作或者重要操作，考虑也更新默认schema.
+            if (parseResult.isMaster()) {
+                routeInfos.add( new DataTable( mainTableRouteData.tableConfig.getBaseNode(), mainTableRouteData.tableConfig.getTableName() ) );
+            }
+            RouteAlgorithm.RouteResultData routeInfoData = new RouteAlgorithm.RouteResultData();
+            routeInfoData.setAll( routeInfos );
+            mainTableRouteData.routeInfoData = routeInfoData;
         } else {
-
             if (mainTableRouteData == null) {
                 //这种情况一般是完全无法匹配的，生成sql的时候直接给默认schema。
                 return;
@@ -1015,7 +968,7 @@ public class SqlParser {
             }
 
             //检查是否有表匹配。
-            if (checkTableRouteExists()) {
+            if (mainTableRouteData != null && mainTableRouteData.tableConfig.getRouteId() > 0) {
                 //此时Table是有Route的
                 if (!routeKeyData.isEmptyValue()) {
                     //此时说明是sharding配置表。
@@ -1029,8 +982,8 @@ public class SqlParser {
                             routeInfoData.setSingle( defaultRoute );
                             mainTableRouteData.routeInfoData = routeInfoData;
                         } else {
-                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + sqlSource );
-                            log.warn( "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + sqlSource );
+                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
+                            log.warn( "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
                             return;
                         }
                     }
@@ -1049,45 +1002,45 @@ public class SqlParser {
                             try {
                                 routeInfoData2.setAll( new HashSet<>( RouteManager.getAllRouteList( mainTableRouteData.tableConfig ) ) );
                             } catch (RouteAlgorithm.RouteException e) {
-                                this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO, "NO TABLE ROUTE INFO: " + sqlSource );
+                                this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO, "NO TABLE ROUTE INFO: " + parseResult.getSourceSql() );
                                 return;
                             }
                             mainTableRouteData.routeInfoData = routeInfoData2;
                             break;
                         default:
                             //直接报错吧。
-                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_KEY, "NO ROUTE KEY[" + routeKeyData.keyString() + "]:" + sqlSource );
+                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_KEY, "NO ROUTE KEY[" + routeKeyData.keyString() + "]:" + parseResult.getSourceSql() );
                             return;
                     }
                 }
             } else {
                 //不在路由名单里的，匹配默认schema。
+                // TODO 此处屏蔽掉了。
                 RouteAlgorithm.RouteResultData routeInfoData = new RouteAlgorithm.RouteResultData();
-                String database = mainTableRouteData.database;
-                if (database == null) {
-                    database = databaseSource;
-                } else {
-                    //排除系统表。
+//                if (database == null) {
+//                    database = parseResult.getSourceDatabase();
+//                } else {
+                //排除系统表。
 //                    if (!schemaName.equals( "information_schema" ) && !schemaName.equals( "performance_schema" ) && !schemaName.equals( "mysql" ) && !schemaName.equals( "sys"
 //                    )) {
 //                        schemaName = sqlDatabase;
 //                    }
-                }
-                routeInfoData.setSingle( mainTableRouteData.tableConfig.genDataTable() );
+//                }
+//                routeInfoData.setSingle( mainTableRouteData.tableConfig.genDataTable() );
 
-                mainTableRouteData.routeInfoData = routeInfoData;
+//                mainTableRouteData.routeInfoData = routeInfoData;
             }
 
             //匹配从表数据
-            if (tableRouteDataMap != null) {
-                for (TableRouteData tableRouteData : tableRouteDataMap.values()) {
+            if (tableRouteDataList != null) {
+                for (TableRouteData tableRouteData : tableRouteDataList) {
                     if (tableRouteData.routeInfoData == null) {
                         try {
                             DataTable defaultRoute = mainTableRouteData.tableConfig.genDataTable();
                             tableRouteData.routeInfoData = RouteManager.calculate( tableRouteData.tableConfig, defaultRoute, routeKeyData );
                         } catch (Exception e) {
-                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR:  " + e.getMessage() + ", SQL: " + sqlSource );
-                            log.warn( "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + sqlSource );
+                            this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR:  " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
+                            log.warn( "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
                             return;
                         }
                     }
@@ -1102,14 +1055,14 @@ public class SqlParser {
     private void generateSqlInfo() {
         //没有匹配到表名，直接给默认schema了。
         if (subSqlList.size() <= 1 && mainTableRouteData == null) {
-            sqlInfo = new SqlParseResult.SqlInfo( sqlSource );
-            sqlInfo.setDataTable( new DataTable( new DataNode( 1, databaseSource ), null ) );
+            sqlInfo = new SqlParseResult.SqlInfo( parseResult.getSourceSql() );
+            sqlInfo.setDataTable( new DataTable( new DataNode( 1, parseResult.getSourceDatabase() ), null ) );
             this.parseResult.setSqlInfo( sqlInfo );
             return;
         }
         //每个mainRouteInfoData对应一个mysqlGroup
         if (checkSingleRoute()) {
-            sqlInfo = new SqlParseResult.SqlInfo( sqlSource.length() + 64 );
+            sqlInfo = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 64 );
             //开始循环加表名
             for (int i = 0; i < subSqlList.size(); i++) {
                 sqlInfo.appendSql( subSqlList.get( i ) );
@@ -1121,9 +1074,10 @@ public class SqlParser {
                         sqlInfo.setDataTable( dataTable );
                     }
                 } else if (i < subSqlList.size() - 1) {
+
                     //开始处理从表路由。
-                    if (tableList != null) {
-                        RouteAlgorithm.RouteResultData routeInfoData = tableRouteDataMap.get( tableList.get( i - 1 ) ).routeInfoData;
+                    if (tableRouteDataList != null) {
+                        RouteAlgorithm.RouteResultData routeInfoData = tableRouteDataList.get( i - 1 ).routeInfoData;
                         if (routeInfoData != null) {
                             DataTable routeInfo = routeInfoData.getRouteResult();
                             sqlInfo.appendSql( routeInfo.checkValid() ? routeInfo.getDatabase() : sqlInfo.getDatabase() ).appendSql( "." ).appendSql( routeInfo.getTable() );
@@ -1134,7 +1088,7 @@ public class SqlParser {
             this.parseResult.setSqlInfo( sqlInfo );
         } else {
             sqlInfoList = new ArrayList<>();
-            SqlParseResult.SqlInfo sb = new SqlParseResult.SqlInfo( sqlSource.length() + 32 );
+            SqlParseResult.SqlInfo sb = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 32 );
             sqlInfoList.add( sb );
             //开始循环加表名
             for (int i = 0; i < subSqlList.size(); i++) {
@@ -1146,8 +1100,8 @@ public class SqlParser {
                     appendRouteInfoData( true, mainTableRouteData.routeInfoData );
                 } else if (i < subSqlList.size() - 1) {
                     //开始处理从表路由。
-                    if (tableList != null) {
-                        RouteAlgorithm.RouteResultData routeInfoData = tableRouteDataMap.get( tableList.get( i - 1 ) ).routeInfoData;
+                    if (tableRouteDataList != null) {
+                        RouteAlgorithm.RouteResultData routeInfoData = tableRouteDataList.get( i - 1 ).routeInfoData;
                         if (routeInfoData != null) {
                             appendRouteInfoData( false, routeInfoData );
                         }
@@ -1166,8 +1120,8 @@ public class SqlParser {
      */
     private boolean checkSingleRoute() {
         boolean isSingle = mainTableRouteData == null || mainTableRouteData.isSingle();
-        if (tableRouteDataMap != null) {
-            for (TableRouteData tableRouteData : tableRouteDataMap.values()) {
+        if (tableRouteDataList != null) {
+            for (TableRouteData tableRouteData : tableRouteDataList) {
                 isSingle = isSingle && tableRouteData.isSingle();
             }
         }
@@ -1195,7 +1149,7 @@ public class SqlParser {
             for (DataTable dataTable : routeResultData.getRouteResults()) {
                 //此处应该复制多个sql了。。。
                 for (SqlParseResult.SqlInfo sqlInfo : this.sqlInfoList) {
-                    SqlParseResult.SqlInfo sqlInfo1 = new SqlParseResult.SqlInfo( sqlSource.length() + 32 );
+                    SqlParseResult.SqlInfo sqlInfo1 = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 32 );
                     sqlInfo1.appendSql( sqlInfo.getNewSql() );
                     sqlInfo1.setDataTable( sqlInfo.getDataTable() );
                     sqlInfo1.appendSql( dataTable.checkValid() ? dataTable.getDatabase() : sqlInfo1.getDatabase() ).appendSql( "." ).appendSql( dataTable.getTable() );
@@ -1215,17 +1169,12 @@ public class SqlParser {
     private static class TableRouteData {
 
         /**
-         * 原始的database信息。
-         */
-        String database;
-
-        /**
          * 表信息。
          */
         TableConfig tableConfig;
 
         /**
-         * 绑定的routeInfoData
+         * 绑定的路由结果数据。
          */
         RouteAlgorithm.RouteResultData routeInfoData;
 
