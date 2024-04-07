@@ -114,7 +114,7 @@ public abstract class RouteAlgorithm {
     /**
      * 存放路由Key和匹配到的数据。
      */
-    public static class RouteKeyData {
+    public static class RouteData {
 
         /**
          * key，用于优化内存占用。
@@ -124,7 +124,7 @@ public abstract class RouteAlgorithm {
         /**
          * value，用于优化内存占用。
          */
-        private RouteKeyValue value;
+        private RouteValue value;
 
         /**
          * key，用于优化内存占用。
@@ -134,7 +134,7 @@ public abstract class RouteAlgorithm {
         /**
          * value，用于优化内存占用。
          */
-        private RouteKeyValue value1;
+        private RouteValue value1;
 
         /**
          * key，用于优化内存占用。
@@ -144,7 +144,7 @@ public abstract class RouteAlgorithm {
         /**
          * value，用于优化内存占用。
          */
-        private RouteKeyValue value2;
+        private RouteValue value2;
 
         /**
          * 检查是否有key。
@@ -210,7 +210,7 @@ public abstract class RouteAlgorithm {
          *
          * @return
          */
-        public RouteKeyValue getValue() {
+        public RouteValue getValue() {
             return value;
         }
 
@@ -219,17 +219,17 @@ public abstract class RouteAlgorithm {
          *
          * @return
          */
-        public RouteKeyValue[] getValues() {
+        public RouteValue[] getValues() {
             if (key == null) {
-                return new RouteKeyValue[0];
+                return new RouteValue[0];
             }
             if (key1 == null) {
-                return new RouteKeyValue[]{value};
+                return new RouteValue[]{value};
             }
             if (key2 == null) {
-                return new RouteKeyValue[]{value, value1};
+                return new RouteValue[]{value, value1};
             }
-            return new RouteKeyValue[]{value, value1, value2};
+            return new RouteValue[]{value, value1, value2};
         }
 
         /**
@@ -240,13 +240,13 @@ public abstract class RouteAlgorithm {
         public void initKey(String key) {
             if (this.key == null) {
                 this.key = key;
-                this.value = new RouteKeyValue();
+                this.value = new RouteValue();
             } else if (this.key1 == null) {
                 this.key1 = key;
-                this.value1 = new RouteKeyValue();
+                this.value1 = new RouteValue();
             } else if (this.key2 == null) {
                 this.key2 = key;
-                this.value2 = new RouteKeyValue();
+                this.value2 = new RouteValue();
             }
         }
 
@@ -256,7 +256,7 @@ public abstract class RouteAlgorithm {
          * @param key
          * @return
          */
-        public RouteKeyValue getValue(String key) {
+        public RouteValue getValue(String key) {
             if (this.key == null) {
                 return null;
             } else if (this.key.equals( key )) {
@@ -355,9 +355,9 @@ public abstract class RouteAlgorithm {
     }
 
     /**
-     * 路由数值类型。
+     * 路由数值数据。
      */
-    public static class RouteKeyValue {
+    public static class RouteValue {
 
         /**
          * 空值
@@ -387,12 +387,12 @@ public abstract class RouteAlgorithm {
         /**
          * 数值1
          */
-        private String value1;
+        private String value;
 
         /**
          * 数值2
          */
-        private String value2;
+        private String valueEnd;
 
         /**
          * 多值类型
@@ -407,9 +407,9 @@ public abstract class RouteAlgorithm {
         public boolean isEmpty() {
             switch (type) {
                 case SINGLE:
-                    return value1 == null;
+                    return value == null;
                 case RANGE:
-                    return value1 == null && value2 == null;
+                    return value == null && valueEnd == null;
                 case MULTI:
                     return values == null;
                 default:
@@ -421,13 +421,13 @@ public abstract class RouteAlgorithm {
          * 针对范围运行有时候只有一个值来进行优化。
          */
         public void guessType() {
-            if (value1 == null || value2 == null) {
+            if (value == null || valueEnd == null) {
                 type = SINGLE;
-                if (value1 == null && value2 != null) {
-                    value1 = value2;
+                if (value == null && valueEnd != null) {
+                    value = valueEnd;
                 }
-                if (value1 != null && value2 == null) {
-                    value2 = value1;
+                if (value != null && valueEnd == null) {
+                    valueEnd = value;
                 }
             }
         }
@@ -435,17 +435,17 @@ public abstract class RouteAlgorithm {
 
         public void putValue(String value) {
             type = SINGLE;
-            this.value1 = value;
+            this.value = value;
         }
 
-        public void putRangeStart(String value1) {
+        public void putRangeStart(String valueStart) {
             type = RANGE;
-            this.value1 = value1;
+            this.value = valueStart;
         }
 
-        public void putRangeEnd(String value2) {
+        public void putRangeEnd(String valueEnd) {
             type = RANGE;
-            this.value2 = value2;
+            this.valueEnd = valueEnd;
         }
 
         public void putValues(List<String> values) {
@@ -453,12 +453,12 @@ public abstract class RouteAlgorithm {
             this.values = values;
         }
 
-        public String getValue1() {
-            return value1;
+        public String getValueStart() {
+            return value;
         }
 
-        public String getValue2() {
-            return value2;
+        public String getValueEnd() {
+            return valueEnd;
         }
 
         public List<String> getValues() {
@@ -479,30 +479,30 @@ public abstract class RouteAlgorithm {
      * 用于优化存储RouteInfo。
      * 对大多数情况下，可能只有单一路由信息，尽量减少不必要的List使用。
      */
-    public static class RouteResultData {
+    public static class RouteResult {
 
         /**
          * 单一路由信息。
          */
-        private DataTable routeResult;
+        private DataTable dataTable;
 
         /**
          * 路由信息集合。
          */
-        private Set<DataTable> routeResults;
+        private Set<DataTable> dataTables;
 
         /**
          * 设置一个RouteInfo Set.
          *
-         * @param routeInfos
+         * @param dataTables
          */
-        public void setAll(Set<DataTable> routeInfos) {
-            if (routeInfos != null && routeInfos.size() == 1) {
-                this.routeResult = routeInfos.iterator().next();
-                this.routeResults = null;
+        public void setAll(Set<DataTable> dataTables) {
+            if (dataTables != null && dataTables.size() == 1) {
+                this.dataTable = dataTables.iterator().next();
+                this.dataTables = null;
             } else {
-                this.routeResult = null;
-                this.routeResults = routeInfos;
+                this.dataTable = null;
+                this.dataTables = dataTables;
             }
         }
 
@@ -512,20 +512,20 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public boolean isSingle() {
-            return routeResults == null;
+            return dataTables == null;
         }
 
-        public void setSingle(DataTable routeInfo) {
-            this.routeResult = routeInfo;
-            this.routeResults = null;
+        public void setSingle(DataTable dataTable) {
+            this.dataTable = dataTable;
+            this.dataTables = null;
         }
 
-        public DataTable getRouteResult() {
-            return routeResult;
+        public DataTable getDataTable() {
+            return dataTable;
         }
 
-        public Set<DataTable> getRouteResults() {
-            return routeResults;
+        public Set<DataTable> getDataTables() {
+            return dataTables;
         }
     }
 

@@ -3,6 +3,7 @@ package uw.mydb.route;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
+import uw.mydb.constant.MydbRouteMatchMode;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.RouteConfig;
 import uw.mydb.vo.TableConfig;
@@ -30,77 +31,94 @@ public class RouteManager {
      * @param tableConfig
      * @return
      */
-    public static void initRouteKeyData(TableConfig tableConfig, RouteAlgorithm.RouteKeyData routeKeyData) {
+    public static RouteAlgorithm.RouteData initRouteData(TableConfig tableConfig) {
+        RouteAlgorithm.RouteData routeData = new RouteAlgorithm.RouteData();
         List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
-            routeKeyData.initKey( routeAlgorithm.getRouteKey() );
+            routeData.initKey( routeAlgorithm.getRouteKey() );
         }
+        return routeData;
     }
 
     /**
      * 获得路由信息。
      *
      * @param tableConfig
-     * @param routeInfo   默认匹配的路由
-     * @param keyData
+     * @param routeData
      * @return
      */
-    public static RouteAlgorithm.RouteResultData calculate(TableConfig tableConfig, DataTable routeInfo, RouteAlgorithm.RouteKeyData keyData) throws RouteAlgorithm.RouteException {
-        RouteAlgorithm.RouteResultData routeInfoData = new RouteAlgorithm.RouteResultData();
-        //构造空路由配置。
-        routeInfoData.setSingle( routeInfo );
+    public static RouteAlgorithm.RouteResult calculate(TableConfig tableConfig, RouteAlgorithm.RouteData routeData) throws RouteAlgorithm.RouteException {
+        RouteAlgorithm.RouteResult routeResult = new RouteAlgorithm.RouteResult();
         //获得路由算法列表。
         List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         if (routeAlgorithms == null) {
-            return routeInfoData;
+            return routeResult;
         }
+        DataTable defaultRoute = tableConfig.genDataTable();
         for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
-            RouteAlgorithm.RouteKeyValue routeKeyValue = keyData.getValue( routeAlgorithm.getRouteKey() );
-            //优化一下calcType。
-            routeKeyValue.guessType();
-            if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.SINGLE) {
-                routeInfo = routeAlgorithm.calculate( tableConfig, routeInfo, routeKeyValue.getValue1() );
-                routeInfoData.setSingle( routeInfo );
-            } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.RANGE) {
-                Set<DataTable> set = new LinkedHashSet<>();
-                if (routeInfoData.isSingle()) {
-                    List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, routeInfoData.getRouteResult(), routeKeyValue.getValue1(), routeKeyValue.getValue2() );
-                    set.addAll( list );
-                } else {
-                    for (DataTable dataTable : routeInfoData.getRouteResults()) {
-                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, dataTable, routeKeyValue.getValue1(), routeKeyValue.getValue2() );
-                        set.addAll( list );
-                    }
+            RouteAlgorithm.RouteValue routeValue = routeData.getValue( routeAlgorithm.getRouteKey() );
+            if (routeValue == null || routeValue.isEmpty()) {
+                //在路由名单里的，不指定参数，根据匹配类型确定转发。
+                switch (MydbRouteMatchMode.findByValue( tableConfig.getMatchType() )) {
+                    case MATCH_DEFAULT:
+                        //此时是非sharding配置表，给schema默认数据。
+                        routeResult = new RouteAlgorithm.RouteResult();
+                        routeResult.setSingle( defaultRoute );
+                        break;
+                    case MATCH_ALL:
+                        //匹配全部路由
+                        routeResult.setAll( new HashSet<>( RouteManager.getAllRouteList( tableConfig ) ) );
+                        break;
+                    default:
+                        //直接报错吧。
+                        throw new RouteAlgorithm.RouteException( "Route can not fix match!" );
                 }
-                routeInfoData.setAll( set );
-            } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.MULTI) {
-                Set<DataTable> set = new LinkedHashSet<>();
-                if (routeInfoData.isSingle()) {
-                    Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, routeInfoData.getRouteResult(), routeKeyValue.getValues() );
-                    set.addAll( dts );
-                } else {
-                    for (DataTable dataTable : routeInfoData.getRouteResults()) {
-                        Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, dataTable, routeKeyValue.getValues() );
-                        set.addAll( dts );
-                    }
-                }
-                routeInfoData.setAll( set );
             } else {
-                //此时说明参数没有匹配上。
-                routeInfo = routeAlgorithm.getDefaultRoute( tableConfig, routeInfo );
-                routeInfoData.setSingle( routeInfo );
+                routeValue.guessType();
+                if (routeValue.getType() == RouteAlgorithm.RouteValue.SINGLE) {
+                    defaultRoute = routeAlgorithm.calculate( tableConfig, defaultRoute, routeValue.getValueStart() );
+                    routeResult.setSingle( defaultRoute );
+                } else if (routeValue.getType() == RouteAlgorithm.RouteValue.RANGE) {
+                    Set<DataTable> set = new LinkedHashSet<>();
+                    if (routeResult.isSingle()) {
+                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, routeResult.getDataTable(), routeValue.getValueStart(), routeValue.getValueEnd() );
+                        set.addAll( list );
+                    } else {
+                        for (DataTable dataTable : routeResult.getDataTables()) {
+                            List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, dataTable, routeValue.getValueStart(), routeValue.getValueEnd() );
+                            set.addAll( list );
+                        }
+                    }
+                    routeResult.setAll( set );
+                } else if (routeValue.getType() == RouteAlgorithm.RouteValue.MULTI) {
+                    Set<DataTable> set = new LinkedHashSet<>();
+                    if (routeResult.isSingle()) {
+                        Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, routeResult.getDataTable(), routeValue.getValues() );
+                        set.addAll( dts );
+                    } else {
+                        for (DataTable dataTable : routeResult.getDataTables()) {
+                            Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, dataTable, routeValue.getValues() );
+                            set.addAll( dts );
+                        }
+                    }
+                    routeResult.setAll( set );
+                } else {
+                    //此时说明参数没有匹配上。
+                    defaultRoute = routeAlgorithm.getDefaultRoute( tableConfig, defaultRoute );
+                    routeResult.setSingle( defaultRoute );
+                }
             }
         }
 
         // 检查schema情况
-        if (routeInfoData.isSingle()) {
-            MydbConfigService.checkTableExists( tableConfig.getTableName(), routeInfoData.getRouteResult() );
+        if (routeResult.isSingle()) {
+            MydbConfigService.checkTableExists( tableConfig.getTableName(), routeResult.getDataTable() );
         } else {
-            for (DataTable dataTable : routeInfoData.getRouteResults()) {
+            for (DataTable dataTable : routeResult.getDataTables()) {
                 MydbConfigService.checkTableExists( tableConfig.getTableName(), dataTable );
             }
         }
-        return routeInfoData;
+        return routeResult;
     }
 
     /**

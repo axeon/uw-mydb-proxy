@@ -3,64 +3,49 @@ package uw.mydb.sqlparser;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.packet.CommandPacket;
 import uw.mydb.protocol.packet.MySqlPacket;
+import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.vo.DataTable;
-
-import java.util.List;
+import uw.mydb.vo.TableConfig;
 
 /**
  * SQL解析路由结果。
  *
  * @author axeon
  */
-public class SqlParseResult {
+public class SqlParseResult{
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger( SqlParseResult.class );
 
     /**
      * 原始的sql语句。
      */
-    private String sourceSql;
+    protected String sourceSql;
 
     /**
      * schema名。
      */
-    private String sourceDatabase;
-
-    /**
-     * 表名。
-     */
-    private String sourceTable;
+    protected String sourceDatabase;
 
     /**
      * 是否是DML。
      * 默认为true。
      */
-    private boolean isDML = true;
+    protected boolean isDML = true;
 
     /**
      * 是否主库操作。
      */
-    private Boolean isMasterQuery;
+    protected boolean isMasterQuery = true;
 
     /**
      * 错误编码。
      */
-    private int errorCode;
+    protected int errorCode;
 
     /**
      * 错误信息。
      */
-    private String errorMessage;
-
-    /**
-     * 单sql结果
-     */
-    private SqlInfo sqlInfo = null;
-
-    /**
-     * 多sql结果。
-     */
-    private List<SqlInfo> sqlInfoList = null;
+    protected String errorMessage;
 
     public SqlParseResult(String sourceDatabase, String sourceSql) {
         this.sourceDatabase = sourceDatabase;
@@ -73,14 +58,6 @@ public class SqlParseResult {
 
     public String getSourceDatabase() {
         return sourceDatabase;
-    }
-
-    public String getSourceTable() {
-        return sourceTable;
-    }
-
-    public void setSourceTable(String sourceTable) {
-        this.sourceTable = sourceTable;
     }
 
     public boolean isDML() {
@@ -150,57 +127,26 @@ public class SqlParseResult {
         isMasterQuery = master;
     }
 
-    /**
-     * 如果未赋值，则设置master状态
-     *
-     * @param master
-     */
-    public void setMasterIfNull(boolean master) {
-        if (this.isMasterQuery == null) {
-            isMasterQuery = master;
-        }
-    }
 
-    public SqlInfo getSqlInfo() {
-        return sqlInfo;
-    }
-
-    public void setSqlInfo(SqlInfo sqlInfo) {
-        this.sqlInfo = sqlInfo;
-    }
-
-    public List<SqlInfo> getSqlInfoList() {
-        return sqlInfoList;
-    }
-
-    public void setSqlInfoList(List<SqlInfo> sqlInfoList) {
-        this.sqlInfoList = sqlInfoList;
-    }
 
     /**
      * sql信息。
      */
     public static class SqlInfo {
 
-        private DataTable dataTable;
-
         /**
-         * sql拼接builder。
-         * 本来只是个中间体，为了减少不必要的转换，作为变量使用。
+         * 关联的DataTable
          */
-        private StringBuilder newSqlBuf;
+        protected DataTable dataTable;
 
         /**
          * 新的sql。
          */
-        private String newSql;
+        protected String sql;
 
-        public SqlInfo(int sqlSize) {
-            newSqlBuf = new StringBuilder( sqlSize );
-        }
-
-        public SqlInfo(String sql) {
-            newSql = sql;
+        public SqlInfo(DataTable dataTable, String sql) {
+            this.dataTable = dataTable;
+            this.sql = sql;
         }
 
         public long getClusterId() {
@@ -223,16 +169,9 @@ public class SqlParseResult {
             this.dataTable = dataTable;
         }
 
-        public String getNewSql() {
-            if (newSql == null) {
-                newSql = newSqlBuf.toString();
-            }
-            return newSql;
-        }
+        public String getSql() {
 
-        public SqlInfo appendSql(String text) {
-            this.newSqlBuf.append( text );
-            return this;
+            return sql;
         }
 
         /**
@@ -243,8 +182,7 @@ public class SqlParseResult {
         public CommandPacket genPacket() {
             CommandPacket packet = new CommandPacket();
             packet.command = MySqlPacket.CMD_QUERY;
-            packet.arg = getNewSql();
-
+            packet.arg = getSql();
             if (logger.isTraceEnabled()) {
                 logger.trace( "MySQL执行: {}", packet.arg );
             }
@@ -252,4 +190,73 @@ public class SqlParseResult {
         }
     }
 
+    /**
+     * 表路由信息。
+     */
+    public static class TableRouteData {
+
+        /**
+         * 表信息。
+         */
+        protected TableConfig tableConfig;
+
+        /**
+         * 表别名。
+         */
+        protected String tableAliasName;
+
+        /**
+         * 路由数据。
+         */
+        protected RouteAlgorithm.RouteData routeData;
+
+        /**
+         * 绑定的路由结果数据。
+         */
+        protected RouteAlgorithm.RouteResult routeResult;
+
+        public TableRouteData(TableConfig tableConfig) {
+            this.tableConfig = tableConfig;
+        }
+
+        public TableRouteData(TableConfig tableConfig, String tableAliasName) {
+            this.tableConfig = tableConfig;
+            this.tableAliasName = tableAliasName;
+        }
+
+        public TableRouteData() {
+        }
+
+        public TableConfig getTableConfig() {
+            return tableConfig;
+        }
+
+        public void setTableConfig(TableConfig tableConfig) {
+            this.tableConfig = tableConfig;
+        }
+
+        public String getTableAliasName() {
+            return tableAliasName;
+        }
+
+        public void setTableAliasName(String tableAliasName) {
+            this.tableAliasName = tableAliasName;
+        }
+
+        public RouteAlgorithm.RouteData getRouteData() {
+            return routeData;
+        }
+
+        public void setRouteData(RouteAlgorithm.RouteData routeData) {
+            this.routeData = routeData;
+        }
+
+        public RouteAlgorithm.RouteResult getRouteResult() {
+            return routeResult;
+        }
+
+        public void setRouteResult(RouteAlgorithm.RouteResult routeResult) {
+            this.routeResult = routeResult;
+        }
+    }
 }

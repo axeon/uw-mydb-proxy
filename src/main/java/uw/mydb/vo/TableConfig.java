@@ -15,11 +15,6 @@ public class TableConfig {
     private String tableDesc;
 
     /**
-     * 表别名，解析时会使用。
-     */
-    private String aliasName;
-
-    /**
      * 路由设置。
      */
     private long routeId;
@@ -76,14 +71,6 @@ public class TableConfig {
 
     public void setTableDesc(String tableDesc) {
         this.tableDesc = tableDesc;
-    }
-
-    public String getAliasName() {
-        return aliasName;
-    }
-
-    public void setAliasName(String aliasName) {
-        this.aliasName = aliasName;
     }
 
     public long getRouteId() {
