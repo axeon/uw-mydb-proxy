@@ -12,9 +12,9 @@ import uw.mydb.constant.GlobalConstants;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
-import uw.mydb.protocol.packet.*;
 import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.constant.MySqlErrorCode;
+import uw.mydb.protocol.packet.*;
 import uw.mydb.sqlparser.SqlParseResult;
 import uw.mydb.sqlparser.SqlParser;
 import uw.mydb.stats.StatsManager;
@@ -153,7 +153,7 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * sql解析结果。
      */
-    private SqlParseResult routeResult;
+    private SqlParseResult sqlParseResult;
 
 
     public ProxySession(ChannelHandlerContext ctx) {
@@ -413,16 +413,16 @@ public class ProxySession implements MySqlSessionCallback {
     public void onFinish() {
         //开始统计数据了。
         this.exeTime = SystemClock.now() - queryStartTime;
-        if (routeResult != null) {
-            String statsTable = routeResult.getTable();
-            String statsSql = routeResult.getSourceSql();
-            int statsRouteSize = (routeResult.isSingle() ? 1 : routeResult.getSqlInfoList().size());
+        if (sqlParseResult != null) {
+            String statsTable = sqlParseResult.getSourceTable();
+            String statsSql = sqlParseResult.getSourceSql();
+            int statsRouteSize = sqlParseResult.getSqlInfo() != null ? 1 : sqlParseResult.getSqlInfoList().size();
             //开始统计。
             StatsManager.statsMydb( host, database, statsTable, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );
             StatsManager.statsSlowSql( host, database, statsSql, statsRouteSize, Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeTime, queryStartTime );
         }
         //数据归零
-        routeResult = null;
+        sqlParseResult = null;
         isMasterSql = false;
         isExeSuccess = true;
         this.exeTime = 0;
@@ -466,30 +466,28 @@ public class ProxySession implements MySqlSessionCallback {
         }
         //根据解析结果判定，当前支持1.单实例执行；2.多实例执行
         SqlParser parser = new SqlParser( this, sql );
-        routeResult = parser.parse();
+        sqlParseResult = parser.parse();
         //sql解析后，routeResult=null的，可能已经在parser里处理过了。
-        if (routeResult.hasError()) {
+        if (sqlParseResult.hasError()) {
             //error code>0的，发送错误信息。
-            if (routeResult.getErrorCode() > 0) {
-                onFailMessage( ctx, routeResult.getErrorCode(), routeResult.getErrorMessage() );
-                onFinish();
-            }
+            onFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
+            onFinish();
             return;
         }
         //压测时，可直接返回ok包的。
-        if (routeResult.isSingle()) {
+        if (sqlParseResult.getSqlInfo() != null) {
             //单实例执行直接绑定执行即可。
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( routeResult.getSqlInfo().getClusterId(), routeResult.isMaster() );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlParseResult.getSqlInfo().getClusterId(), sqlParseResult.isMasterQuery() );
             if (mySqlSession == null) {
                 onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
                 onFinish();
                 logger.warn( "无法找到合适的mysqlSession!" );
                 return;
             }
-            mySqlSession.addCommand(this , routeResult.getSqlInfo(), routeResult.isMaster() );
+            mySqlSession.addCommand( this, sqlParseResult.getSqlInfo(), sqlParseResult.isMasterQuery() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
-            multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, routeResult ) );
+            multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, sqlParseResult ) );
         }
     }
 

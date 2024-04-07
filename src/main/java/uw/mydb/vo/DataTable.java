@@ -5,6 +5,7 @@ import java.util.*;
 
 /**
  * 数据表。
+ * 数据表通过DataNode和表名来确定唯一性。
  */
 public class DataTable {
 
@@ -33,29 +34,6 @@ public class DataTable {
         return new DataTable( null, table );
     }
 
-    /**
-     * new一个只有单个RouteInfo的Map。
-     *
-     * @param dataTable
-     * @return
-     */
-    public static Map<String, DataTable> newMapWithRouteResult(DataTable dataTable) {
-        HashMap<String, DataTable> map = new HashMap<>();
-        map.put( "", dataTable );
-        return map;
-    }
-
-    /**
-     * new一个只有单个RouteInfo的List。
-     *
-     * @param dataTable
-     * @return
-     */
-    public static List<DataTable> newListWithRouteResult(DataTable dataTable) {
-        List<DataTable> list = new ArrayList<>();
-        list.add( dataTable );
-        return list;
-    }
 
     /**
      * 检查是否合法。
@@ -108,7 +86,6 @@ public class DataTable {
     public long getClusterId() {
         return dataNode.getClusterId();
     }
-
 
     public String getDatabase() {
         return dataNode.getDatabase();

@@ -92,7 +92,7 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
     }
 
     @Override
-    public List<DataTable> calculateRange(TableConfig tableConfig, List<DataTable> routeInfos, String startValue, String endValue) throws RouteException {
+    public List<DataTable> calculateRange(TableConfig tableConfig, DataTable dataTable, String startValue, String endValue) throws RouteException {
         if (startValue == null) {
             startValue = endValue;
         }
@@ -100,7 +100,7 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
             endValue = startValue;
         }
         if (startValue == null && endValue == null) {
-            return routeInfos;
+            return null;
         }
         List<String> list = new ArrayList<>();
         LocalDateTime startDate, endDate;
@@ -129,12 +129,10 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
         }
         //循环赋值
         List<DataTable> newList = new ArrayList<>();
-        for (DataTable routeInfo : routeInfos) {
-            for (String text : list) {
-                DataTable copy = routeInfo.copy();
-                copy.setTable( new StringBuilder( routeInfo.getTable() ).append( "_" ).append( text ).toString() );
-                newList.add( copy );
-            }
+        for (String text : list) {
+            DataTable copy = dataTable.copy();
+            copy.setTable( new StringBuilder( dataTable.getTable() ).append( "_" ).append( text ).toString() );
+            newList.add( copy );
         }
         return newList;
     }

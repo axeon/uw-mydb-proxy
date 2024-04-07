@@ -25,33 +25,16 @@ public class RouteManager {
     private static Map<Long, ArrayList<RouteAlgorithm>> routeAlgorithmMap = new ConcurrentHashMap<>();
 
     /**
-     * 构造路由keyData。
+     * 初始化路由keyData。
      *
      * @param tableConfig
      * @return
      */
-    public static RouteAlgorithm.RouteKeyData buildRouteKeyData(RouteAlgorithm.RouteKeyData routeKeyData, TableConfig tableConfig) {
-        if (tableConfig == null) {
-            return null;
+    public static void initRouteKeyData(TableConfig tableConfig, RouteAlgorithm.RouteKeyData routeKeyData) {
+        List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
+        for (RouteAlgorithm routeAlgorithm : routeAlgorithms) {
+            routeKeyData.initKey( routeAlgorithm.getRouteKey() );
         }
-        RouteConfig routeConfig = MydbConfigService.getRouteConfig( tableConfig.getRouteId() );
-        if (routeConfig == null) {
-            return null;
-        }
-        //加载父级路由信息。
-        if (routeConfig.getParentId() > 0) {
-            RouteConfig parentRoute = MydbConfigService.getRouteConfig( routeConfig.getParentId() );
-            if (parentRoute != null) {
-                if (routeKeyData.getValue( parentRoute.getRouteKey() ) == null) {
-                    routeKeyData.initKey( parentRoute.getRouteKey() );
-                }
-            }
-        }
-        //加载本级路由信息。
-        if (routeKeyData.getValue( routeConfig.getRouteKey() ) == null) {
-            routeKeyData.initKey( routeConfig.getRouteKey() );
-        }
-        return routeKeyData;
     }
 
     /**
@@ -79,27 +62,26 @@ public class RouteManager {
                 routeInfo = routeAlgorithm.calculate( tableConfig, routeInfo, routeKeyValue.getValue1() );
                 routeInfoData.setSingle( routeInfo );
             } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.RANGE) {
-                Set<DataTable> set = new HashSet<>();
+                Set<DataTable> set = new LinkedHashSet<>();
                 if (routeInfoData.isSingle()) {
-                    List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( routeInfoData.getRouteResult() ), routeKeyValue.getValue1(),
-                            routeKeyValue.getValue2() );
+                    List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, routeInfoData.getRouteResult(), routeKeyValue.getValue1(), routeKeyValue.getValue2() );
                     set.addAll( list );
                 } else {
                     for (DataTable dataTable : routeInfoData.getRouteResults()) {
-                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, DataTable.newListWithRouteResult( dataTable ), routeKeyValue.getValue1(), routeKeyValue.getValue2() );
+                        List<DataTable> list = routeAlgorithm.calculateRange( tableConfig, dataTable, routeKeyValue.getValue1(), routeKeyValue.getValue2() );
                         set.addAll( list );
                     }
                 }
                 routeInfoData.setAll( set );
             } else if (routeKeyValue.getType() == RouteAlgorithm.RouteKeyValue.MULTI) {
-                Set<DataTable> set = new HashSet<>();
+                Set<DataTable> set = new LinkedHashSet<>();
                 if (routeInfoData.isSingle()) {
-                    Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( routeInfoData.getRouteResult() ), routeKeyValue.getValues() );
-                    set.addAll( map.values() );
+                    Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, routeInfoData.getRouteResult(), routeKeyValue.getValues() );
+                    set.addAll( dts );
                 } else {
                     for (DataTable dataTable : routeInfoData.getRouteResults()) {
-                        Map<String, DataTable> map = routeAlgorithm.calculate( tableConfig, DataTable.newMapWithRouteResult( dataTable ), routeKeyValue.getValues() );
-                        set.addAll( map.values() );
+                        Set<DataTable> dts = routeAlgorithm.calculate( tableConfig, dataTable, routeKeyValue.getValues() );
+                        set.addAll( dts );
                     }
                 }
                 routeInfoData.setAll( set );

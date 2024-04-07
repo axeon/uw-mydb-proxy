@@ -1,7 +1,8 @@
 package uw.mydb.vo;
 
 /**
- * 数据节点。
+ * 数据节点对象。
+ * 数据节点通过服务器集群和库来确定唯一性。
  */
 public class DataNode {
 
@@ -9,6 +10,7 @@ public class DataNode {
      * mysql集群。
      */
     private long clusterId;
+
     /**
      * mysql库名。
      */
@@ -19,15 +21,20 @@ public class DataNode {
         this.database = database;
     }
 
-    public DataNode(String combineKey) {
-        int splitPos = combineKey.indexOf( '.' );
-        if (splitPos > -1) {
-            clusterId = Long.parseLong( combineKey.substring( 0, splitPos ) );
-            database = combineKey.substring( splitPos+1 );
-
+    /**
+     * 通过集群ID.数据库名来确定唯一值。
+     *
+     * @param dataNodeKey
+     */
+    public DataNode(String dataNodeKey) {
+        if (dataNodeKey != null) {
+            int splitPos = dataNodeKey.indexOf( '.' );
+            if (splitPos > -1) {
+                clusterId = Long.parseLong( dataNodeKey.substring( 0, splitPos ) );
+                database = dataNodeKey.substring( splitPos + 1 );
+            }
         }
     }
-
 
     public DataNode() {
     }

@@ -29,13 +29,18 @@ public class SqlParseResult {
     /**
      * 表名。
      */
-    private String table;
+    private String sourceTable;
 
     /**
      * 是否是DML。
      * 默认为true。
      */
     private boolean isDML = true;
+
+    /**
+     * 是否主库操作。
+     */
+    private Boolean isMasterQuery;
 
     /**
      * 错误编码。
@@ -46,16 +51,6 @@ public class SqlParseResult {
      * 错误信息。
      */
     private String errorMessage;
-
-    /**
-     * 是否单一路由，默认为true。
-     */
-    private boolean isSingle = true;
-
-    /**
-     * 是否主库操作。
-     */
-    private Boolean isMaster;
 
     /**
      * 单sql结果
@@ -80,12 +75,12 @@ public class SqlParseResult {
         return sourceDatabase;
     }
 
-    public String getTable() {
-        return table;
+    public String getSourceTable() {
+        return sourceTable;
     }
 
-    public void setTable(String table) {
-        this.table = table;
+    public void setSourceTable(String sourceTable) {
+        this.sourceTable = sourceTable;
     }
 
     public boolean isDML() {
@@ -138,12 +133,12 @@ public class SqlParseResult {
     }
 
     /**
-     * 是否master路由。
+     * 是否master查询。
      *
      * @return
      */
-    public boolean isMaster() {
-        return isMaster;
+    public boolean isMasterQuery() {
+        return isMasterQuery;
     }
 
     /**
@@ -151,8 +146,8 @@ public class SqlParseResult {
      *
      * @param master
      */
-    public void setMaster(boolean master) {
-        isMaster = master;
+    public void setMasterQuery(boolean master) {
+        isMasterQuery = master;
     }
 
     /**
@@ -161,17 +156,9 @@ public class SqlParseResult {
      * @param master
      */
     public void setMasterIfNull(boolean master) {
-        if (this.isMaster == null) {
-            isMaster = master;
+        if (this.isMasterQuery == null) {
+            isMasterQuery = master;
         }
-    }
-
-    public boolean isSingle() {
-        return isSingle;
-    }
-
-    public void setSingle(boolean single) {
-        isSingle = single;
     }
 
     public SqlInfo getSqlInfo() {

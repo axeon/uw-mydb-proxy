@@ -5,9 +5,7 @@ import uw.mydb.vo.RouteConfig;
 import uw.mydb.vo.TableConfig;
 
 import java.security.PrivilegedActionException;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * 动态分表算法，一般来说表是完全动态创建的。
@@ -22,7 +20,7 @@ public abstract class RouteAlgorithm {
     protected RouteConfig routeConfig;
 
     /**
-     * 根据分库分表参数初始化。
+     * 算法路由参数初始化。
      */
     public void init(RouteConfig routeConfig) {
         this.routeConfig = routeConfig;
@@ -35,12 +33,12 @@ public abstract class RouteAlgorithm {
     public abstract void config();
 
     /**
-     * 路由名称。
+     * 路由算法名称。
      */
     public abstract String name();
 
     /**
-     * 路由描述。
+     * 路由算法描述。
      */
     public abstract String description();
 
@@ -62,19 +60,15 @@ public abstract class RouteAlgorithm {
      * 此方法一般查询用。
      *
      * @param tableConfig
-     * @param routeInfos  携带初始值的路由信息
+     * @param dataTable  携带初始值的路由信息
      * @return 修正后的路由信息
      */
-    public Map<String, DataTable> calculate(TableConfig tableConfig, Map<String, DataTable> routeInfos, List<String> values) throws RouteException {
+    public Set<DataTable> calculate(TableConfig tableConfig, DataTable dataTable, List<String> values) throws RouteException {
+        LinkedHashSet set = new LinkedHashSet();
         for (String value : values) {
-            DataTable routeInfo = routeInfos.get( value );
-            if (routeInfo == null) {
-                routeInfo = DataTable.newDataWithTable( tableConfig.getTableName() );
-                routeInfos.put( value, routeInfo );
-            }
-            calculate( tableConfig, routeInfo, value );
+            set.add( calculate( tableConfig, dataTable, value ) );
         }
-        return routeInfos;
+        return set;
     }
 
     /**
@@ -82,12 +76,12 @@ public abstract class RouteAlgorithm {
      * 此方法一般查询用。
      *
      * @param tableConfig
-     * @param routeInfos  携带初始值的路由信息
+     * @param dataTable  携带初始值的路由信息
      * @param startValue
      * @param endValue
      * @return 表名列表
      */
-    public List<DataTable> calculateRange(TableConfig tableConfig, List<DataTable> routeInfos, String startValue, String endValue) throws RouteException {
+    public List<DataTable> calculateRange(TableConfig tableConfig, DataTable dataTable, String startValue, String endValue) throws RouteException {
         throw new RouteException( "不支持范围计算!" );
     }
 
