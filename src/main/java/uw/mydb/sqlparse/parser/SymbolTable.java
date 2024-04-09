@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package uw.mydb.sqlparser.parser;
+package uw.mydb.sqlparse.parser;
 
 import java.nio.charset.Charset;
 

@@ -1,20 +1,28 @@
-package uw.mydb.sqlparser;
+package uw.mydb.sqlparse;
 
+import org.apache.commons.lang3.builder.ToStringBuilder;
+import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.packet.CommandPacket;
 import uw.mydb.protocol.packet.MySqlPacket;
-import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.vo.DataTable;
-import uw.mydb.vo.TableConfig;
+
+import java.util.List;
 
 /**
  * SQL解析路由结果。
  *
  * @author axeon
  */
-public class SqlParseResult{
+public class SqlParseResult {
 
     private static final org.slf4j.Logger logger = LoggerFactory.getLogger( SqlParseResult.class );
+
+    /**
+     * 原始表。
+     * 当前只存储主表。
+     */
+    protected String sourceTable;
 
     /**
      * 原始的sql语句。
@@ -47,9 +55,34 @@ public class SqlParseResult{
      */
     protected String errorMessage;
 
+    /**
+     * 单一sqlInfo。
+     */
+    protected SqlInfo sqlInfo;
+
+    /**
+     * sqlInfo列表。
+     */
+    protected List<SqlInfo> sqlInfoList;
+
     public SqlParseResult(String sourceDatabase, String sourceSql) {
         this.sourceDatabase = sourceDatabase;
         this.sourceSql = sourceSql;
+    }
+
+    @Override
+    public String toString() {
+        return new ToStringBuilder( this, ToStringStyle.MULTI_LINE_STYLE )
+                .append( "sourceTable", sourceTable )
+                .append( "sourceSql", sourceSql )
+                .append( "sourceDatabase", sourceDatabase )
+                .append( "isDML", isDML )
+                .append( "isMasterQuery", isMasterQuery )
+                .append( "errorCode", errorCode )
+                .append( "errorMessage", errorMessage )
+                .append( "sqlInfo", sqlInfo )
+                .append( "sqlInfoList", sqlInfoList )
+                .toString();
     }
 
     public String getSourceSql() {
@@ -58,6 +91,14 @@ public class SqlParseResult{
 
     public String getSourceDatabase() {
         return sourceDatabase;
+    }
+
+    public String getSourceTable() {
+        return sourceTable;
+    }
+
+    public void setSourceTable(String sourceTable) {
+        this.sourceTable = sourceTable;
     }
 
     public boolean isDML() {
@@ -127,6 +168,21 @@ public class SqlParseResult{
         isMasterQuery = master;
     }
 
+    public SqlInfo getSqlInfo() {
+        return sqlInfo;
+    }
+
+    public void setSqlInfo(SqlInfo sqlInfo) {
+        this.sqlInfo = sqlInfo;
+    }
+
+    public List<SqlInfo> getSqlInfoList() {
+        return sqlInfoList;
+    }
+
+    public void setSqlInfoList(List<SqlInfo> sqlInfoList) {
+        this.sqlInfoList = sqlInfoList;
+    }
 
 
     /**
@@ -134,19 +190,33 @@ public class SqlParseResult{
      */
     public static class SqlInfo {
 
+        private DataTable dataTable;
+
         /**
-         * 关联的DataTable
+         * sql信息。
          */
-        protected DataTable dataTable;
+        private StringBuilder newSqlBuf;
 
         /**
          * 新的sql。
          */
-        protected String sql;
+        private String newSql;
 
-        public SqlInfo(DataTable dataTable, String sql) {
+        public SqlInfo(int sqlSize) {
+            newSqlBuf = new StringBuilder( sqlSize );
+        }
+
+        public SqlInfo(DataTable dataTable, String newSql) {
             this.dataTable = dataTable;
-            this.sql = sql;
+            this.newSql = newSql;
+        }
+
+        @Override
+        public String toString() {
+            return new ToStringBuilder( this, ToStringStyle.MULTI_LINE_STYLE )
+                    .append( "dataTable", dataTable )
+                    .append( "newSql", getNewSql() )
+                    .toString();
         }
 
         public long getClusterId() {
@@ -169,9 +239,17 @@ public class SqlParseResult{
             this.dataTable = dataTable;
         }
 
-        public String getSql() {
+        public String getNewSql() {
+            if (newSql == null) {
+                newSql = newSqlBuf.toString();
+                newSqlBuf = null;
+            }
+            return newSql;
+        }
 
-            return sql;
+        public SqlInfo appendSql(String text) {
+            this.newSqlBuf.append( text );
+            return this;
         }
 
         /**
@@ -182,81 +260,14 @@ public class SqlParseResult{
         public CommandPacket genPacket() {
             CommandPacket packet = new CommandPacket();
             packet.command = MySqlPacket.CMD_QUERY;
-            packet.arg = getSql();
+            packet.arg = getNewSql();
+
             if (logger.isTraceEnabled()) {
-                logger.trace( "MySQL执行: {}", packet.arg );
+                logger.trace( "MySQL执行: {}", getNewSql() );
             }
             return packet;
         }
     }
 
-    /**
-     * 表路由信息。
-     */
-    public static class TableRouteData {
 
-        /**
-         * 表信息。
-         */
-        protected TableConfig tableConfig;
-
-        /**
-         * 表别名。
-         */
-        protected String tableAliasName;
-
-        /**
-         * 路由数据。
-         */
-        protected RouteAlgorithm.RouteData routeData;
-
-        /**
-         * 绑定的路由结果数据。
-         */
-        protected RouteAlgorithm.RouteResult routeResult;
-
-        public TableRouteData(TableConfig tableConfig) {
-            this.tableConfig = tableConfig;
-        }
-
-        public TableRouteData(TableConfig tableConfig, String tableAliasName) {
-            this.tableConfig = tableConfig;
-            this.tableAliasName = tableAliasName;
-        }
-
-        public TableRouteData() {
-        }
-
-        public TableConfig getTableConfig() {
-            return tableConfig;
-        }
-
-        public void setTableConfig(TableConfig tableConfig) {
-            this.tableConfig = tableConfig;
-        }
-
-        public String getTableAliasName() {
-            return tableAliasName;
-        }
-
-        public void setTableAliasName(String tableAliasName) {
-            this.tableAliasName = tableAliasName;
-        }
-
-        public RouteAlgorithm.RouteData getRouteData() {
-            return routeData;
-        }
-
-        public void setRouteData(RouteAlgorithm.RouteData routeData) {
-            this.routeData = routeData;
-        }
-
-        public RouteAlgorithm.RouteResult getRouteResult() {
-            return routeResult;
-        }
-
-        public void setRouteResult(RouteAlgorithm.RouteResult routeResult) {
-            this.routeResult = routeResult;
-        }
-    }
 }

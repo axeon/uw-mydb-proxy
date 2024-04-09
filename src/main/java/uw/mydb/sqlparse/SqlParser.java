@@ -1,4 +1,4 @@
-package uw.mydb.sqlparser;
+package uw.mydb.sqlparse;
 
 
 import org.slf4j.Logger;
@@ -8,9 +8,9 @@ import uw.mydb.protocol.constant.MySqlErrorCode;
 import uw.mydb.proxy.ProxySession;
 import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.route.RouteManager;
-import uw.mydb.sqlparser.parser.HintTypes;
-import uw.mydb.sqlparser.parser.Lexer;
-import uw.mydb.sqlparser.parser.Token;
+import uw.mydb.sqlparse.parser.HintTypes;
+import uw.mydb.sqlparse.parser.Lexer;
+import uw.mydb.sqlparse.parser.Token;
 import uw.mydb.vo.DataNode;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.TableConfig;
@@ -20,7 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static uw.mydb.sqlparser.parser.Token.*;
+import static uw.mydb.sqlparse.parser.Token.*;
 
 /**
  * Sql解析器，根据table sharding设置决定分发mysql。
@@ -61,12 +61,12 @@ public class SqlParser {
     /**
      * 主路由信息，存储表信息和路由结果。
      */
-    private SqlParseResult.TableRouteData tableRouteDataMain;
+    private TableRouteData tableRouteDataMain;
 
     /**
      * 路由信息列表，除了主路由之外的子表路由。
      */
-    private List<SqlParseResult.TableRouteData> tableRouteDataList;
+    private List<TableRouteData> tableRouteDataList;
 
     /**
      * sql解析结果。
@@ -147,7 +147,9 @@ public class SqlParser {
             //计算路由信息。
             calculateAllRouteInfo();
         }
-
+        if (!parseResult.hasError()) {
+            generateSqlInfo();
+        }
         return parseResult;
     }
 
@@ -255,7 +257,7 @@ public class SqlParser {
                 tableName = lexer.stringVal();
                 lexer.nextToken();
             }
-            putTableRouteData( tableName, null );
+            putTableRouteData( database, tableName, null );
         }
     }
 
@@ -273,24 +275,30 @@ public class SqlParser {
         lexer.nextToken();
         //解析表名
         parseTableName( lexer );
-        //原计划在这做优化，可能导致子查询不能重写
-        if (!routeData.checkKeyExists()) {
+        //此处做优化，如果没有匹配表，则直接返回。
+        if (!checkExistsRouteData()) {
             lexer.skipToEOF();
             splitSubSql( lexer );
             return;
         }
-        //如果有routeData匹配，采取匹配routeKeyData
         //此时走values的路
         if (lexer.token() == Token.LPAREN) {
             int pos = 0;
             while (!lexer.isEOF()) {
                 lexer.nextToken();
                 if (lexer.token() == Token.IDENTIFIER) {
+                    String tableName = null;
                     String colName = lexer.stringVal();
-                    RouteAlgorithm.RouteValue routeValue = routeData.getValue( colName );
-                    //设置pos位置
+                    lexer.nextToken();
+                    if (lexer.token() == Token.DOT) {
+                        lexer.nextToken();
+                        tableName = colName;
+                        colName = lexer.stringVal();
+                    }
+                    RouteAlgorithm.RouteValue routeValue = findRouteValue( tableName, colName );
+                    //此处利用routeValueType字段设置pos位置，后期还要用guessType设置回去的。
                     if (routeValue != null) {
-                        routeValue.setType( pos + 100 );
+                        routeValue.setType( pos + 1000 );
                     }
                 } else if (lexer.token() == Token.COMMA) {
                     pos++;
@@ -312,17 +320,17 @@ public class SqlParser {
                     //可以直接退了
                     break;
                 } else {
-                    if (routeData.isSingle()) {
-                        RouteAlgorithm.RouteValue rkv = routeData.getValue();
-                        if (rkv.getType() == pos + 100) {
+                    if (tableRouteDataMain.routeData.isSingle()) {
+                        RouteAlgorithm.RouteValue rkv = tableRouteDataMain.routeData.getValue();
+                        if (rkv.getType() == pos + 1000) {
                             rkv.putValue( lexer.paramValueString() );
                             //匹配完了，直接退
                             break;
                         }
                     } else {
-                        RouteAlgorithm.RouteValue[] rkvs = routeData.getValues();
+                        RouteAlgorithm.RouteValue[] rkvs = tableRouteDataMain.routeData.getValues();
                         for (RouteAlgorithm.RouteValue rkv : rkvs) {
-                            if (rkv.getType() == pos + 100) {
+                            if (rkv.getType() == pos + 1000) {
                                 rkv.putValue( lexer.paramValueString() );
                                 break;
                             }
@@ -387,17 +395,17 @@ public class SqlParser {
             switch (lexer.token()) {
                 case IDENTIFIER:
                     //属性值的情况，检查匹配。
+                    String tableName = null;
                     String colName = lexer.stringVal();
                     lexer.nextToken();
                     if (lexer.token() == Token.DOT) {
                         lexer.nextToken();
-                    }
-                    if (lexer.token() == Token.IDENTIFIER) {
+                        tableName = colName;
                         colName = lexer.stringVal();
                         lexer.nextToken();
                     }
-                    RouteAlgorithm.RouteValue routeValue = routeData.getValue( colName );
-                    if (routeValue != null) {
+                    RouteAlgorithm.RouteValue routeValue = findRouteValue( tableName, colName );
+                    if (routeValue != null && !routeValue.isEmpty()) {
                         //判断操作符，取参数。
                         switch (lexer.token()) {
                             case EQ:
@@ -422,6 +430,15 @@ public class SqlParser {
                                     break;
                                 }
                                 routeValue.putRangeEnd( lexer.paramValueString() );
+                                break;
+                            case BETWEEN:
+                                lexer.nextToken();
+                                routeValue.putRangeStart( lexer.paramValueString() );
+                                lexer.nextToken();
+                                if (lexer.token() == AND) {
+                                    lexer.nextToken();
+                                    routeValue.putRangeEnd( lexer.paramValueString() );
+                                }
                                 break;
                             case BANGEQ:
                                 lexer.nextToken();
@@ -465,10 +482,7 @@ public class SqlParser {
                     //不管了，让他过
                     break;
             }
-            //判断如果都满足了，直接结束。
-//            if (!routeKeyData.isEmptyValue()) {
-//                break;
-//            }
+
         }
 
     }
@@ -505,7 +519,7 @@ public class SqlParser {
                         aliasName = lexer.stringVal();
                     }
                     //注册表到routeData
-                    putTableRouteData( tableName, aliasName );
+                    putTableRouteData( database, tableName, aliasName );
                     lexer.skipTo( Token.SET, Token.WHERE, Token.JOIN, Token.COMMA );
                     break;
                 case JOIN:
@@ -532,7 +546,7 @@ public class SqlParser {
                         aliasJoin = lexer.stringVal();
                     }
 
-                    putTableRouteData( tableJoin, aliasJoin );
+                    putTableRouteData( databaseJoin, tableJoin, aliasJoin );
                     //其他的就跳走吧，不管了。
                     lexer.skipTo( Token.SET, Token.WHERE, Token.JOIN, Token.COMMA );
                     break;
@@ -578,16 +592,16 @@ public class SqlParser {
      * @param tableName
      * @return
      */
-    private SqlParseResult.TableRouteData getRouteData(String tableName) {
+    private RouteAlgorithm.RouteData findRouteData(String tableName) {
         if (tableRouteDataMain != null) {
-            if (tableName.equals( tableRouteDataMain.tableConfig.getTableName()) || tableName.equals( tableRouteDataMain.getTableAliasName())) {
-                return tableRouteDataMain;
+            if (tableName.equals( tableRouteDataMain.tableConfig.getTableName() ) || tableName.equals( tableRouteDataMain.getTableAliasName() )) {
+                return tableRouteDataMain.routeData;
             }
         }
         if (tableRouteDataList != null) {
-            for (SqlParseResult.TableRouteData tableRouteData : tableRouteDataList) {
-                if (tableName.equals(tableRouteData.tableConfig.getTableName()) || tableName.equals( tableRouteData.getTableAliasName())) {
-                    return tableRouteData;
+            for (TableRouteData tableRouteData : tableRouteDataList) {
+                if (tableName.equals( tableRouteData.tableConfig.getTableName() ) || tableName.equals( tableRouteData.getTableAliasName() )) {
+                    return tableRouteData.routeData;
                 }
             }
         }
@@ -595,26 +609,55 @@ public class SqlParser {
     }
 
     /**
-     * 防止RouteData信息。
+     * 检查是否匹配到路由数据。
+     *
+     * @return
      */
-    private void putTableRouteData(String tableName, String aliasName) {
-        SqlParseResult.TableRouteData tableRouteData = getRouteData( tableName );
-        if (tableRouteData == null) {
-            //从配置中拉取table配置
-            TableConfig tableConfig = MydbConfigService.getTableConfig( tableName );
-            //如果没有配置的，直接返回吧。
-            if (tableConfig == null) {
-                return;
+    private boolean checkExistsRouteData() {
+        return tableRouteDataMain != null && tableRouteDataMain.routeData != null;
+    }
+
+    /**
+     * 查找RouteValue。
+     *
+     * @param tableName
+     * @param routeKey
+     * @return
+     */
+    private RouteAlgorithm.RouteValue findRouteValue(String tableName, String routeKey) {
+        RouteAlgorithm.RouteData routeData = tableRouteDataMain.routeData;
+        if (tableName != null) {
+            routeData = findRouteData( tableName );
+        }
+        if (routeData != null) {
+            if (routeData.isSingle()) {
+                return routeData.getValue();
+            } else {
+                return routeData.getValue( routeKey );
             }
-            tableRouteData = new SqlParseResult.TableRouteData( tableConfig, aliasName );
-            //如果有route信息的，拉一下routeKeyData。
-            if (tableConfig.getRouteId() > 0) {
-                tableRouteData.setRouteData( RouteManager.initRouteData( tableConfig ) );
-            }
+        }
+        return null;
+    }
+
+    /**
+     * 放置RouteData信息。
+     */
+    private void putTableRouteData(String database, String tableName, String aliasName) {
+        //从配置中拉取table配置
+        TableConfig tableConfig = MydbConfigService.getTableConfig( tableName );
+        //如果没有配置的，直接返回吧。
+        if (tableConfig == null) {
+            tableConfig = new TableConfig( tableName, MydbConfigService.getBaseClusterId(), database );
+        }
+        TableRouteData tableRouteData = new TableRouteData( tableConfig, aliasName );
+        //如果有route信息的，拉一下routeKeyData。
+        if (tableConfig.getRouteId() > 0) {
+            tableRouteData.setRouteData( RouteManager.initRouteData( tableConfig ) );
         }
         //优先放mainRouteData
         if (this.tableRouteDataMain == null) {
             this.tableRouteDataMain = tableRouteData;
+            this.parseResult.setSourceTable( tableName );
         } else {
             if (this.tableRouteDataList == null) {
                 this.tableRouteDataList = new ArrayList<>();
@@ -622,6 +665,7 @@ public class SqlParser {
             tableRouteDataList.add( tableRouteData );
         }
     }
+
 
     /**
      * 计算路由。
@@ -667,12 +711,14 @@ public class SqlParser {
             routeInfoData.setAll( routeInfos );
             tableRouteDataMain.routeResult = routeInfoData;
         } else {
-            //计算主表路由数据
-            calculateTableRouteInfo( tableRouteDataMain );
-            //匹配从表路由信息
-            if (tableRouteDataList != null) {
-                for (SqlParseResult.TableRouteData tableRouteData : tableRouteDataList) {
-                    calculateTableRouteInfo( tableRouteData );
+            if (tableRouteDataMain != null) {
+                //计算主表路由数据
+                calculateTableRouteInfo( tableRouteDataMain );
+                //匹配从表路由信息
+                if (tableRouteDataList != null) {
+                    for (TableRouteData tableRouteData : tableRouteDataList) {
+                        calculateTableRouteInfo( tableRouteData );
+                    }
                 }
             }
         }
@@ -683,8 +729,8 @@ public class SqlParser {
      *
      * @param tableRouteData
      */
-    private void calculateTableRouteInfo(SqlParseResult.TableRouteData tableRouteData) {
-        if (tableRouteData == null || tableRouteData.routeResult == null) {
+    private void calculateTableRouteInfo(TableRouteData tableRouteData) {
+        if (tableRouteData.routeData == null) {
             //这种情况一般是完全无法匹配的，生成sql的时候直接给默认schema。
             return;
         }
@@ -692,7 +738,7 @@ public class SqlParser {
         if (tableRouteData.tableConfig.getRouteId() > 0) {
             //如果Table是有Route数值的
             try {
-                tableRouteData.routeResult = RouteManager.calculate( tableRouteData.tableConfig, routeData );
+                tableRouteData.routeResult = RouteManager.calculate( tableRouteData.tableConfig, tableRouteDataMain.routeData );
             } catch (Throwable e) {
                 this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
                 log.warn( "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
@@ -700,4 +746,200 @@ public class SqlParser {
         }
     }
 
+    /**
+     * 整体结果是否为单一路由？
+     *
+     * @return
+     */
+    private boolean checkSingleRoute() {
+        boolean isSingle = tableRouteDataMain.isSingleRoute();
+        if (tableRouteDataList != null) {
+            for (TableRouteData tableRouteData : tableRouteDataList) {
+                isSingle = isSingle && tableRouteData.isSingleRoute();
+            }
+        }
+        return isSingle;
+    }
+
+    /**
+     * 根据路由情况，分批合并sql。
+     */
+    private void generateSqlInfo() {
+        //没有匹配到表名，直接给默认schema了。
+        if (subSqlList.size() <= 1 || tableRouteDataMain== null) {
+            this.parseResult.setSqlInfo( new SqlParseResult.SqlInfo( DataTable.newDataWithClusterId( MydbConfigService.getBaseClusterId() ),parseResult.sourceSql ) );
+            return;
+        }
+        //每个mainRouteInfoData对应一个mysqlGroup
+        if (checkSingleRoute()) {
+            SqlParseResult.SqlInfo sqlInfo = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 64 );
+            //开始循环加表名
+            for (int i = 0; i < subSqlList.size(); i++) {
+                sqlInfo.appendSql( subSqlList.get( i ) );
+                if (i == 0) {
+                    //把主表路由加上。
+                    DataTable dataTable = tableRouteDataMain.getSingleRouteResult();
+                    if (dataTable != null) {
+                        sqlInfo.appendSql( dataTable.genSqlIdentity() );
+                        sqlInfo.setDataTable( dataTable );
+                    }
+                } else if (i < subSqlList.size() - 1) {
+                    //开始处理从表路由。
+                    if (tableRouteDataList != null) {
+                        DataTable dataTable = tableRouteDataList.get( i - 1 ).getSingleRouteResult();
+                        if (dataTable != null) {
+                            sqlInfo.appendSql( dataTable.genSqlIdentity() );
+                        }
+                    }
+                }
+            }
+            this.parseResult.setSqlInfo( sqlInfo );
+        } else {
+            List<SqlParseResult.SqlInfo> sqlInfoList = new ArrayList<>();
+            SqlParseResult.SqlInfo sb = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 64 );
+            sqlInfoList.add( sb );
+            //开始循环加表名
+            for (int i = 0; i < subSqlList.size(); i++) {
+                for (SqlParseResult.SqlInfo sqlInfo : sqlInfoList) {
+                    sqlInfo.appendSql( subSqlList.get( i ) );
+                }
+                if (i == 0) {
+                    //把主表路由加上。
+                    appendRouteInfoData( true, tableRouteDataMain );
+                } else if (i < subSqlList.size() - 1) {
+                    //开始处理从表路由。
+                    if (tableRouteDataList != null) {
+                        appendRouteInfoData( false, tableRouteDataList.get( i - 1 ) );
+                    }
+                }
+            }
+            this.parseResult.sqlInfoList = sqlInfoList;
+        }
+
+    }
+
+    /**
+     * 附加路由信息数据。
+     *
+     * @param tableRouteData
+     */
+    private void appendRouteInfoData(boolean isMain, TableRouteData tableRouteData) {
+        if (tableRouteData.isSingleRoute()) {
+            //匹配单个结果。
+            DataTable dataTable = tableRouteData.getSingleRouteResult();
+            for (SqlParseResult.SqlInfo sqlInfo : this.parseResult.sqlInfoList) {
+                sqlInfo.appendSql( dataTable.genSqlIdentity() );
+                if (isMain) {
+                    sqlInfo.setDataTable( dataTable );
+                }
+            }
+        } else {
+            ArrayList<SqlParseResult.SqlInfo> sqlInfoList = new ArrayList<>();
+            for (DataTable dataTable : tableRouteData.routeResult.getDataTables()) {
+                //此处应该复制多个sql了。。。
+                for (SqlParseResult.SqlInfo sqlInfo : this.parseResult.sqlInfoList) {
+                    SqlParseResult.SqlInfo sqlInfo1 = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 32 );
+                    sqlInfo1.appendSql( sqlInfo.getNewSql() );
+                    sqlInfo1.setDataTable( sqlInfo.getDataTable() );
+                    sqlInfo1.appendSql( dataTable.genSqlIdentity() );
+                    if (isMain) {
+                        sqlInfo1.setDataTable( dataTable );
+                    }
+                    sqlInfoList.add( sqlInfo1 );
+                }
+            }
+            this.parseResult.sqlInfoList = sqlInfoList;
+        }
+    }
+
+    /**
+     * 表路由信息。
+     */
+    public static class TableRouteData {
+
+        /**
+         * 表信息。
+         */
+        protected TableConfig tableConfig;
+
+        /**
+         * 表别名。
+         */
+        protected String tableAliasName;
+
+        /**
+         * 路由数据。
+         */
+        protected RouteAlgorithm.RouteData routeData;
+
+        /**
+         * 绑定的路由结果数据。
+         */
+        protected RouteAlgorithm.RouteResult routeResult;
+
+        public TableRouteData(TableConfig tableConfig) {
+            this.tableConfig = tableConfig;
+        }
+
+        public TableRouteData(TableConfig tableConfig, String tableAliasName) {
+            this.tableConfig = tableConfig;
+            this.tableAliasName = tableAliasName;
+        }
+
+        public TableRouteData() {
+        }
+
+        /**
+         * 是否单一路由。
+         *
+         * @return
+         */
+        public boolean isSingleRoute() {
+            return routeResult == null || routeResult.isSingle();
+        }
+
+        /**
+         * 获得单表路由结果。
+         * 单表路由结果很有可能没有经过计算的。
+         */
+        public DataTable getSingleRouteResult() {
+            if (routeResult == null) {
+                return tableConfig.genDataTable();
+            } else {
+                return routeResult.getDataTable();
+            }
+        }
+
+        public TableConfig getTableConfig() {
+            return tableConfig;
+        }
+
+        public void setTableConfig(TableConfig tableConfig) {
+            this.tableConfig = tableConfig;
+        }
+
+        public String getTableAliasName() {
+            return tableAliasName;
+        }
+
+        public void setTableAliasName(String tableAliasName) {
+            this.tableAliasName = tableAliasName;
+        }
+
+        public RouteAlgorithm.RouteData getRouteData() {
+            return routeData;
+        }
+
+        public void setRouteData(RouteAlgorithm.RouteData routeData) {
+            this.routeData = routeData;
+        }
+
+        public RouteAlgorithm.RouteResult getRouteResult() {
+            return routeResult;
+        }
+
+        public void setRouteResult(RouteAlgorithm.RouteResult routeResult) {
+            this.routeResult = routeResult;
+        }
+    }
 }

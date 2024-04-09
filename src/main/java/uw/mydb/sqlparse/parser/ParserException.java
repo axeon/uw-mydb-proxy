@@ -1,4 +1,4 @@
-package uw.mydb.sqlparser.parser;
+package uw.mydb.sqlparse.parser;
 
 import java.io.Serializable;
 

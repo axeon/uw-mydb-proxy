@@ -160,6 +160,19 @@ public abstract class RouteAlgorithm {
         }
 
         /**
+         * 是否完全是空值。
+         *
+         * @return
+         */
+        public boolean isEmptyValue() {
+            if (value==null||value.isEmpty()||value1==null||value2.isEmpty()||value2==null||value2.isEmpty()){
+                return true;
+            }else{
+                return false;
+            }
+        }
+
+        /**
          * 返回key列表。
          *
          * @return
@@ -176,24 +189,6 @@ public abstract class RouteAlgorithm {
                 sb.append( ',' ).append( key2 );
             }
             return sb.toString();
-        }
-
-        /**
-         * 有空数值，返回true。
-         *
-         * @return
-         */
-        public boolean isEmptyValue() {
-            if (value != null) {
-                return value.isEmpty();
-            }
-            if (value1 != null) {
-                return value1.isEmpty();
-            }
-            if (value2 != null) {
-                return value2.isEmpty();
-            }
-            return false;
         }
 
         /**

@@ -1,7 +1,7 @@
-package uw.mydb.sqlparser.parser;
+package uw.mydb.sqlparse.parser;
 
 
-import static uw.mydb.sqlparser.parser.LayoutCharacters.EOI;
+import static uw.mydb.sqlparse.parser.LayoutCharacters.EOI;
 
 /**
  * 字符类型，基于druid的修改版本。

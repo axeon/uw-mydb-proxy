@@ -10,7 +10,7 @@ import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.ErrorPacket;
 import uw.mydb.protocol.packet.OkPacket;
-import uw.mydb.sqlparser.SqlParseResult;
+import uw.mydb.sqlparse.SqlParseResult;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

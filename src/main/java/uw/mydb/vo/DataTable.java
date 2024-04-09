@@ -1,7 +1,7 @@
 package uw.mydb.vo;
 
 
-import java.util.*;
+import java.util.Objects;
 
 /**
  * 数据表。
@@ -23,6 +23,17 @@ public class DataTable {
         this.dataNode = dataNode;
         this.table = table;
     }
+
+    /**
+     * 只有表名的新实例。
+     *
+     * @param clusterId
+     * @return
+     */
+    public static DataTable newDataWithClusterId(long clusterId) {
+        return new DataTable( new DataNode( clusterId, null ), null );
+    }
+
 
     /**
      * 只有表名的新实例。
@@ -73,6 +84,19 @@ public class DataTable {
     @Override
     public String toString() {
         return new StringBuilder().append( dataNode.getClusterId() ).append( '.' ).append( dataNode.getDatabase() ).append( '.' ).append( table ).toString();
+    }
+
+    /**
+     * 生成sql标识符。
+     *
+     * @return
+     */
+    public String genSqlIdentity() {
+        if (dataNode.getDatabase() == null) {
+            return table;
+        } else {
+            return dataNode.getDatabase() + '.' + table;
+        }
     }
 
     public DataNode getDataNode() {

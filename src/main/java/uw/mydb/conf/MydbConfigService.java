@@ -37,6 +37,11 @@ public class MydbConfigService {
      */
     private static RestTemplate restTemplate;
 
+    /**
+     * 基础集群ID。
+     */
+    private static long baseClusterId;
+
     protected MydbConfigService(MydbProperties taskProperties, RestTemplate restTemplate) {
         MydbConfigService.mydbProperties = taskProperties;
         MydbConfigService.restTemplate = restTemplate;
@@ -72,7 +77,8 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
-                MysqlClusterConfig clusterConfig =  restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                MysqlClusterConfig clusterConfig =
+                        restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
                 clusterConfig.initServerWeightList();
                 return clusterConfig;
             }
@@ -95,8 +101,8 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, DataNode[]>() {
             @Override
             public DataNode[] load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key
-                        , DataNode[].class );
+                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key,
+                        DataNode[].class );
             }
         } );
     }
@@ -118,6 +124,7 @@ public class MydbConfigService {
         return true;
     }
 
+
     /**
      * 获得mydb配置文件。
      *
@@ -134,6 +141,20 @@ public class MydbConfigService {
      */
     public static MydbProxyConfig getProxyConfig() {
         return FusionCache.get( MydbProxyConfig.class, mydbProperties.getConfigKey() );
+    }
+
+    /**
+     * 获得基础集群ID.
+     * @return
+     */
+    public static long getBaseClusterId() {
+        if (baseClusterId == 0) {
+            MydbProxyConfig proxyConfig = getProxyConfig();
+            if (proxyConfig != null) {
+                baseClusterId = proxyConfig.getBaseCluster();
+            }
+        }
+        return baseClusterId;
     }
 
     /**

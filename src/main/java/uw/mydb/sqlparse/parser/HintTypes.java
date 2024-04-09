@@ -1,4 +1,4 @@
-package uw.mydb.sqlparser.parser;
+package uw.mydb.sqlparse.parser;
 
 /**
  * HINT类型，基于druid的修改版本。

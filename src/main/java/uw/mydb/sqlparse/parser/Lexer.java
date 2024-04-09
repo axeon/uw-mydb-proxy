@@ -1,12 +1,12 @@
-package uw.mydb.sqlparser.parser;
+package uw.mydb.sqlparse.parser;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static uw.mydb.sqlparser.parser.CharTypes.*;
-import static uw.mydb.sqlparser.parser.LayoutCharacters.EOI;
-import static uw.mydb.sqlparser.parser.Token.*;
+import static uw.mydb.sqlparse.parser.CharTypes.*;
+import static uw.mydb.sqlparse.parser.LayoutCharacters.EOI;
+import static uw.mydb.sqlparse.parser.Token.*;
 
 /**
  * 来源于druid的sql解析器，在此基础上进行了修改，保留原有授权信息和作者信息。

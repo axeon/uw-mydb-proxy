@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.packet.*;
-import uw.mydb.sqlparser.SqlParseResult;
+import uw.mydb.sqlparse.SqlParseResult;
 import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
