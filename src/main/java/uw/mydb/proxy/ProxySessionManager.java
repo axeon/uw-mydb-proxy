@@ -9,7 +9,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ProxySessionManager {
 
-    private static ConcurrentHashMap<String, ProxySession> map = new ConcurrentHashMap();
+    /**
+     * key是用户ip端口。
+     */
+    private static ConcurrentHashMap<String, ProxySession> sessionMap = new ConcurrentHashMap();
 
     /**
      * 获得在线计数。
@@ -17,7 +20,7 @@ public class ProxySessionManager {
      * @return
      */
     public static int getCount() {
-        return map.size();
+        return sessionMap.size();
     }
 
     /**
@@ -25,8 +28,8 @@ public class ProxySessionManager {
      *
      * @return
      */
-    public static ConcurrentHashMap<String, ProxySession> getMap() {
-        return map;
+    public static ConcurrentHashMap<String, ProxySession> getSessionMap() {
+        return sessionMap;
     }
 
     /**
@@ -36,7 +39,7 @@ public class ProxySessionManager {
      * @param session
      */
     public static void put(String key, ProxySession session) {
-        map.put(key, session);
+        sessionMap.put(key, session);
     }
 
     /**
@@ -45,6 +48,6 @@ public class ProxySessionManager {
      * @param key
      */
     public static void remove(String key) {
-        map.remove(key);
+        sessionMap.remove(key);
     }
 }

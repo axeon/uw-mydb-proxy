@@ -42,7 +42,7 @@ public class ProxyRunInfo {
      * @return
      */
     public Map<String, Long> getConnectionMap() {
-        return ProxySessionManager.getMap().values().stream().map( ProxySession::getHost).collect(Collectors.groupingBy(Function.identity(), counting()));
+        return ProxySessionManager.getSessionMap().values().stream().map( ProxySession::getHost).collect(Collectors.groupingBy(Function.identity(), counting()));
     }
 
 }
