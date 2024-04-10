@@ -7,8 +7,6 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.pool.AbstractChannelPoolMap;
-import io.netty.channel.pool.ChannelPoolMap;
-import io.netty.channel.pool.FixedChannelPool;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
@@ -20,6 +18,11 @@ import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 
 /**
@@ -34,12 +37,17 @@ public class MySqlClient {
     /**
      * poolMap。
      */
-    public static ChannelPoolMap<MysqlServerConfig, FixedChannelPool> poolMap;
+    public static AbstractChannelPoolMap<MysqlServerConfig, MySqlPool> channelPoolMap;
 
     /**
      * acceptor线程。
      */
     private static EventLoopGroup eventLoopGroup = null;
+
+    /**
+     * 后台调度任务。
+     */
+    private static ScheduledExecutorService scheduledExecutorService;
 
     public static void main(String[] args) throws InterruptedException {
         MySqlClient.start();
@@ -94,7 +102,7 @@ public class MySqlClient {
             return null;
         }
         MysqlServerConfig mysqlServerConfig = clusterConfig.fetchServerConfig( isMaster );
-        FixedChannelPool channelPool = poolMap.get( mysqlServerConfig );
+        MySqlPool channelPool = channelPoolMap.get( mysqlServerConfig );
         Future<Channel> channelFuture = channelPool.acquire();
         MySqlSession mySqlSession = null;
         try {
@@ -114,12 +122,35 @@ public class MySqlClient {
         eventLoopGroup = new NioEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "mysql-event-%d" ).build() );
         Bootstrap bootstrap = new Bootstrap();
         bootstrap.group( eventLoopGroup ).channel( NioSocketChannel.class ).option( ChannelOption.CONNECT_TIMEOUT_MILLIS, 10000 ).option( ChannelOption.TCP_NODELAY, true );
-        poolMap = new AbstractChannelPoolMap<>() {
+        channelPoolMap = new AbstractChannelPoolMap<>() {
             @Override
-            protected FixedChannelPool newPool(MysqlServerConfig mysqlServerConfig) {
-                return new FixedChannelPool( bootstrap.remoteAddress( mysqlServerConfig.getHost(), mysqlServerConfig.getPort() ), new MysqlPoolHandler( mysqlServerConfig ), 1000 );
+            protected MySqlPool newPool(MysqlServerConfig mysqlServerConfig) {
+                return new MySqlPool( bootstrap.remoteAddress( mysqlServerConfig.getHost(), mysqlServerConfig.getPort() ).clone(), new MysqlPoolHandler( mysqlServerConfig ),
+                        mysqlServerConfig.getConnMin(), mysqlServerConfig.getConnMax(), mysqlServerConfig.getConnIdleTimeout() * 1000L,
+                        mysqlServerConfig.getConnBusyTimeout() * 1000L, mysqlServerConfig.getConnMaxAge() * 1000L );
             }
         };
+        //设置后台调度任务。
+        scheduledExecutorService = Executors.newScheduledThreadPool( 1, r -> {
+            Thread thread = new Thread( r );
+            thread.setName( "mysql-housekeeping-task" );
+            thread.setDaemon( true );
+            return thread;
+        } );
+        //连接池维护。
+        scheduledExecutorService.scheduleAtFixedRate( () -> {
+            if (channelPoolMap != null) {
+                Iterator<Map.Entry<MysqlServerConfig, MySqlPool>> iterator = channelPoolMap.iterator();
+                while (iterator.hasNext()) {
+                    Map.Entry<MysqlServerConfig, MySqlPool> kv = iterator.next();
+                    MysqlServerConfig config = kv.getKey();
+                    MySqlPool pool = kv.getValue();
+                    if (logger.isDebugEnabled()) {
+                        logger.debug( "MySql[{}]Pool run housekeeping...current idleConn[{}],busyConn[{}]", config.toString(), pool.getIdleConnNum(), pool.getBusyConnNum() );
+                    }
+                }
+            }
+        }, 60, 60, TimeUnit.SECONDS );
         logger.info( "MySqlClient started!" );
     }
 
@@ -127,9 +158,13 @@ public class MySqlClient {
      * 关闭服务器。
      */
     public static void stop() {
+        scheduledExecutorService.shutdownNow();
+
         if (eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully();
         }
+
         logger.info( "MySqlClient stopped!" );
     }
+
 }

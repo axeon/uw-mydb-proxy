@@ -5,7 +5,6 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.pool.FixedChannelPool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.constant.MySQLCapability;
@@ -89,7 +88,7 @@ public class MySqlSession {
     /**
      * channel pool。
      */
-    private FixedChannelPool channelPool = null;
+    private MySqlPool channelPool = null;
 
     /**
      * 对应的channel。
@@ -209,7 +208,7 @@ public class MySqlSession {
      *
      * @param channelPool
      */
-    protected void bindChannelPool(FixedChannelPool channelPool) {
+    protected void bindChannelPool(MySqlPool channelPool) {
         this.channelPool = channelPool;
     }
 
@@ -469,6 +468,22 @@ public class MySqlSession {
         if (this.sessionStatus == SESSION_NORMAL) {
             this.sessionStatus = SESSION_USING;
         }
+    }
+
+    /**
+     * 获得创建时间。
+     * @return
+     */
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * 获得最后访问时间。
+     * @return
+     */
+    public long getLastAccess() {
+        return lastAccess;
     }
 
     /**

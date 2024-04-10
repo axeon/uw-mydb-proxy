@@ -1,4 +1,4 @@
-package uw.mydb.mysql.pool;
+package uw.mydb.mysql;
 
 import io.netty.bootstrap.Bootstrap;
 import io.netty.channel.*;
@@ -10,24 +10,36 @@ import io.netty.util.concurrent.Future;
 import io.netty.util.concurrent.FutureListener;
 import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.Promise;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import uw.mydb.util.SystemClock;
 
 import java.util.Deque;
+import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 
 import static io.netty.util.internal.ObjectUtil.checkNotNull;
+import static uw.mydb.mysql.MySqlHandler.MYSQL_SESSION;
 
 /**
  * 一个弹性的channel pool。
  * 可以提供针对最小连接数，最大连接数，空闲时间，最忙时间，最大寿命等条件限制。
  */
-public class ElasticChannelPool implements ChannelPool {
-    private static final AttributeKey<ElasticChannelPool> POOL_KEY = AttributeKey.newInstance( "uw.mydb.mysql.pool.ElasticChannelPool" );
+public class MySqlPool implements ChannelPool {
+    private static final Logger log = LoggerFactory.getLogger( MySqlPool.class );
+    private static final AttributeKey<MySqlPool> POOL_KEY = AttributeKey.newInstance( "uw.mydb.mysql.pool.ElasticChannelPool" );
 
     /**
-     * 连接池。
+     * 空闲连接池。
      */
-    private final Deque<Channel> deque = new ConcurrentLinkedDeque();
+    private final Deque<Channel> idleDeque = new ConcurrentLinkedDeque();
+
+    /**
+     * 在用channelSet。
+     */
+    private final Set<Channel> busySet = ConcurrentHashMap.newKeySet();
 
     /**
      * ChannelPoolHandler
@@ -50,11 +62,6 @@ public class ElasticChannelPool implements ChannelPool {
     private final boolean releaseHealthCheck;
 
     /**
-     * 是否使用LRU算法获取连接。
-     */
-    private final boolean lastRecentUsed;
-
-    /**
      * 最小连接数
      */
     private int connMin = 1;
@@ -67,36 +74,31 @@ public class ElasticChannelPool implements ChannelPool {
     /**
      * 连接闲时超时秒数.
      */
-    private int connIdleTimeout = 180;
+    private long connIdleTimeoutMillis = 600_000L;
 
     /**
      * 连接忙时超时秒数.
      */
-    private int connBusyTimeout = 180;
+    private long connBusyTimeoutMillis = 3600_000L;
 
     /**
      * 连接最大寿命秒数.
      */
-    private int connMaxAge = 1800;
+    private long connMaxAgeMillis = 36000_000L;
 
     /**
      * 创建一个实例。
      *
-     * @param bootstrap          the {@link Bootstrap} that is used for connections
-     * @param handler            the {@link ChannelPoolHandler} that will be notified for the different pool actions
-     * @param healthCheck        the {@link ChannelHealthChecker} that will be used to check if a {@link Channel} is
-     *                           still healthy when obtain from the {@link ChannelPool}
-     * @param releaseHealthCheck will check channel health before offering back if this parameter set to {@code true};
-     *                           otherwise, channel health is only checked at acquisition time
-     * @param lastRecentUsed     {@code true} {@link Channel} selection will be LIFO, if {@code false} FIFO.
+     * @param bootstrap the {@link Bootstrap} that is used for connections
+     * @param handler   the {@link ChannelPoolHandler} that will be notified for the different pool actions
+     *                  still healthy when obtain from the {@link ChannelPool}
      */
-    public ElasticChannelPool(ChannelPoolHandler handler, ChannelHealthChecker healthCheck, Bootstrap bootstrap, boolean releaseHealthCheck, boolean lastRecentUsed, boolean lastRecentUsed1, int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
+    public MySqlPool(Bootstrap bootstrap, ChannelPoolHandler handler, int connMin, int connMax, long connIdleTimeoutMillis, long connBusyTimeoutMillis, long connMaxAgeMillis) {
         this.handler = checkNotNull( handler, "handler" );
-        this.healthCheck = checkNotNull( healthCheck, "healthCheck" );
-        this.releaseHealthCheck = releaseHealthCheck;
+        this.healthCheck = ChannelHealthChecker.ACTIVE;
+        this.releaseHealthCheck = true;
         // Clone the original Bootstrap as we want to set our own handler
         this.bootstrap = checkNotNull( bootstrap, "bootstrap" ).clone();
-        this.lastRecentUsed = lastRecentUsed1;
         this.bootstrap.handler( new ChannelInitializer<Channel>() {
             @Override
             protected void initChannel(Channel ch) throws Exception {
@@ -104,11 +106,49 @@ public class ElasticChannelPool implements ChannelPool {
                 handler.channelCreated( ch );
             }
         } );
-        this.connMin = connMin;
-        this.connMax = connMax;
-        this.connIdleTimeout = connIdleTimeout;
-        this.connBusyTimeout = connBusyTimeout;
-        this.connMaxAge = connMaxAge;
+        if (connMin > 0) {
+            this.connMin = connMin;
+        }
+        if (connMax > 0) {
+            this.connMax = connMax;
+        }
+        if (connIdleTimeoutMillis > 0) {
+            this.connIdleTimeoutMillis = connIdleTimeoutMillis;
+        }
+        if (connBusyTimeoutMillis > 0) {
+            this.connBusyTimeoutMillis = connBusyTimeoutMillis;
+        }
+        if (connMaxAgeMillis > 0) {
+            this.connMaxAgeMillis = connMaxAgeMillis;
+        }
+    }
+
+    public int getConnMin() {
+        return connMin;
+    }
+
+    public int getConnMax() {
+        return connMax;
+    }
+
+    public long getConnIdleTimeoutMillis() {
+        return connIdleTimeoutMillis;
+    }
+
+    public long getConnBusyTimeoutMillis() {
+        return connBusyTimeoutMillis;
+    }
+
+    public long getConnMaxAgeMillis() {
+        return connMaxAgeMillis;
+    }
+
+    public int getIdleConnNum() {
+        return idleDeque.size();
+    }
+
+    public int getBusyConnNum() {
+        return busySet.size();
     }
 
     @Override
@@ -123,6 +163,8 @@ public class ElasticChannelPool implements ChannelPool {
 
     @Override
     public final Future<Void> release(Channel channel) {
+        //必须在这里移除掉，避免因为健康检测无法正确移除。
+        busySet.remove( channel );
         return release( channel, channel.eventLoop().<Void>newPromise() );
     }
 
@@ -174,6 +216,85 @@ public class ElasticChannelPool implements ChannelPool {
                 return null;
             }
         } );
+    }
+
+    /**
+     * 连接池维护。
+     */
+    protected void houseKeeping() {
+        //先检查idleDeque。
+        for (; ; ) {
+            Channel channel = idleDeque.pollFirst();
+            if (channel == null) {
+                break;
+            }
+            //如果超出了最小连接数数值，则进行检查。
+            MySqlSession session = channel.attr( MYSQL_SESSION ).get();
+            boolean readyClose = false;
+            if (session != null) {
+                long now = SystemClock.now();
+                if (idleDeque.size() > connMin) {
+                    if ((now - session.getLastAccess()) > connIdleTimeoutMillis) {
+                        if (log.isDebugEnabled()) {
+                            log.debug( "Channel[{}] will be closed because reach idle timeout[{}]!", channel, connBusyTimeoutMillis );
+                        }
+                        //准备释放链接吧。
+                        readyClose = true;
+                    }
+                }
+                if ((now - session.getCreateTime()) > connMaxAgeMillis) {
+                    if (log.isDebugEnabled()) {
+                        log.debug( "Channel[{}] will be closed because reach max age[{}]!", channel, connBusyTimeoutMillis );
+                    }
+                    //准备释放链接吧。
+                    readyClose = true;
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug( "Channel[{}] will be closed because lost session info!", channel );
+                }
+                //异常channel，也准备关闭吧。
+                readyClose = true;
+            }
+            if (readyClose) {
+                try {
+                    closeChannel( channel );
+                } catch (Exception e) {
+                    log.error( e.getMessage(), e );
+                }
+            } else {
+                idleDeque.offer( channel );
+            }
+        }
+        //再检查busySet。
+        for (Channel channel : busySet) {
+            MySqlSession session = channel.attr( MYSQL_SESSION ).get();
+            boolean readyClose = false;
+            if (session != null) {
+                long now = SystemClock.now();
+                if ((now - session.getLastAccess()) > connBusyTimeoutMillis) {
+                    if (log.isDebugEnabled()) {
+                        log.debug( "Channel[{}] will be closed because reach busy timeout[{}]!", channel, connBusyTimeoutMillis );
+                    }
+                    //准备释放链接吧。
+                    readyClose = true;
+                }
+            } else {
+                if (log.isDebugEnabled()) {
+                    log.debug( "Channel[{}] will be closed because lost session info!", channel );
+                }
+                //异常channel，也准备关闭吧。
+                readyClose = true;
+            }
+            if (readyClose) {
+                try {
+                    closeChannel( channel );
+                } catch (Exception e) {
+                    log.error( e.getMessage(), e );
+                }
+                busySet.remove( channel );
+            }
+        }
     }
 
     /**
@@ -231,7 +352,7 @@ public class ElasticChannelPool implements ChannelPool {
      * implementations of these methods needs to be thread-safe!
      */
     protected Channel pollChannel() {
-        return lastRecentUsed ? deque.pollLast() : deque.pollFirst();
+        return idleDeque.pollFirst();
     }
 
     /**
@@ -242,7 +363,7 @@ public class ElasticChannelPool implements ChannelPool {
      * implementations of these methods needs to be thread-safe!
      */
     protected boolean offerChannel(Channel channel) {
-        return deque.offer( channel );
+        return idleDeque.offer( channel );
     }
 
     /**
@@ -253,34 +374,38 @@ public class ElasticChannelPool implements ChannelPool {
      */
     private Future<Channel> acquireHealthyFromPoolOrNew(final Promise<Channel> promise) {
         try {
-            final Channel ch = pollChannel();
-            if (ch == null) {
-                // No Channel left in the pool bootstrap a new Channel
-                Bootstrap bs = bootstrap.clone();
-                bs.attr( POOL_KEY, this );
-                ChannelFuture f = connectChannel( bs );
-                if (f.isDone()) {
-                    notifyConnect( f, promise );
+            if (busySet.size() < connMax) {
+                final Channel ch = pollChannel();
+                if (ch == null) {
+                    // No Channel left in the pool bootstrap a new Channel
+                    Bootstrap bs = bootstrap.clone();
+                    bs.attr( POOL_KEY, this );
+                    ChannelFuture f = connectChannel( bs );
+                    if (f.isDone()) {
+                        notifyConnect( f, promise );
+                    } else {
+                        f.addListener( new ChannelFutureListener() {
+                            @Override
+                            public void operationComplete(ChannelFuture future) throws Exception {
+                                notifyConnect( future, promise );
+                            }
+                        } );
+                    }
                 } else {
-                    f.addListener( new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture future) throws Exception {
-                            notifyConnect( future, promise );
-                        }
-                    } );
+                    EventLoop loop = ch.eventLoop();
+                    if (loop.inEventLoop()) {
+                        doHealthCheck( ch, promise );
+                    } else {
+                        loop.execute( new Runnable() {
+                            @Override
+                            public void run() {
+                                doHealthCheck( ch, promise );
+                            }
+                        } );
+                    }
                 }
             } else {
-                EventLoop loop = ch.eventLoop();
-                if (loop.inEventLoop()) {
-                    doHealthCheck( ch, promise );
-                } else {
-                    loop.execute( new Runnable() {
-                        @Override
-                        public void run() {
-                            doHealthCheck( ch, promise );
-                        }
-                    } );
-                }
+                throw new IllegalStateException( "Too many outstanding acquire operations, current connMax config only " + connMax + "." );
             }
         } catch (Throwable cause) {
             promise.tryFailure( cause );
@@ -293,6 +418,8 @@ public class ElasticChannelPool implements ChannelPool {
         try {
             if (future.isSuccess()) {
                 channel = future.channel();
+                //此处放入busySet
+                busySet.add( channel );
                 handler.channelAcquired( channel );
                 if (!promise.trySuccess( channel )) {
                     // Promise was completed in the meantime (like cancelled), just release the channel again
@@ -330,6 +457,8 @@ public class ElasticChannelPool implements ChannelPool {
             assert channel.eventLoop().inEventLoop();
             if (future.isSuccess() && future.getNow()) {
                 channel.attr( POOL_KEY ).set( this );
+                //此处放入busySet
+                busySet.add( channel );
                 handler.channelAcquired( channel );
                 promise.setSuccess( channel );
             } else {
@@ -398,6 +527,7 @@ public class ElasticChannelPool implements ChannelPool {
 
     private void releaseAndOffer(Channel channel, Promise<Void> promise) throws Exception {
         if (offerChannel( channel )) {
+            //此处释放计数。
             handler.channelReleased( channel );
             promise.setSuccess( null );
         } else {
