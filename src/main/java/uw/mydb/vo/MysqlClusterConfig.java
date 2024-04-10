@@ -85,6 +85,21 @@ public class MysqlClusterConfig {
         }
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        MysqlClusterConfig that = (MysqlClusterConfig) o;
+
+        return id == that.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return (int) (id ^ (id >>> 32));
+    }
+
     /**
      * 计算服务器权重。
      */

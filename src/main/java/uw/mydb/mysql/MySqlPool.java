@@ -221,7 +221,7 @@ public class MySqlPool implements ChannelPool {
     /**
      * 连接池维护。
      */
-    protected void houseKeeping() {
+    protected void housekeeping() {
         //先检查idleDeque。
         for (; ; ) {
             Channel channel = idleDeque.pollFirst();
@@ -236,7 +236,7 @@ public class MySqlPool implements ChannelPool {
                 if (idleDeque.size() > connMin) {
                     if ((now - session.getLastAccess()) > connIdleTimeoutMillis) {
                         if (log.isDebugEnabled()) {
-                            log.debug( "Channel[{}] will be closed because reach idle timeout[{}]!", channel, connBusyTimeoutMillis );
+                            log.debug( "Channel[{}] will be closed because reach idle timeout[{}]!", channel, connIdleTimeoutMillis );
                         }
                         //准备释放链接吧。
                         readyClose = true;
@@ -244,7 +244,7 @@ public class MySqlPool implements ChannelPool {
                 }
                 if ((now - session.getCreateTime()) > connMaxAgeMillis) {
                     if (log.isDebugEnabled()) {
-                        log.debug( "Channel[{}] will be closed because reach max age[{}]!", channel, connBusyTimeoutMillis );
+                        log.debug( "Channel[{}] will be closed because reach max age[{}]!", channel, connMaxAgeMillis );
                     }
                     //准备释放链接吧。
                     readyClose = true;

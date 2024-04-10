@@ -149,6 +149,7 @@ public class MySqlClient {
                     if (logger.isDebugEnabled()) {
                         logger.debug( "MySql[{}]Pool run housekeeping...current idleConn[{}],busyConn[{}]", config.toString(), pool.getIdleConnNum(), pool.getBusyConnNum() );
                     }
+                    pool.housekeeping();
                 }
             }
         }, 60, 60, TimeUnit.SECONDS );

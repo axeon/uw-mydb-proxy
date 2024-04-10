@@ -6,6 +6,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.util.AttributeKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.protocol.constant.MySqlErrorCode;
 
 /**
  * 处理mysql端的数据交互。
@@ -26,7 +27,7 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         MySqlSession session = ctx.channel().attr( MYSQL_SESSION ).get();
-        if (session!=null) {
+        if (session != null) {
             session.trueClose();
         }
         super.channelInactive( ctx );
@@ -49,7 +50,9 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught( ctx, cause );
         MySqlSession session = ctx.channel().attr( MYSQL_SESSION ).get();
-        if (session!=null) {
+        //发送错误信息。
+        session.failMessage( MySqlErrorCode.ERR_CONN_NOT_ALIVE, cause.getMessage() );
+        if (session != null) {
             session.trueClose();
         }
     }

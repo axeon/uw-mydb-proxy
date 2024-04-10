@@ -471,6 +471,18 @@ public class MySqlSession {
     }
 
     /**
+     * 错误提示。
+     *
+     * @param errorNo
+     * @param info
+     */
+    public void failMessage(int errorNo, String info) {
+        if (sessionCallback != null) {
+            sessionCallback.onFailMessage(errorNo, info);
+        }
+    }
+
+    /**
      * 获得创建时间。
      * @return
      */
