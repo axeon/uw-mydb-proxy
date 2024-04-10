@@ -140,6 +140,7 @@ public class MySqlClient {
         //连接池维护。
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             if (channelPoolMap != null) {
+                logger.debug( "MySqlPool start housekeeping schedule task..." );
                 Iterator<Map.Entry<MysqlServerConfig, MySqlPool>> iterator = channelPoolMap.iterator();
                 while (iterator.hasNext()) {
                     Map.Entry<MysqlServerConfig, MySqlPool> kv = iterator.next();
