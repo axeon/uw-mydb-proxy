@@ -10,15 +10,13 @@ import io.netty.channel.pool.AbstractChannelPoolMap;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
-import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
-import uw.mydb.mysql.task.LocalCmdCallback;
-import uw.mydb.mysql.task.SingleListTask;
 import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -37,7 +35,7 @@ public class MySqlClient {
     /**
      * poolMap。
      */
-    public static AbstractChannelPoolMap<MysqlServerConfig, MySqlPool> channelPoolMap;
+    private static AbstractChannelPoolMap<MysqlServerConfig, MySqlPool> channelPoolMap;
 
     /**
      * acceptor线程。
@@ -49,46 +47,46 @@ public class MySqlClient {
      */
     private static ScheduledExecutorService scheduledExecutorService;
 
-    public static void main(String[] args) throws InterruptedException {
-        MySqlClient.start();
-        //mysql配置缓存 key: mysql clusterId value: mysqlClusterConfig
-        FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
-            @Override
-            public MysqlClusterConfig load(Long key) throws Exception {
-                return null;
-            }
-        }, (key, oldValue, newValue) -> {
-            //此处要重新加载mysqlCluster信息。
-        } );
-        MysqlServerConfig mysqlServerConfig = new MysqlServerConfig();
-        mysqlServerConfig.setHost( "dev.xili.pub" );
-        mysqlServerConfig.setPort( 3308 );
-        mysqlServerConfig.setWeight( 1 );
-        mysqlServerConfig.setUsername( "root" );
-        mysqlServerConfig.setPassword( "mysqlRootPassword" );
-        ArrayList<MysqlServerConfig> serverList = new ArrayList();
-        serverList.add( mysqlServerConfig );
-        MysqlClusterConfig mysqlClusterConfig = new MysqlClusterConfig();
-        mysqlClusterConfig.setId( 1 );
-        mysqlClusterConfig.setServerList( serverList );
-        mysqlClusterConfig.initServerWeightList();
-        FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getId(), mysqlClusterConfig, true );
-        new SingleListTask( 1, new LocalCmdCallback<ArrayList<String>>() {
-            @Override
-            public void onSuccess(ArrayList<String> data) {
-                for (String line : data) {
-                    logger.info( "db:{}", line );
-                }
-            }
-
-            @Override
-            public void onFailure(int errorNo, String message) {
-                logger.error( "errorNo[{}]:{}", errorNo, message );
-            }
-        } ).run( "show databases" );
-//        Thread.sleep( 3000 );
-//        stop();
-    }
+//    public static void main(String[] args) throws InterruptedException {
+//        MySqlClient.start();
+//        //mysql配置缓存 key: mysql clusterId value: mysqlClusterConfig
+//        FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
+//            @Override
+//            public MysqlClusterConfig load(Long key) throws Exception {
+//                return null;
+//            }
+//        }, (key, oldValue, newValue) -> {
+//            //此处要重新加载mysqlCluster信息。
+//        } );
+//        MysqlServerConfig mysqlServerConfig = new MysqlServerConfig();
+//        mysqlServerConfig.setHost( "dev.xili.pub" );
+//        mysqlServerConfig.setPort( 3308 );
+//        mysqlServerConfig.setWeight( 1 );
+//        mysqlServerConfig.setUsername( "root" );
+//        mysqlServerConfig.setPassword( "mysqlRootPassword" );
+//        ArrayList<MysqlServerConfig> serverList = new ArrayList();
+//        serverList.add( mysqlServerConfig );
+//        MysqlClusterConfig mysqlClusterConfig = new MysqlClusterConfig();
+//        mysqlClusterConfig.setId( 1 );
+//        mysqlClusterConfig.setServerList( serverList );
+//        mysqlClusterConfig.initServerWeightList();
+//        FusionCache.put( MysqlClusterConfig.class, mysqlClusterConfig.getId(), mysqlClusterConfig, true );
+//        new SingleListTask( 1, new LocalCmdCallback<ArrayList<String>>() {
+//            @Override
+//            public void onSuccess(ArrayList<String> data) {
+//                for (String line : data) {
+//                    logger.info( "db:{}", line );
+//                }
+//            }
+//
+//            @Override
+//            public void onFailure(int errorNo, String message) {
+//                logger.error( "errorNo[{}]:{}", errorNo, message );
+//            }
+//        } ).run( "show databases" );
+////        Thread.sleep( 3000 );
+////        stop();
+//    }
 
     /**
      * 获得mysql session。
@@ -154,6 +152,24 @@ public class MySqlClient {
             }
         }, 60, 60, TimeUnit.SECONDS );
         logger.info( "MySqlClient started!" );
+    }
+
+    /**
+     * 获得mysql连接列表。
+     * mysqlId,busyConnNum,idleConnNum
+     *
+     * @return
+     */
+    public static List<long[]> getMysqlConnList() {
+        List<long[]> list = new ArrayList<>();
+        Iterator<Map.Entry<MysqlServerConfig, MySqlPool>> iterator = channelPoolMap.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<MysqlServerConfig, MySqlPool> kv = iterator.next();
+            MysqlServerConfig config = kv.getKey();
+            MySqlPool pool = kv.getValue();
+            list.add( new long[]{config.getId(), pool.getBusyConnNum(), pool.getIdleConnNum()} );
+        }
+        return list;
     }
 
     /**

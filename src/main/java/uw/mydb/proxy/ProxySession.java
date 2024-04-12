@@ -42,17 +42,12 @@ public class ProxySession implements MySqlSessionCallback {
      * 多节点执行的异步线程池。
      */
     private static final ThreadPoolExecutor multiNodeExecutor = new ThreadPoolExecutor( 5, 500, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "multi_node_service-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
+            new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "multi_node_executor-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
 
     /**
      * 全局统一的sessionId生成器。
      */
     private static AtomicLong sessionIdGenerator = new AtomicLong();
-
-    /**
-     * 默认验证插件。
-     */
-    public String clientAuthPluginName = MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
 
     /**
      * 数据行计数。
@@ -142,7 +137,7 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 查询开始时间
      */
-    private long queryStartTime;
+    private long lastRequestTime;
 
     /**
      * sql解析结果。
@@ -298,7 +293,10 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void onFinish() {
         //开始统计数据了。
-//        long exeMillis = SystemClock.now() - queryStartTime;
+        if (!isExeSuccess) {
+            long exeMillis = SystemClock.now() - lastRequestTime;
+//            StatsManager.reportErrorSql(clientHost,);
+        }
         //数据归零
         sqlParseResult = null;
         isMasterSql = false;
@@ -450,7 +448,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     public void query(ChannelHandlerContext ctx, ByteBuf buf) {
         rxBytes += buf.readableBytes();
-        queryStartTime = SystemClock.now();
+        lastRequestTime = SystemClock.now();
         //如果schema没有任何表分区定义，则直接转发到默认库。
         //读取sql
         CommandPacket cmd = new CommandPacket();

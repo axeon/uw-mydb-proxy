@@ -1,23 +1,20 @@
 package uw.mydb.stats;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.conf.MydbProperties;
 import uw.mydb.constant.SQLType;
-import uw.mydb.proxy.ProxySession;
+import uw.mydb.mysql.MySqlClient;
 import uw.mydb.proxy.ProxySessionManager;
-import uw.mydb.stats.vo.ProxyRunReport;
-import uw.mydb.stats.vo.SchemaSqlStats;
-import uw.mydb.stats.vo.SlowSql;
-import uw.mydb.stats.vo.SqlStats;
+import uw.mydb.stats.vo.*;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.counting;
+import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * 统计的工厂类。
@@ -25,6 +22,13 @@ import static java.util.stream.Collectors.counting;
  * @author axeon
  */
 public class StatsManager {
+
+
+    /**
+     * 报告异步线程池。
+     */
+    private static final ThreadPoolExecutor reportExecutor = new ThreadPoolExecutor( 5, 500, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "report-executor-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
 
     /**
      * 服务器统计表。
@@ -36,7 +40,6 @@ public class StatsManager {
      */
     private static Map<String, SchemaSqlStats> sqlStatsMap = new ConcurrentHashMap();
 
-
     /**
      * 获得server Sql统计。
      *
@@ -47,29 +50,10 @@ public class StatsManager {
     }
 
     /**
-     * 获得当前连接数。
-     *
-     * @return
-     */
-    public static int getTotalConnections() {
-        return ProxySessionManager.getCount();
-    }
-
-    /**
-     * 获得链接映射表。
-     *
-     * @return
-     */
-    public static Map<String, Long> getConnectionMap() {
-        return ProxySessionManager.getSessionMap().values().stream().map( ProxySession::getClientHost ).collect( Collectors.groupingBy( Function.identity(), counting() ) );
-    }
-
-
-    /**
      * 统计慢sql。
      */
-    public static void stats(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum, long txBytes,
-                             long rxBytes, long exeMillis, long runDate) {
+    public static void statsSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum, long txBytes,
+                                long rxBytes, long exeMillis, long runDate) {
         //获得schema统计表。
         SchemaSqlStats schemaSqlStats =
                 sqlStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaSqlStats( clusterId, serverId, database, table ) );
@@ -150,10 +134,18 @@ public class StatsManager {
             proxySqlStats.addOtherRxBytes( rxBytes );
         }
         if (exeMillis >= MydbConfigService.getMydbProperties().getSlowQueryMillis()) {
-            SlowSql slowSql = new SlowSql( clientIp, clusterId, serverId, database, table, sql, sqlType, isSuccess, rowNum, txBytes, rxBytes, exeMillis, runDate );
-            //往ES里面打
-
+            SlowSql slowSql = new SlowSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate );
+            MydbConfigService.reportSlowSql( slowSql );
+            reportExecutor.submit( () -> MydbConfigService.reportSlowSql( slowSql ) );
         }
+    }
+
+    /**
+     * 记录错误SQL。
+     */
+    public static void reportErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
+        ErrorSql errorSql = new ErrorSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate, errorCode, errorMsg, exception);
+        reportExecutor.submit( () -> MydbConfigService.reportErrorSql( errorSql ) );
     }
 
     /**
@@ -170,10 +162,6 @@ public class StatsManager {
         report.setProxyPort( properties.getProxyPort() );
         report.setAppName( properties.getAppName() );
         report.setAppVersion( properties.getAppVersion() );
-        report.setProxySqlStats( proxySqlStats );
-        report.setClientNum( getConnectionMap().size() );
-        report.setConnectionNum( getTotalConnections() );
-        report.setSchemaSqlStatsList( sqlStatsMap.values() );
         //设置内存和线程信息。
         Runtime runtime = Runtime.getRuntime();
         report.setJvmMemMax( runtime.maxMemory() );
@@ -184,6 +172,12 @@ public class StatsManager {
         report.setThreadDaemon( threadMXBean.getDaemonThreadCount() );
         report.setThreadPeak( threadMXBean.getPeakThreadCount() );
         report.setThreadStarted( threadMXBean.getTotalStartedThreadCount() );
+        //统计信息。
+        report.setConnectionNum( ProxySessionManager.getConnectionNum() );
+        report.setClientConnMap( ProxySessionManager.getClientConnMap() );
+        report.setMysqlConnList( MySqlClient.getMysqlConnList() );
+        report.setProxySqlStats( proxySqlStats );
+        report.setSchemaSqlStatsList( sqlStatsMap.values() );
         return report;
     }
 

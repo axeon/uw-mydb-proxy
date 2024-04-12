@@ -1,11 +1,11 @@
 package uw.mydb.stats.vo;
 
 /**
- * 慢Sql统计。
+ * 错误Sql统计。
  *
  * @author axeon
  */
-public class SlowSql {
+public class ErrorSql {
 
     /**
      * 发起客户端。
@@ -67,11 +67,22 @@ public class SlowSql {
      */
     private long runDate;
 
-    public SlowSql() {
-    }
+    /**
+     * 错误号。
+     */
+    private int errorCode;
 
-    public SlowSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes,
-                   long rxBytes, long exeMillis, long runDate) {
+    /**
+     * 错误信息。
+     */
+    private String errorMsg;
+
+    /**
+     * 异常信息。
+     */
+    private String exception;
+
+    public ErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
         this.clientIp = clientIp;
         this.clusterId = clusterId;
         this.serverId = serverId;
@@ -84,6 +95,12 @@ public class SlowSql {
         this.rxBytes = rxBytes;
         this.exeMillis = exeMillis;
         this.runDate = runDate;
+        this.errorCode = errorCode;
+        this.errorMsg = errorMsg;
+        this.exception = exception;
+    }
+
+    public ErrorSql() {
     }
 
     public String getClientIp() {
@@ -180,5 +197,29 @@ public class SlowSql {
 
     public void setRunDate(long runDate) {
         this.runDate = runDate;
+    }
+
+    public int getErrorCode() {
+        return errorCode;
+    }
+
+    public void setErrorCode(int errorCode) {
+        this.errorCode = errorCode;
+    }
+
+    public String getErrorMsg() {
+        return errorMsg;
+    }
+
+    public void setErrorMsg(String errorMsg) {
+        this.errorMsg = errorMsg;
+    }
+
+    public String getException() {
+        return exception;
+    }
+
+    public void setException(String exception) {
+        this.exception = exception;
     }
 }

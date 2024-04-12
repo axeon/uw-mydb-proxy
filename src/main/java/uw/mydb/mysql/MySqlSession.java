@@ -508,7 +508,7 @@ public class MySqlSession {
         long exeMillis = (now - this.lastQueryTime);
         this.lastQueryTime = now;
         //最后统计执行信息。
-        StatsManager.stats( this.sessionCallback.getClientInfo(), this.mysqlServerConfig.getClusterId(), this.mysqlServerConfig.getId(), database, table, "", 1, isExeSuccess,
+        StatsManager.statsSql( this.sessionCallback.getClientInfo(), this.mysqlServerConfig.getClusterId(), this.mysqlServerConfig.getId(), database, table, "", 1, isExeSuccess,
                 Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeMillis, now );
         //数据归零
         this.command = null;

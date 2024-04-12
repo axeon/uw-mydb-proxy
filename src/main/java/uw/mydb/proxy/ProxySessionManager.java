@@ -1,6 +1,11 @@
 package uw.mydb.proxy;
 
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.counting;
 
 /**
  * ProxySession管理器。
@@ -39,7 +44,7 @@ public class ProxySessionManager {
      * @param session
      */
     public static void put(String key, ProxySession session) {
-        sessionMap.put(key, session);
+        sessionMap.put( key, session );
     }
 
     /**
@@ -48,6 +53,26 @@ public class ProxySessionManager {
      * @param key
      */
     public static void remove(String key) {
-        sessionMap.remove(key);
+        sessionMap.remove( key );
+    }
+
+    /**
+     * 获得proxy映射表。
+     * key: client IP
+     * value: 连接数
+     *
+     * @return
+     */
+    public static Map<String, Long> getClientConnMap() {
+        return ProxySessionManager.getSessionMap().values().stream().map( ProxySession::getClientHost ).collect( Collectors.groupingBy( Function.identity(), counting() ) );
+    }
+
+    /**
+     * 获得当前连接数。
+     *
+     * @return
+     */
+    public static int getConnectionNum() {
+        return ProxySessionManager.getCount();
     }
 }

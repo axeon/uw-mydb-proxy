@@ -1,6 +1,10 @@
 package uw.mydb.stats.vo;
 
+import org.apache.commons.lang3.tuple.Triple;
+
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 /**
  * MyDb proxy 运行报告
@@ -70,11 +74,6 @@ public class ProxyRunReport {
     private long threadStarted;
 
     /**
-     * 客户端数量。
-     */
-    private long clientNum;
-
-    /**
      * 连接数量。
      */
     private int connectionNum;
@@ -83,6 +82,16 @@ public class ProxyRunReport {
      * 代理 sql stats统计。
      */
     private SqlStats ProxySqlStats;
+
+    /**
+     * 客户端连接信息。
+     */
+    private Map<String,Long> clientConnMap;
+
+    /**
+     * mysql链接信息。
+     */
+    private List<long[]> mysqlConnList;
 
     /**
      * 分组统计sqlStats集合。
@@ -185,13 +194,6 @@ public class ProxyRunReport {
         this.threadStarted = threadStarted;
     }
 
-    public long getClientNum() {
-        return clientNum;
-    }
-
-    public void setClientNum(long clientNum) {
-        this.clientNum = clientNum;
-    }
 
     public int getConnectionNum() {
         return connectionNum;
@@ -199,6 +201,22 @@ public class ProxyRunReport {
 
     public void setConnectionNum(int connectionNum) {
         this.connectionNum = connectionNum;
+    }
+
+    public Map<String, Long> getClientConnMap() {
+        return clientConnMap;
+    }
+
+    public void setClientConnMap(Map<String, Long> clientConnMap) {
+        this.clientConnMap = clientConnMap;
+    }
+
+    public List<long[]> getMysqlConnList() {
+        return mysqlConnList;
+    }
+
+    public void setMysqlConnList(List<long[]> mysqlConnList) {
+        this.mysqlConnList = mysqlConnList;
     }
 
     public SqlStats getProxySqlStats() {

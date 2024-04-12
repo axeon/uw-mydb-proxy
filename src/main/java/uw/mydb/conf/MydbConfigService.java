@@ -6,7 +6,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
+import uw.mydb.stats.vo.ErrorSql;
 import uw.mydb.stats.vo.ProxyRunReport;
+import uw.mydb.stats.vo.SlowSql;
 import uw.mydb.vo.*;
 
 import java.util.Set;
@@ -20,6 +22,7 @@ import java.util.Set;
 public class MydbConfigService {
 
     private static final Logger logger = LoggerFactory.getLogger( MydbConfigService.class );
+
 
     /**
      * Task配置文件
@@ -213,5 +216,24 @@ public class MydbConfigService {
         if (response != null) {
             proxyId = response.getProxyId();
         }
+    }
+
+
+    /**
+     * 报告慢sql。
+     *
+     * @param slowSql
+     */
+    public static void reportSlowSql(SlowSql slowSql) {
+
+    }
+
+    /**
+     * 报告错误sql。
+     *
+     * @param errorSql
+     */
+    public static void reportErrorSql(ErrorSql errorSql) {
+
     }
 }
