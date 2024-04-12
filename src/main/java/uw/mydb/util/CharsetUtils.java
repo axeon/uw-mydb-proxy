@@ -7,21 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * 该类被彻底重构，fix 掉了原来的 collationIndex 和 charset 之间对应关系的兼容性问题， 比如 utf8mb4 对应的
- * collationIndex 有 45, 46 两个值，如果我们只配置一个 45或者46的话，
- * 那么当mysqld(my.cnf配置文件)中的配置了：collation_server=utf8mb4_bin时，而我们却仅仅
- * 值配置45的话，那么就会报错：'java.lang.RuntimeException: Unknown charsetIndex:46' 如果没有配置
- * collation_server=utf8mb4_bin，那么collation_server就是使用的默认值，而我们却仅仅
- * 仅仅配置46，那么也会报错。所以应该要同时配置45,46两个值才是正确的。 重构方法是，在 MycatServer.startup()方法在中，在
- * config.initDatasource(); 之前，加入
- * CharsetUtils.initCharsetAndCollation(config.getDataHosts());
- * 该方法，直接从mysqld的information_schema.collations表中获取 collationIndex 和 charset
- * 之间对应关系， 因为是从mysqld服务器获取的，所以肯定不会出现以前的兼容性问题(不同版本的mysqld，collationIndex 和
- * charset 对应关系不一样)。
- *
- * @author mydb
- */
+
 public class CharsetUtils {
     public static final Logger logger = LoggerFactory.getLogger(CharsetUtils.class);
 
