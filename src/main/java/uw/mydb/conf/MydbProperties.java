@@ -1,5 +1,6 @@
 package uw.mydb.conf;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -11,6 +12,24 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "uw.mydb")
 public class MydbProperties {
+
+    /**
+     * 应用名称
+     */
+    @Value("${spring.application.name}")
+    private String appName;
+
+    /**
+     * 应用版本
+     */
+    @Value("${project.version}")
+    private String appVersion;
+
+    /**
+     * app主机
+     */
+    @Value("${spring.cloud.nacos.discovery.ip}")
+    private String proxyHost;
 
     /**
      * mydb center主机。
@@ -26,6 +45,11 @@ public class MydbProperties {
      * 端口号。
      */
     private int proxyPort = 3300;
+
+    /**
+     * 慢查询门限值。
+     */
+    private long slowQueryMillis = 10_000L;
 
 
     public String getMydbCenterHost() {
@@ -50,5 +74,37 @@ public class MydbProperties {
 
     public void setProxyPort(int proxyPort) {
         this.proxyPort = proxyPort;
+    }
+
+    public long getSlowQueryMillis() {
+        return slowQueryMillis;
+    }
+
+    public void setSlowQueryMillis(long slowQueryMillis) {
+        this.slowQueryMillis = slowQueryMillis;
+    }
+
+    public String getAppName() {
+        return appName;
+    }
+
+    public void setAppName(String appName) {
+        this.appName = appName;
+    }
+
+    public String getAppVersion() {
+        return appVersion;
+    }
+
+    public void setAppVersion(String appVersion) {
+        this.appVersion = appVersion;
+    }
+
+    public String getProxyHost() {
+        return proxyHost;
+    }
+
+    public void setProxyHost(String proxyHost) {
+        this.proxyHost = proxyHost;
     }
 }

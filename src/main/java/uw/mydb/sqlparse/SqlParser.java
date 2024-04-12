@@ -4,6 +4,7 @@ package uw.mydb.sqlparse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
+import uw.mydb.constant.SQLType;
 import uw.mydb.protocol.constant.MySqlErrorCode;
 import uw.mydb.proxy.ProxySession;
 import uw.mydb.route.RouteAlgorithm;
@@ -118,21 +119,27 @@ public class SqlParser {
             switch (lexer.token()) {
                 case SELECT:
                     this.parseResult.setMasterQuery( false );
+                    this.parseResult.setSqlType( SQLType.SELECT.getValue() );
                     parseSelect( lexer );
                     break;
                 case INSERT:
+                    this.parseResult.setSqlType( SQLType.INSERT.getValue() );
                     parseInsert( lexer );
                     break;
                 case UPDATE:
+                    this.parseResult.setSqlType( SQLType.UPDATE.getValue() );
                     parseUpdate( lexer );
                     break;
                 case DELETE:
+                    this.parseResult.setSqlType( SQLType.DELETE.getValue() );
                     parseDelete( lexer );
                     break;
                 case USE:
+                    this.parseResult.setSqlType( SQLType.OTHER.getValue() );
                     parseUse( lexer );
                     break;
                 default:
+                    this.parseResult.setSqlType( SQLType.OTHER.getValue() );
                     if (lexer.token() == SET || lexer.token() == SHOW || lexer.token() == EXPLAIN || lexer.token() == DESCRIBE || lexer.token() == EOF) {
                         //有些类型需要通过虚拟schema上支持的,，这些类型必须可以过。
                     } else {

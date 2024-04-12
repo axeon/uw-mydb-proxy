@@ -40,7 +40,12 @@ public class SlowSql {
     /**
      * sql类型。
      */
-    private String sqlType;
+    private int sqlType;
+
+    /**
+     * 是否成功。
+     */
+    private boolean isSuccess;
 
     /**
      * 数据行计数。
@@ -70,7 +75,8 @@ public class SlowSql {
     public SlowSql() {
     }
 
-    public SlowSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, String sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate) {
+    public SlowSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum, long txBytes,
+                   long rxBytes, long exeMillis, long runDate) {
         this.clientIp = clientIp;
         this.clusterId = clusterId;
         this.serverId = serverId;
@@ -78,6 +84,7 @@ public class SlowSql {
         this.table = table;
         this.sql = sql;
         this.sqlType = sqlType;
+        this.isSuccess = isSuccess;
         this.rowNum = rowNum;
         this.txBytes = txBytes;
         this.rxBytes = rxBytes;
@@ -133,12 +140,20 @@ public class SlowSql {
         this.sql = sql;
     }
 
-    public String getSqlType() {
+    public int getSqlType() {
         return sqlType;
     }
 
-    public void setSqlType(String sqlType) {
+    public void setSqlType(int sqlType) {
         this.sqlType = sqlType;
+    }
+
+    public boolean isSuccess() {
+        return isSuccess;
+    }
+
+    public void setSuccess(boolean success) {
+        isSuccess = success;
     }
 
     public int getRowNum() {

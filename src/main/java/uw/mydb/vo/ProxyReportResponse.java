@@ -1,14 +1,14 @@
 package uw.mydb.vo;
 
 /**
- * agent报告response。
+ * 报告response。
  */
 public class ProxyReportResponse {
 
     /**
-     * id。
+     * proxyId。
      */
-    private long id;
+    private long proxyId;
 
     /**
      * 状态。
@@ -19,4 +19,28 @@ public class ProxyReportResponse {
      * 消息。
      */
     private String message;
+
+    public long getProxyId() {
+        return proxyId;
+    }
+
+    public void setProxyId(long proxyId) {
+        this.proxyId = proxyId;
+    }
+
+    public int getState() {
+        return state;
+    }
+
+    public void setState(int state) {
+        this.state = state;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
 }

@@ -46,6 +46,11 @@ public class SqlParseResult {
     protected boolean isMasterQuery = true;
 
     /**
+     * sql类型。
+     */
+    protected int sqlType;
+
+    /**
      * 错误编码。
      */
     protected int errorCode;
@@ -72,17 +77,26 @@ public class SqlParseResult {
 
     @Override
     public String toString() {
-        return new ToStringBuilder( this, ToStringStyle.MULTI_LINE_STYLE )
+        return new ToStringBuilder( this ,ToStringStyle.MULTI_LINE_STYLE)
                 .append( "sourceTable", sourceTable )
                 .append( "sourceSql", sourceSql )
                 .append( "sourceDatabase", sourceDatabase )
                 .append( "isDML", isDML )
                 .append( "isMasterQuery", isMasterQuery )
+                .append( "sqlType", sqlType )
                 .append( "errorCode", errorCode )
                 .append( "errorMessage", errorMessage )
                 .append( "sqlInfo", sqlInfo )
                 .append( "sqlInfoList", sqlInfoList )
                 .toString();
+    }
+
+    public int getSqlType() {
+        return sqlType;
+    }
+
+    public void setSqlType(int sqlType) {
+        this.sqlType = sqlType;
     }
 
     public String getSourceSql() {
@@ -183,7 +197,6 @@ public class SqlParseResult {
     public void setSqlInfoList(List<SqlInfo> sqlInfoList) {
         this.sqlInfoList = sqlInfoList;
     }
-
 
     /**
      * sql信息。

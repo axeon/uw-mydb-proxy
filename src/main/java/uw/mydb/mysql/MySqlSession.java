@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.packet.*;
 import uw.mydb.sqlparse.SqlParseResult;
+import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
 import uw.mydb.util.SystemClock;
@@ -507,7 +508,8 @@ public class MySqlSession {
         long exeMillis = (now - this.lastQueryTime);
         this.lastQueryTime = now;
         //最后统计执行信息。
-//        StatsManager.stats( 1, 1, database, table, isMasterSql, isExeSuccess, exeMillis, dataRowsCount, affectRowsCount, txBytes, rxBytes );
+        StatsManager.stats( this.sessionCallback.getClientInfo(), this.mysqlServerConfig.getClusterId(), this.mysqlServerConfig.getId(), database, table, "", 1, isExeSuccess,
+                Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeMillis, now );
         //数据归零
         this.command = null;
         this.isMasterSql = false;

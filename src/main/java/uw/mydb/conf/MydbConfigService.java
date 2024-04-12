@@ -6,9 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.client.RestTemplate;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
-import uw.httpclient.http.HttpConfig;
-import uw.httpclient.http.HttpInterface;
-import uw.httpclient.json.JsonInterfaceHelper;
+import uw.mydb.stats.vo.ProxyRunReport;
 import uw.mydb.vo.*;
 
 import java.util.Set;
@@ -22,10 +20,6 @@ import java.util.Set;
 public class MydbConfigService {
 
     private static final Logger logger = LoggerFactory.getLogger( MydbConfigService.class );
-
-    private static final HttpInterface agentClient =
-            new JsonInterfaceHelper( HttpConfig.builder().connectTimeout( 30000 ).readTimeout( 30000 ).writeTimeout( 30000 ).retryOnConnectionFailure( true ).build() );
-
 
     /**
      * Task配置文件
@@ -42,14 +36,20 @@ public class MydbConfigService {
      */
     private static long baseClusterId;
 
-    protected MydbConfigService(MydbProperties taskProperties, RestTemplate restTemplate) {
-        MydbConfigService.mydbProperties = taskProperties;
+    /**
+     * 代理ID.
+     */
+    private static long proxyId;
+
+
+    protected MydbConfigService(MydbProperties mydbProperties, RestTemplate restTemplate) {
+        MydbConfigService.mydbProperties = mydbProperties;
         MydbConfigService.restTemplate = restTemplate;
         //Proxy配置缓存 key: routeId value:ProxyConfig
         FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, 0L ), new CacheDataLoader<String, MydbProxyConfig>() {
             @Override
             public MydbProxyConfig load(String key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getProxyConfig?configKey=" + taskProperties.getConfigKey(),
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getProxyConfig?configKey=" + mydbProperties.getConfigKey(),
                         MydbProxyConfig.class );
             }
         } );
@@ -58,7 +58,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( TableConfig.class, 10000, 0L ), new CacheDataLoader<String, TableConfig>() {
             @Override
             public TableConfig load(String key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getTableConfig?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getTableConfig?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
             }
         } );
 
@@ -66,7 +66,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
             @Override
             public RouteConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + taskProperties.getConfigKey() + "&routeId=" + key
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId=" + key
                         , RouteConfig.class );
             }
         }, (key, oldValue, newValue) -> {
@@ -78,7 +78,7 @@ public class MydbConfigService {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
                 MysqlClusterConfig clusterConfig =
-                        restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + taskProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                        restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
                 clusterConfig.initServerWeightList();
                 return clusterConfig;
             }
@@ -91,7 +91,7 @@ public class MydbConfigService {
             @Override
             public String[] load(String key) throws Exception {
                 DataNode node = new DataNode( key );
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
             }
         }, (key, oldValue, newValue) -> {
 
@@ -101,7 +101,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, DataNode[]>() {
             @Override
             public DataNode[] load(Long key) throws Exception {
-                return restTemplate.getForObject( taskProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + taskProperties.getConfigKey() + "&tableName=" + key,
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key,
                         DataNode[].class );
             }
         } );
@@ -145,6 +145,7 @@ public class MydbConfigService {
 
     /**
      * 获得基础集群ID.
+     *
      * @return
      */
     public static long getBaseClusterId() {
@@ -193,5 +194,24 @@ public class MydbConfigService {
         return FusionCache.get( MysqlClusterConfig.class, clusterId );
     }
 
+    /**
+     * 获得proxyId
+     *
+     * @return
+     */
+    public static long getProxyId() {
+        return proxyId;
+    }
 
+    /**
+     * 报告执行情况。
+     *
+     * @param report
+     */
+    public static void report(ProxyRunReport report) {
+        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/report", report, ProxyReportResponse.class );
+        if (response != null) {
+            proxyId = response.getProxyId();
+        }
+    }
 }

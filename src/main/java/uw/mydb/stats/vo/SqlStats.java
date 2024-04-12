@@ -1,5 +1,8 @@
 package uw.mydb.stats.vo;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * sql统计信息。
  *
@@ -8,322 +11,393 @@ package uw.mydb.stats.vo;
 public class SqlStats {
 
     /**
-     * 集群ID。
+     * insert计数。
      */
-    private long clusterId;
+    protected AtomicInteger insertNum;
 
     /**
-     * 服务器ID。
+     * update计数。
      */
-    private long serverId;
+    protected AtomicInteger updateNum;
 
     /**
-     * 数据库名。
+     * delete计数。
      */
-    private String database;
+    protected AtomicInteger deleteNum;
 
     /**
-     * 表名。
+     * select计数。
      */
-    private String table;
-    protected transient int insertNum;
+    protected AtomicInteger selectNum;
 
-    protected transient int updateNum;
+    /**
+     * other计数。
+     */
+    protected AtomicInteger otherNum;
 
-    protected transient int deleteNum;
+    /**
+     * insert错误计数。
+     */
+    protected AtomicInteger insertErrorNum;
 
-    protected transient int selectNum;
+    /**
+     * update错误计数。
+     */
+    protected AtomicInteger updateErrorNum;
 
-    protected transient int otherNum;
+    /**
+     * delete错误计数。
+     */
+    protected AtomicInteger deleteErrorNum;
 
-    protected transient int insertErrorNum;
+    /**
+     * select错误计数。
+     */
+    protected AtomicInteger selectErrorNum;
 
-    protected transient int updateErrorNum;
+    /**
+     * other错误计数。
+     */
+    protected AtomicInteger otherErrorNum;
 
-    protected transient int deleteErrorNum;
+    /**
+     * insert执行耗时毫秒数。
+     */
+    protected AtomicLong insertExeMillis;
 
-    protected transient int selectErrorNum;
+    /**
+     * update执行耗时毫秒数。
+     */
+    protected AtomicLong updateExeMillis;
 
-    protected transient int otherErrorNum;
+    /**
+     * delete执行耗时毫秒数。
+     */
+    protected AtomicLong deleteExeMillis;
 
-    protected transient long insertExeMillis;
+    /**
+     * select执行耗时毫秒数。
+     */
+    protected AtomicLong selectExeMillis;
 
-    protected transient long updateExeMillis;
+    /**
+     * other执行耗时毫秒数。
+     */
+    protected AtomicLong otherExeMillis;
 
-    protected transient long deleteExeMillis;
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong insertRowNum;
 
-    protected transient long selectExeMillis;
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong updateRowNum;
 
-    protected transient long otherExeMillis;
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong deleteRowNum;
 
-    protected transient long insertRowNum;
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong selectRowNum;
 
-    protected transient long updateRowNum;
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong otherRowNum;
 
-    protected transient long deleteRowNum;
+    /**
+     * insert发送字节数。
+     */
+    protected AtomicLong insertTxBytes;
 
-    protected transient long selectRowNum;
+    /**
+     * insert接收字节数。
+     */
+    protected AtomicLong insertRxBytes;
 
-    protected transient long otherRowNum;
+    /**
+     * update发送字节数。
+     */
+    protected AtomicLong updateTxBytes;
 
-    protected transient long insertTxBytes;
+    /**
+     * update接收字节数。
+     */
+    protected AtomicLong updateRxBytes;
 
-    protected transient long insertRxBytes;
+    /**
+     * delete发送字节数。
+     */
+    protected AtomicLong deleteTxBytes;
 
-    protected transient long updateTxBytes;
+    /**
+     * delete接收字节数。
+     */
+    protected AtomicLong deleteRxBytes;
 
-    protected transient long updateRxBytes;
+    /**
+     * select发送字节数。
+     */
+    protected AtomicLong selectTxBytes;
 
-    protected transient long deleteTxBytes;
+    /**
+     * select接收字节数。
+     */
+    protected AtomicLong selectRxBytes;
 
-    protected transient long deleteRxBytes;
+    /**
+     * other发送字节数。
+     */
+    protected AtomicLong otherTxBytes;
 
-    protected transient long selectTxBytes;
-
-    protected transient long selectRxBytes;
-
-    protected transient long otherTxBytes;
-
-    protected transient long otherRxBytes;
+    /**
+     * other接收字节数。
+     */
+    protected AtomicLong otherRxBytes;
 
 
     public int getInsertNum() {
-        return insertNum;
+        return insertNum.get();
     }
 
-    public void setInsertNum(int insertNum) {
-        this.insertNum = insertNum;
+    public void addInsertNum(int insertNum) {
+        this.insertNum.addAndGet( insertNum );
     }
 
     public int getUpdateNum() {
-        return updateNum;
+        return updateNum.get();
     }
 
-    public void setUpdateNum(int updateNum) {
-        this.updateNum = updateNum;
+    public void addUpdateNum(int updateNum) {
+        this.updateNum.addAndGet( updateNum );
     }
 
     public int getDeleteNum() {
-        return deleteNum;
+        return deleteNum.get();
     }
 
-    public void setDeleteNum(int deleteNum) {
-        this.deleteNum = deleteNum;
+    public void addDeleteNum(int deleteNum) {
+        this.deleteNum.addAndGet( deleteNum );
     }
 
     public int getSelectNum() {
-        return selectNum;
+        return selectNum.get();
     }
 
-    public void setSelectNum(int selectNum) {
-        this.selectNum = selectNum;
+    public void addSelectNum(int selectNum) {
+        this.selectNum.addAndGet( selectNum );
     }
 
     public int getOtherNum() {
-        return otherNum;
+        return otherNum.get();
     }
 
-    public void setOtherNum(int otherNum) {
-        this.otherNum = otherNum;
+    public void addOtherNum(int otherNum) {
+        this.otherNum.addAndGet( otherNum );
     }
 
     public int getInsertErrorNum() {
-        return insertErrorNum;
+        return insertErrorNum.get();
     }
 
-    public void setInsertErrorNum(int insertErrorNum) {
-        this.insertErrorNum = insertErrorNum;
+    public void addInsertErrorNum(int insertErrorNum) {
+        this.insertErrorNum.addAndGet( insertErrorNum );
     }
 
     public int getUpdateErrorNum() {
-        return updateErrorNum;
+        return updateErrorNum.get();
     }
 
-    public void setUpdateErrorNum(int updateErrorNum) {
-        this.updateErrorNum = updateErrorNum;
+    public void addUpdateErrorNum(int updateErrorNum) {
+        this.updateErrorNum.addAndGet( updateErrorNum );
     }
 
     public int getDeleteErrorNum() {
-        return deleteErrorNum;
+        return deleteErrorNum.get();
     }
 
-    public void setDeleteErrorNum(int deleteErrorNum) {
-        this.deleteErrorNum = deleteErrorNum;
+    public void addDeleteErrorNum(int deleteErrorNum) {
+        this.deleteErrorNum.addAndGet( deleteErrorNum );
     }
 
     public int getSelectErrorNum() {
-        return selectErrorNum;
+        return selectErrorNum.get();
     }
 
-    public void setSelectErrorNum(int selectErrorNum) {
-        this.selectErrorNum = selectErrorNum;
+    public void addSelectErrorNum(int selectErrorNum) {
+        this.selectErrorNum.addAndGet( selectErrorNum );
     }
 
     public int getOtherErrorNum() {
-        return otherErrorNum;
+        return otherErrorNum.get();
     }
 
-    public void setOtherErrorNum(int otherErrorNum) {
-        this.otherErrorNum = otherErrorNum;
+    public void addOtherErrorNum(int otherErrorNum) {
+        this.otherErrorNum.addAndGet( otherErrorNum );
     }
 
     public long getInsertExeMillis() {
-        return insertExeMillis;
+        return insertExeMillis.get();
     }
 
-    public void setInsertExeMillis(long insertExeMillis) {
-        this.insertExeMillis = insertExeMillis;
+    public void addInsertExeMillis(long insertExeMillis) {
+        this.insertExeMillis.addAndGet( insertExeMillis );
     }
 
     public long getUpdateExeMillis() {
-        return updateExeMillis;
+        return updateExeMillis.get();
     }
 
-    public void setUpdateExeMillis(long updateExeMillis) {
-        this.updateExeMillis = updateExeMillis;
+    public void addUpdateExeMillis(long updateExeMillis) {
+        this.updateExeMillis.addAndGet( updateExeMillis );
     }
 
     public long getDeleteExeMillis() {
-        return deleteExeMillis;
+        return deleteExeMillis.get();
     }
 
-    public void setDeleteExeMillis(long deleteExeMillis) {
-        this.deleteExeMillis = deleteExeMillis;
+    public void addDeleteExeMillis(long deleteExeMillis) {
+        this.deleteExeMillis.addAndGet( deleteExeMillis );
     }
 
     public long getSelectExeMillis() {
-        return selectExeMillis;
+        return selectExeMillis.get();
     }
 
-    public void setSelectExeMillis(long selectExeMillis) {
-        this.selectExeMillis = selectExeMillis;
+    public void addSelectExeMillis(long selectExeMillis) {
+        this.selectExeMillis.addAndGet( selectExeMillis );
     }
 
     public long getOtherExeMillis() {
-        return otherExeMillis;
+        return otherExeMillis.get();
     }
 
-    public void setOtherExeMillis(long otherExeMillis) {
-        this.otherExeMillis = otherExeMillis;
+    public void addOtherExeMillis(long otherExeMillis) {
+        this.otherExeMillis.addAndGet( otherExeMillis );
     }
 
     public long getInsertRowNum() {
-        return insertRowNum;
+        return insertRowNum.get();
     }
 
-    public void setInsertRowNum(long insertRowNum) {
-        this.insertRowNum = insertRowNum;
+    public void addInsertRowNum(long insertRowNum) {
+        this.insertRowNum.addAndGet( insertRowNum );
     }
 
     public long getUpdateRowNum() {
-        return updateRowNum;
+        return updateRowNum.get();
     }
 
-    public void setUpdateRowNum(long updateRowNum) {
-        this.updateRowNum = updateRowNum;
+    public void addUpdateRowNum(long updateRowNum) {
+        this.updateRowNum.addAndGet( updateRowNum );
     }
 
     public long getDeleteRowNum() {
-        return deleteRowNum;
+        return deleteRowNum.get();
     }
 
-    public void setDeleteRowNum(long deleteRowNum) {
-        this.deleteRowNum = deleteRowNum;
+    public void addDeleteRowNum(long deleteRowNum) {
+        this.deleteRowNum.addAndGet( deleteRowNum );
     }
 
     public long getSelectRowNum() {
-        return selectRowNum;
+        return selectRowNum.get();
     }
 
-    public void setSelectRowNum(long selectRowNum) {
-        this.selectRowNum = selectRowNum;
+    public void addSelectRowNum(long selectRowNum) {
+        this.selectRowNum.addAndGet( selectRowNum );
     }
 
     public long getOtherRowNum() {
-        return otherRowNum;
+        return otherRowNum.get();
     }
 
-    public void setOtherRowNum(long otherRowNum) {
-        this.otherRowNum = otherRowNum;
+    public void addOtherRowNum(long otherRowNum) {
+        this.otherRowNum.addAndGet( otherRowNum );
     }
 
     public long getInsertTxBytes() {
-        return insertTxBytes;
+        return insertTxBytes.get();
     }
 
-    public void setInsertTxBytes(long insertTxBytes) {
-        this.insertTxBytes = insertTxBytes;
+    public void addInsertTxBytes(long insertTxBytes) {
+        this.insertTxBytes.addAndGet( insertTxBytes );
     }
 
     public long getInsertRxBytes() {
-        return insertRxBytes;
+        return insertRxBytes.get();
     }
 
-    public void setInsertRxBytes(long insertRxBytes) {
-        this.insertRxBytes = insertRxBytes;
+    public void addInsertRxBytes(long insertRxBytes) {
+        this.insertRxBytes.addAndGet( insertRxBytes );
     }
 
     public long getUpdateTxBytes() {
-        return updateTxBytes;
+        return updateTxBytes.get();
     }
 
-    public void setUpdateTxBytes(long updateTxBytes) {
-        this.updateTxBytes = updateTxBytes;
+    public void addUpdateTxBytes(long updateTxBytes) {
+        this.updateTxBytes.addAndGet( updateTxBytes );
     }
 
     public long getUpdateRxBytes() {
-        return updateRxBytes;
+        return updateRxBytes.get();
     }
 
-    public void setUpdateRxBytes(long updateRxBytes) {
-        this.updateRxBytes = updateRxBytes;
+    public void addUpdateRxBytes(long updateRxBytes) {
+        this.updateRxBytes.addAndGet( updateRxBytes );
     }
 
     public long getDeleteTxBytes() {
-        return deleteTxBytes;
+        return deleteTxBytes.get();
     }
 
-    public void setDeleteTxBytes(long deleteTxBytes) {
-        this.deleteTxBytes = deleteTxBytes;
+    public void addDeleteTxBytes(long deleteTxBytes) {
+        this.deleteTxBytes.addAndGet( deleteTxBytes );
     }
 
     public long getDeleteRxBytes() {
-        return deleteRxBytes;
+        return deleteRxBytes.get();
     }
 
-    public void setDeleteRxBytes(long deleteRxBytes) {
-        this.deleteRxBytes = deleteRxBytes;
+    public void addDeleteRxBytes(long deleteRxBytes) {
+        this.deleteRxBytes.addAndGet( deleteRxBytes );
     }
 
     public long getSelectTxBytes() {
-        return selectTxBytes;
+        return selectTxBytes.get();
     }
 
-    public void setSelectTxBytes(long selectTxBytes) {
-        this.selectTxBytes = selectTxBytes;
+    public void addSelectTxBytes(long selectTxBytes) {
+        this.selectTxBytes.addAndGet( selectTxBytes );
     }
 
     public long getSelectRxBytes() {
-        return selectRxBytes;
+        return selectRxBytes.get();
     }
 
-    public void setSelectRxBytes(long selectRxBytes) {
-        this.selectRxBytes = selectRxBytes;
+    public void addSelectRxBytes(long selectRxBytes) {
+        this.selectRxBytes.addAndGet( selectRxBytes );
     }
 
     public long getOtherTxBytes() {
-        return otherTxBytes;
+        return otherTxBytes.get();
     }
 
-    public void setOtherTxBytes(long otherTxBytes) {
-        this.otherTxBytes = otherTxBytes;
+    public void addOtherTxBytes(long otherTxBytes) {
+        this.otherTxBytes.addAndGet( otherTxBytes );
     }
 
     public long getOtherRxBytes() {
-        return otherRxBytes;
+        return otherRxBytes.get();
     }
 
-    public void setOtherRxBytes(long otherRxBytes) {
-        this.otherRxBytes = otherRxBytes;
+    public void addOtherRxBytes(long otherRxBytes) {
+        this.otherRxBytes.addAndGet( otherRxBytes );
     }
 }

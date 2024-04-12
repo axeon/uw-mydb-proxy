@@ -160,7 +160,9 @@ public class MySqlClient {
      * 关闭服务器。
      */
     public static void stop() {
-        scheduledExecutorService.shutdownNow();
+        if (scheduledExecutorService != null) {
+            scheduledExecutorService.shutdownNow();
+        }
 
         if (eventLoopGroup != null) {
             eventLoopGroup.shutdownGracefully();
