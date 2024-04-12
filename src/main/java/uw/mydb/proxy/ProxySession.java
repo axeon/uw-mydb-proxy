@@ -325,11 +325,26 @@ public class ProxySession implements MySqlSessionCallback {
         if (StringUtils.isNotBlank( database )) {
             this.database = database;
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( MydbConfigService.getProxyConfig().getBaseCluster(), true );
-            mySqlSession.addCommand( this, CommandPacket.build( "use " + this.database ), true );
+            mySqlSession.addCommand( this, "use " + this.database, true );
         } else {
             //报错，找不到这个schema。
             onFailMessage( MySqlErrorCode.ER_NO_DB_ERROR, "No database!" );
         }
+    }
+
+    /**
+     * 生成packet。
+     *
+     * @return
+     */
+    public CommandPacket buildCommandPacket(String sql) {
+        CommandPacket packet = new CommandPacket();
+        packet.command = MySqlPacket.CMD_QUERY;
+        packet.arg = sql;
+        if (logger.isTraceEnabled()) {
+            logger.trace( "MySQL执行: {}", sql );
+        }
+        return packet;
     }
 
     /**

@@ -265,21 +265,7 @@ public class SqlParseResult {
             return this;
         }
 
-        /**
-         * 生成packet。
-         *
-         * @return
-         */
-        public CommandPacket genPacket() {
-            CommandPacket packet = new CommandPacket();
-            packet.command = MySqlPacket.CMD_QUERY;
-            packet.arg = getNewSql();
 
-            if (logger.isTraceEnabled()) {
-                logger.trace( "MySQL执行: {}", getNewSql() );
-            }
-            return packet;
-        }
     }
 
 

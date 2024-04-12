@@ -60,11 +60,6 @@ public class CommandPacket extends MySqlPacket {
     public byte command = MySqlPacket.CMD_QUERY;
     public String arg;
 
-    public static CommandPacket build(String sql) {
-        CommandPacket packet = new CommandPacket();
-        packet.arg = sql;
-        return packet;
-    }
 
     @Override
     protected void read(ByteBuf buf) {

@@ -175,12 +175,12 @@ public class MySqlSession {
      * 异步执行一条sql。
      *
      * @param sessionCallback
-     * @param command
+     * @param sql
      */
-    public void addCommand(MySqlSessionCallback sessionCallback, CommandPacket command, boolean isMasterSql) {
+    public void addCommand(MySqlSessionCallback sessionCallback, String sql, boolean isMasterSql) {
         bindCallback( sessionCallback );
         this.isMasterSql = isMasterSql;
-        this.command = command;
+        this.command = buildCommandPacket( sql );
         if (sessionStatus > SESSION_NORMAL) {
             executeCommand();
         }
@@ -197,10 +197,25 @@ public class MySqlSession {
         this.isMasterSql = isMasterSql;
         this.database = sqlInfo.getDatabase();
         this.table = sqlInfo.getTable();
-        this.command = sqlInfo.genPacket();
+        this.command = buildCommandPacket( sqlInfo.getNewSql() );
         if (sessionStatus > SESSION_NORMAL) {
             executeCommand();
         }
+    }
+
+    /**
+     * 生成packet。
+     *
+     * @return
+     */
+    public CommandPacket buildCommandPacket(String sql) {
+        CommandPacket packet = new CommandPacket();
+        packet.command = MySqlPacket.CMD_QUERY;
+        packet.arg = sql;
+        if (log.isTraceEnabled()) {
+            log.trace( "MySQL执行: {}", sql );
+        }
+        return packet;
     }
 
     /**
