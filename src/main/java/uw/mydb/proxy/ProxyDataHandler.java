@@ -32,8 +32,8 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
         ProxySession session = new ProxySession( ctx );
         InetSocketAddress address = (InetSocketAddress) ctx.channel().remoteAddress();
-        session.setHost( address.getAddress().getHostAddress() );
-        session.setPort( address.getPort() );
+        session.setClientHost( address.getAddress().getHostAddress() );
+        session.setClientPort( address.getPort() );
         ctx.channel().attr( MYDB_SESSION ).set( session );
         ProxySessionManager.put( ctx.channel().remoteAddress().toString(), session );
         session.sendHandshake( ctx );

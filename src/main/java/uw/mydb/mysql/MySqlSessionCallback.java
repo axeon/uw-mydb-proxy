@@ -10,6 +10,12 @@ import io.netty.buffer.ByteBuf;
 public interface MySqlSessionCallback {
 
     /**
+     * 获得客户端信息。
+     * @return
+     */
+    String getClientInfo();
+
+    /**
      * 收到Ok数据包。
      *
      * @param packetId

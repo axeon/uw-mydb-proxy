@@ -43,6 +43,11 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     private static final int PACKET_STEP_EOF = 2;
 
     /**
+     * 客户端信息。
+     */
+    private String clientInfo;
+
+    /**
      * 绑定的channel
      */
     private ChannelHandlerContext ctx;
@@ -111,10 +116,21 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     private boolean isExeSuccess = true;
 
 
-    public ProxyMultiNodeHandler(ChannelHandlerContext ctx, SqlParseResult routeResult) {
+    public ProxyMultiNodeHandler(String clientInfo, ChannelHandlerContext ctx, SqlParseResult routeResult) {
+        this.clientInfo = clientInfo;
         this.ctx = ctx;
         this.routeResult = routeResult;
         countDownLatch = new CountDownLatch( routeResult.getSqlInfoList().size() );
+    }
+
+    /**
+     * 获得客户端信息。
+     *
+     * @return
+     */
+    @Override
+    public String getClientInfo() {
+        return clientInfo;
     }
 
     /**
@@ -249,7 +265,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 continue;
             }
-            mySqlSession.addCommand(this , sqlInfo, routeResult.isMasterQuery() );
+            mySqlSession.addCommand( this, sqlInfo, routeResult.isMasterQuery() );
         }
         //等待最长180s
         try {

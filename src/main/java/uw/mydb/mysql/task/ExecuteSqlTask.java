@@ -13,9 +13,19 @@ import uw.mydb.protocol.packet.OkPacket;
 public class ExecuteSqlTask extends LocalTaskAdapter<Long> {
 
     public ExecuteSqlTask(long mysqlClusterId, LocalCmdCallback<Long> localCmdCallback) {
-        super(mysqlClusterId, localCmdCallback);
+        super( mysqlClusterId, localCmdCallback );
         //写指令，在这里标识出来
         this.isMaster = true;
+    }
+
+    /**
+     * 获得客户端信息。
+     *
+     * @return
+     */
+    @Override
+    public String getClientInfo() {
+        return this.getClass().getSimpleName();
     }
 
     /**
@@ -26,7 +36,7 @@ public class ExecuteSqlTask extends LocalTaskAdapter<Long> {
     @Override
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
         OkPacket okPacket = new OkPacket();
-        okPacket.readPayLoad(buf);
+        okPacket.readPayLoad( buf );
         data = okPacket.affectedRows;
     }
 
@@ -38,7 +48,7 @@ public class ExecuteSqlTask extends LocalTaskAdapter<Long> {
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {
         ErrorPacket errorPacket = new ErrorPacket();
-        errorPacket.readPayLoad(buf);
+        errorPacket.readPayLoad( buf );
         errorNo = errorPacket.errorNo;
         errorMessage = errorPacket.message;
     }

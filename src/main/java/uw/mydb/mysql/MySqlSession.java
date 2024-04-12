@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.packet.*;
 import uw.mydb.sqlparse.SqlParseResult;
-import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
 import uw.mydb.util.SystemClock;
@@ -78,7 +77,7 @@ public class MySqlSession {
     /**
      * 开始使用时间.
      */
-    private long lastAccess = createTime;
+    private long lastQueryTime = createTime;
 
     /**
      * 回调对象。
@@ -201,6 +200,36 @@ public class MySqlSession {
         if (sessionStatus > SESSION_NORMAL) {
             executeCommand();
         }
+    }
+
+    /**
+     * 错误提示。
+     *
+     * @param errorNo
+     * @param info
+     */
+    public void failMessage(int errorNo, String info) {
+        if (sessionCallback != null) {
+            sessionCallback.onFailMessage( errorNo, info );
+        }
+    }
+
+    /**
+     * 获得创建时间。
+     *
+     * @return
+     */
+    public long getCreateTime() {
+        return createTime;
+    }
+
+    /**
+     * 获得最后访问时间。
+     *
+     * @return
+     */
+    public long getLastQueryTime() {
+        return lastQueryTime;
     }
 
     /**
@@ -464,38 +493,10 @@ public class MySqlSession {
      */
     private void bindCallback(MySqlSessionCallback sessionCallback) {
         this.sessionCallback = sessionCallback;
-        this.lastAccess = SystemClock.now();
+        this.lastQueryTime = SystemClock.now();
         if (this.sessionStatus == SESSION_NORMAL) {
             this.sessionStatus = SESSION_USING;
         }
-    }
-
-    /**
-     * 错误提示。
-     *
-     * @param errorNo
-     * @param info
-     */
-    public void failMessage(int errorNo, String info) {
-        if (sessionCallback != null) {
-            sessionCallback.onFailMessage(errorNo, info);
-        }
-    }
-
-    /**
-     * 获得创建时间。
-     * @return
-     */
-    public long getCreateTime() {
-        return createTime;
-    }
-
-    /**
-     * 获得最后访问时间。
-     * @return
-     */
-    public long getLastAccess() {
-        return lastAccess;
     }
 
     /**
@@ -503,10 +504,10 @@ public class MySqlSession {
      */
     private void unbindCallback() {
         long now = SystemClock.now();
-        long exeTime = (now - this.lastAccess);
-        this.lastAccess = now;
-        //最后统计mysql执行信息。
-        StatsManager.statsMysql( 1, 1, database, table, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );
+        long exeMillis = (now - this.lastQueryTime);
+        this.lastQueryTime = now;
+        //最后统计执行信息。
+//        StatsManager.stats( 1, 1, database, table, isMasterSql, isExeSuccess, exeMillis, dataRowsCount, affectRowsCount, txBytes, rxBytes );
         //数据归零
         this.command = null;
         this.isMasterSql = false;
@@ -518,15 +519,17 @@ public class MySqlSession {
         this.resultStatus = RESULT_INIT;
         this.resultFieldCount = 0;
         this.resultFieldPos = 0;
+        //解绑callback。
         if (this.sessionCallback != null) {
-            //再执行解绑
             this.sessionCallback.onFinish();
             this.sessionCallback = null;
         }
+        //设置状态。
+        this.sessionStatus = SESSION_NORMAL;
+        //释放channelPool。
         if (channelPool != null) {
             channelPool.release( channel );
         }
-        this.sessionStatus = SESSION_NORMAL;
     }
 
 }

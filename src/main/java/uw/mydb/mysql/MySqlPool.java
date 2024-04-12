@@ -234,7 +234,7 @@ public class MySqlPool implements ChannelPool {
             if (session != null) {
                 long now = SystemClock.now();
                 if (idleDeque.size() > connMin) {
-                    if ((now - session.getLastAccess()) > connIdleTimeoutMillis) {
+                    if ((now - session.getLastQueryTime()) > connIdleTimeoutMillis) {
                         if (log.isDebugEnabled()) {
                             log.debug( "Channel[{}] will be closed because reach idle timeout[{}]!", channel, connIdleTimeoutMillis );
                         }
@@ -272,7 +272,7 @@ public class MySqlPool implements ChannelPool {
             boolean readyClose = false;
             if (session != null) {
                 long now = SystemClock.now();
-                if ((now - session.getLastAccess()) > connBusyTimeoutMillis) {
+                if ((now - session.getLastQueryTime()) > connBusyTimeoutMillis) {
                     if (log.isDebugEnabled()) {
                         log.debug( "Channel[{}] will be closed because reach busy timeout[{}]!", channel, connBusyTimeoutMillis );
                     }

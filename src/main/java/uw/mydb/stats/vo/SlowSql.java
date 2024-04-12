@@ -7,73 +7,122 @@ package uw.mydb.stats.vo;
  */
 public class SlowSql {
 
-
     /**
      * 发起客户端。
      */
-    private String client;
+    private String clientIp;
+
     /**
-     * 所在schema 。
+     * 集群ID。
      */
-    private String schema;
+    private long clusterId;
+
     /**
-     * 执行的sql。
+     * 服务器ID。
+     */
+    private long serverId;
+
+    /**
+     * 数据库名。
+     */
+    private String database;
+
+    /**
+     * 表名。
+     */
+    private String table;
+
+    /**
+     * sql
      */
     private String sql;
 
     /**
-     * 路由大小。
+     * sql类型。
      */
-    private int routeSize;
+    private String sqlType;
 
     /**
      * 数据行计数。
      */
-    protected int rowsCount;
+    private int rowNum;
+
     /**
      * 发送字节数。
      */
-    protected long sendBytes;
+    private long txBytes;
+
     /**
      * 接收字节数。
      */
-    protected long recvBytes;
+    private long rxBytes;
 
     /**
      * 执行毫秒数。
      */
-    private long exeTime;
+    private long exeMillis;
+
     /**
-     * 执行时间。
+     * 运行时间。
      */
-    private long exeDate;
+    private long runDate;
 
-    public SlowSql(String client, String schema, String sql, int routeSize, int rowsCount, long sendBytes, long recvBytes, long exeTime, long exeDate) {
-        this.client = client;
-        this.schema = schema;
+    public SlowSql() {
+    }
+
+    public SlowSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, String sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate) {
+        this.clientIp = clientIp;
+        this.clusterId = clusterId;
+        this.serverId = serverId;
+        this.database = database;
+        this.table = table;
         this.sql = sql;
-        this.routeSize = routeSize;
-        this.rowsCount = rowsCount;
-        this.sendBytes = sendBytes;
-        this.recvBytes = recvBytes;
-        this.exeTime = exeTime;
-        this.exeDate = exeDate;
+        this.sqlType = sqlType;
+        this.rowNum = rowNum;
+        this.txBytes = txBytes;
+        this.rxBytes = rxBytes;
+        this.exeMillis = exeMillis;
+        this.runDate = runDate;
     }
 
-    public String getClient() {
-        return client;
+    public String getClientIp() {
+        return clientIp;
     }
 
-    public void setClient(String client) {
-        this.client = client;
+    public void setClientIp(String clientIp) {
+        this.clientIp = clientIp;
     }
 
-    public String getSchema() {
-        return schema;
+    public long getClusterId() {
+        return clusterId;
     }
 
-    public void setSchema(String schema) {
-        this.schema = schema;
+    public void setClusterId(long clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public long getServerId() {
+        return serverId;
+    }
+
+    public void setServerId(long serverId) {
+        this.serverId = serverId;
+    }
+
+    public String getDatabase() {
+        return database;
+    }
+
+    public void setDatabase(String database) {
+        this.database = database;
+    }
+
+    public String getTable() {
+        return table;
+    }
+
+    public void setTable(String table) {
+        this.table = table;
     }
 
     public String getSql() {
@@ -84,51 +133,51 @@ public class SlowSql {
         this.sql = sql;
     }
 
-    public int getRouteSize() {
-        return routeSize;
+    public String getSqlType() {
+        return sqlType;
     }
 
-    public void setRouteSize(int routeSize) {
-        this.routeSize = routeSize;
+    public void setSqlType(String sqlType) {
+        this.sqlType = sqlType;
     }
 
-    public int getRowsCount() {
-        return rowsCount;
+    public int getRowNum() {
+        return rowNum;
     }
 
-    public void setRowsCount(int rowsCount) {
-        this.rowsCount = rowsCount;
+    public void setRowNum(int rowNum) {
+        this.rowNum = rowNum;
     }
 
-    public long getSendBytes() {
-        return sendBytes;
+    public long getTxBytes() {
+        return txBytes;
     }
 
-    public void setSendBytes(long sendBytes) {
-        this.sendBytes = sendBytes;
+    public void setTxBytes(long txBytes) {
+        this.txBytes = txBytes;
     }
 
-    public long getRecvBytes() {
-        return recvBytes;
+    public long getRxBytes() {
+        return rxBytes;
     }
 
-    public void setRecvBytes(long recvBytes) {
-        this.recvBytes = recvBytes;
+    public void setRxBytes(long rxBytes) {
+        this.rxBytes = rxBytes;
     }
 
-    public long getExeTime() {
-        return exeTime;
+    public long getExeMillis() {
+        return exeMillis;
     }
 
-    public void setExeTime(long exeTime) {
-        this.exeTime = exeTime;
+    public void setExeMillis(long exeMillis) {
+        this.exeMillis = exeMillis;
     }
 
-    public long getExeDate() {
-        return exeDate;
+    public long getRunDate() {
+        return runDate;
     }
 
-    public void setExeDate(long exeDate) {
-        this.exeDate = exeDate;
+    public void setRunDate(long runDate) {
+        this.runDate = runDate;
     }
 }

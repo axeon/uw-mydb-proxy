@@ -58,5 +58,13 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
         errorMessage = errorPacket.message;
     }
 
-
+    /**
+     * 获得客户端信息。
+     *
+     * @return
+     */
+    @Override
+    public String getClientInfo() {
+        return this.getClass().getSimpleName();
+    }
 }

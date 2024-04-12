@@ -21,6 +21,8 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
     }
 
 
+
+
     /**
      * 收到ResultSetHeader数据包。
      *
@@ -47,6 +49,16 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
             strings[i] = new String(rowDataPacket.fieldValues.get(i));
         }
         data.add(strings);
+    }
+
+    /**
+     * 获得客户端信息。
+     *
+     * @return
+     */
+    @Override
+    public String getClientInfo() {
+        return this.getClass().getSimpleName();
     }
 
     /**

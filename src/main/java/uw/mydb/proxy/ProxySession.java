@@ -17,7 +17,6 @@ import uw.mydb.protocol.constant.MySqlErrorCode;
 import uw.mydb.protocol.packet.*;
 import uw.mydb.sqlparse.SqlParseResult;
 import uw.mydb.sqlparse.SqlParser;
-import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
 import uw.mydb.util.RandomUtils;
@@ -66,11 +65,6 @@ public class ProxySession implements MySqlSessionCallback {
     private int affectRowsCount;
 
     /**
-     * 执行消耗时间。
-     */
-    private long exeTime;
-
-    /**
      * 发送字节数。
      */
     private long txBytes;
@@ -108,17 +102,17 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 用户名
      */
-    private String user;
+    private String clientUser;
 
     /**
      * 连接的主机。
      */
-    private String host;
+    private String clientHost;
 
     /**
      * 连接的端口。
      */
-    private int port;
+    private int clientPort;
 
     /**
      * 连接的database。
@@ -161,32 +155,160 @@ public class ProxySession implements MySqlSessionCallback {
         this.id = sessionIdGenerator.incrementAndGet();
     }
 
-    public String getUser() {
-        return user;
+    public String getClientUser() {
+        return clientUser;
     }
 
-    public void setUser(String user) {
-        this.user = user;
+    public void setClientUser(String clientUser) {
+        this.clientUser = clientUser;
     }
 
-    public String getHost() {
-        return host;
+    public String getClientHost() {
+        return clientHost;
     }
 
-    public void setHost(String host) {
-        this.host = host;
+    public void setClientHost(String clientHost) {
+        this.clientHost = clientHost;
     }
 
-    public int getPort() {
-        return port;
+    public int getClientPort() {
+        return clientPort;
     }
 
-    public void setPort(int port) {
-        this.port = port;
+    public void setClientPort(int clientPort) {
+        this.clientPort = clientPort;
     }
 
     public boolean isLogon() {
         return isLogon;
+    }
+
+    /**
+     * 获得客户端信息。
+     *
+     * @return
+     */
+    @Override
+    public String getClientInfo() {
+        return clientHost;
+    }
+
+    /**
+     * 收到Ok数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveOkPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        OkPacket okPacket = new OkPacket();
+        okPacket.readPayLoad( buf );
+        affectRowsCount += okPacket.affectedRows;
+        buf.resetReaderIndex();
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 收到Error数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveErrorPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        ctx.write( buf.retain() );
+        isExeSuccess = false;
+    }
+
+    /**
+     * 收到ResultSetHeader数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 收到FieldPacket数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveFieldDataPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 收到FieldEOFPacket数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 收到RowDataPacket数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        dataRowsCount++;
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 收到RowDataEOFPacket数据包。
+     *
+     * @param buf
+     */
+    @Override
+    public void receiveRowDataEOFPacket(byte packetId, ByteBuf buf) {
+        txBytes += buf.readableBytes();
+        ctx.write( buf.retain() );
+    }
+
+    /**
+     * 错误提示。
+     *
+     * @param errorNo
+     * @param info
+     */
+    @Override
+    public void onFailMessage(int errorNo, String info) {
+        ErrorPacket errorPacket = new ErrorPacket();
+        errorPacket.packetId = 1;
+        errorPacket.errorNo = errorNo;
+        errorPacket.message = info;
+        errorPacket.writeToChannel( ctx );
+        this.ctx.flush();
+    }
+
+    /**
+     * 卸载。
+     */
+    @Override
+    public void onFinish() {
+        //开始统计数据了。
+//        long exeMillis = SystemClock.now() - queryStartTime;
+        //数据归零
+        sqlParseResult = null;
+        isMasterSql = false;
+        isExeSuccess = true;
+        this.dataRowsCount = 0;
+        this.affectRowsCount = 0;
+        this.rxBytes = 0;
+        this.txBytes = 0;
+        //最后才能flush，否则会出问题！！！
+        this.ctx.flush();
     }
 
     /**
@@ -301,137 +423,10 @@ public class ProxySession implements MySqlSessionCallback {
         // 设置字符集编码
         this.charsetIndex = (authPacket.charsetIndex & 0xff);
         //设置session用户
-        this.user = authPacket.username;
+        this.clientUser = authPacket.username;
         this.isLogon = true;
         this.authSeed = null;
         OkPacket.writeAuthOkToChannel( ctx );
-    }
-
-    /**
-     * 收到Ok数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveOkPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        OkPacket okPacket = new OkPacket();
-        okPacket.readPayLoad( buf );
-        affectRowsCount += okPacket.affectedRows;
-        buf.resetReaderIndex();
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 收到Error数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveErrorPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
-        isExeSuccess = false;
-    }
-
-    /**
-     * 收到ResultSetHeader数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 收到FieldPacket数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveFieldDataPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 收到FieldEOFPacket数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 收到RowDataPacket数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        dataRowsCount++;
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 收到RowDataEOFPacket数据包。
-     *
-     * @param buf
-     */
-    @Override
-    public void receiveRowDataEOFPacket(byte packetId, ByteBuf buf) {
-        txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
-    }
-
-    /**
-     * 错误提示。
-     *
-     * @param errorNo
-     * @param info
-     */
-    @Override
-    public void onFailMessage(int errorNo, String info) {
-        ErrorPacket errorPacket = new ErrorPacket();
-        errorPacket.packetId = 1;
-        errorPacket.errorNo = errorNo;
-        errorPacket.message = info;
-        errorPacket.writeToChannel( ctx );
-        this.ctx.flush();
-    }
-
-    /**
-     * 卸载。
-     */
-    @Override
-    public void onFinish() {
-        //开始统计数据了。
-        this.exeTime = SystemClock.now() - queryStartTime;
-        if (sqlParseResult != null) {
-            String statsTable = sqlParseResult.getSourceTable();
-            String statsSql = sqlParseResult.getSourceSql();
-            int statsRouteSize = sqlParseResult.getSqlInfo() != null ? 1 : sqlParseResult.getSqlInfoList().size();
-            //开始统计。
-            StatsManager.statsMydb( host, database, statsTable, isMasterSql, isExeSuccess, exeTime, dataRowsCount, affectRowsCount, txBytes, rxBytes );
-            StatsManager.statsSlowSql( host, database, statsSql, statsRouteSize, Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeTime, queryStartTime );
-        }
-        //数据归零
-        sqlParseResult = null;
-        isMasterSql = false;
-        isExeSuccess = true;
-        this.exeTime = 0;
-        this.dataRowsCount = 0;
-        this.affectRowsCount = 0;
-        this.rxBytes = 0;
-        this.txBytes = 0;
-        //最后才能flush，否则会出问题！！！
-        this.ctx.flush();
     }
 
     /**
@@ -487,7 +482,7 @@ public class ProxySession implements MySqlSessionCallback {
             mySqlSession.addCommand( this, sqlParseResult.getSqlInfo(), sqlParseResult.isMasterQuery() );
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
-            multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.ctx, sqlParseResult ) );
+            multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.clientHost, this.ctx, sqlParseResult ) );
         }
     }
 
