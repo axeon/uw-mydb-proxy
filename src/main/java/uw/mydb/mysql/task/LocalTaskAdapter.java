@@ -6,8 +6,6 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.mysql.MySqlClient;
-import uw.mydb.protocol.packet.CommandPacket;
-import uw.mydb.protocol.packet.MySqlPacket;
 
 /**
  * 本地任务Adapter。
@@ -75,7 +73,7 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
             logger.warn( "无法找到合适的mysqlSession!" );
             return;
         }
-        mysqlSession.addCommand(this , sql, isMaster );
+        mysqlSession.addCommand(this , sql );
     }
 
     /**

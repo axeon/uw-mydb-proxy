@@ -7,6 +7,7 @@ package uw.mydb.stats.vo;
  */
 public class SlowSql {
 
+    private long proxyId;
     /**
      * 发起客户端。
      */
@@ -84,6 +85,14 @@ public class SlowSql {
         this.rxBytes = rxBytes;
         this.exeMillis = exeMillis;
         this.runDate = runDate;
+    }
+
+    public long getProxyId() {
+        return proxyId;
+    }
+
+    public void setProxyId(long proxyId) {
+        this.proxyId = proxyId;
     }
 
     public String getClientIp() {

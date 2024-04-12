@@ -7,9 +7,9 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
+import uw.mydb.constant.SQLType;
 import uw.mydb.protocol.constant.MySQLCapability;
 import uw.mydb.protocol.packet.*;
-import uw.mydb.sqlparse.SqlParseResult;
 import uw.mydb.stats.StatsManager;
 import uw.mydb.util.CachingSha2PasswordPlugin;
 import uw.mydb.util.MySqlNativePasswordPlugin;
@@ -78,7 +78,7 @@ public class MySqlSession {
     /**
      * 开始使用时间.
      */
-    private long lastQueryTime = createTime;
+    private long lastRequestTime = createTime;
 
     /**
      * 回调对象。
@@ -111,6 +111,28 @@ public class MySqlSession {
      */
     private volatile int resultStatus = RESULT_INIT;
 
+
+    /**
+     * 执行sql所在的数据库
+     */
+    private String database;
+
+    /**
+     * 执行sql所在的表
+     */
+    private String table;
+
+    /**
+     * 执行的sql。
+     */
+    private String sql;
+
+    /**
+     * sql类型。
+     */
+    private int sqlType;
+
+
     /**
      * 数据行计数。
      */
@@ -132,29 +154,9 @@ public class MySqlSession {
     private long rxBytes;
 
     /**
-     * 执行sql所在的数据库
-     */
-    private String database;
-
-    /**
-     * 执行sql所在的表
-     */
-    private String table;
-
-    /**
-     * 是否是只读sql
-     */
-    private boolean isMasterSql = false;
-
-    /**
      * 是否执行失败了
      */
-    private boolean isExeSuccess = true;
-
-    /**
-     * 正在执行的指令。
-     */
-    private CommandPacket command;
+    private boolean isSuccess = true;
 
     /**
      * result set fieldCount.
@@ -165,6 +167,7 @@ public class MySqlSession {
      * fieldPos。
      */
     private int resultFieldPos = 0;
+
 
     protected MySqlSession(MysqlServerConfig mysqlServerConfig, Channel channel) {
         this.mysqlServerConfig = mysqlServerConfig;
@@ -177,46 +180,30 @@ public class MySqlSession {
      * @param sessionCallback
      * @param sql
      */
-    public void addCommand(MySqlSessionCallback sessionCallback, String sql, boolean isMasterSql) {
-        bindCallback( sessionCallback );
-        this.isMasterSql = isMasterSql;
-        this.command = buildCommandPacket( sql );
-        if (sessionStatus > SESSION_NORMAL) {
-            executeCommand();
-        }
+    public void addCommand(MySqlSessionCallback sessionCallback, String sql) {
+        addCommand( sessionCallback, null, null, sql, SQLType.OTHER.getValue() );
     }
 
     /**
-     * 异步执行一条sql。
+     * 异步执行一条sql
      *
      * @param sessionCallback
-     * @param sqlInfo
+     * @param database
+     * @param table
+     * @param sql
+     * @param sqlType
      */
-    public void addCommand(MySqlSessionCallback sessionCallback, SqlParseResult.SqlInfo sqlInfo, boolean isMasterSql) {
+    public void addCommand(MySqlSessionCallback sessionCallback, String database, String table, String sql, int sqlType) {
         bindCallback( sessionCallback );
-        this.isMasterSql = isMasterSql;
-        this.database = sqlInfo.getDatabase();
-        this.table = sqlInfo.getTable();
-        this.command = buildCommandPacket( sqlInfo.getNewSql() );
+        this.database = database;
+        this.table = table;
+        this.sql = sql;
+        this.sqlType = sqlType;
         if (sessionStatus > SESSION_NORMAL) {
             executeCommand();
         }
     }
 
-    /**
-     * 生成packet。
-     *
-     * @return
-     */
-    public CommandPacket buildCommandPacket(String sql) {
-        CommandPacket packet = new CommandPacket();
-        packet.command = MySqlPacket.CMD_QUERY;
-        packet.arg = sql;
-        if (log.isTraceEnabled()) {
-            log.trace( "MySQL执行: {}", sql );
-        }
-        return packet;
-    }
 
     /**
      * 错误提示。
@@ -244,8 +231,8 @@ public class MySqlSession {
      *
      * @return
      */
-    public long getLastQueryTime() {
-        return lastQueryTime;
+    public long getLastRequestTime() {
+        return lastRequestTime;
     }
 
     /**
@@ -422,7 +409,7 @@ public class MySqlSession {
             case MySqlPacket.PACKET_ERROR:
                 //直接转发走
                 sessionCallback.receiveErrorPacket( packetId, buf );
-                isExeSuccess = false;
+                isSuccess = false;
                 //都报错了，直接解绑
                 unbindCallback();
                 break;
@@ -457,9 +444,15 @@ public class MySqlSession {
      * 执行指令。
      */
     private void executeCommand() {
-        if (this.command != null) {
+        if (this.sql != null) {
             ByteBuf buf = channel.alloc().buffer();
-            this.command.writePayLoad( buf );
+            CommandPacket packet = new CommandPacket();
+            packet.command = MySqlPacket.CMD_QUERY;
+            packet.arg = sql;
+            packet.writePayLoad( buf );
+            if (log.isTraceEnabled()) {
+                log.trace( "MySQL执行: {}", sql );
+            }
             //标记发送字节数。
             txBytes += buf.readableBytes();
             channel.writeAndFlush( buf );
@@ -509,7 +502,7 @@ public class MySqlSession {
      */
     private void bindCallback(MySqlSessionCallback sessionCallback) {
         this.sessionCallback = sessionCallback;
-        this.lastQueryTime = SystemClock.now();
+        this.lastRequestTime = SystemClock.now();
         if (this.sessionStatus == SESSION_NORMAL) {
             this.sessionStatus = SESSION_USING;
         }
@@ -520,15 +513,17 @@ public class MySqlSession {
      */
     private void unbindCallback() {
         long now = SystemClock.now();
-        long exeMillis = (now - this.lastQueryTime);
-        this.lastQueryTime = now;
+        long exeMillis = (now - this.lastRequestTime);
+        this.lastRequestTime = now;
         //最后统计执行信息。
-        StatsManager.statsSql( this.sessionCallback.getClientInfo(), this.mysqlServerConfig.getClusterId(), this.mysqlServerConfig.getId(), database, table, "", 1, isExeSuccess,
-                Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeMillis, now );
+        StatsManager.statsSql( this.sessionCallback.getClientInfo(), this.mysqlServerConfig.getClusterId(), this.mysqlServerConfig.getId(), database, table, sql, sqlType,
+                isSuccess, Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, exeMillis, now );
         //数据归零
-        this.command = null;
-        this.isMasterSql = false;
-        this.isExeSuccess = true;
+        this.database = null;
+        this.table = null;
+        this.sql = null;
+        this.sqlType = SQLType.OTHER.getValue();
+        this.isSuccess = true;
         this.dataRowsCount = 0;
         this.affectRowsCount = 0;
         this.rxBytes = 0;

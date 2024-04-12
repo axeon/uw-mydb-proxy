@@ -5,12 +5,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.constant.SQLType;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.mysql.MySqlSession;
 import uw.mydb.mysql.MySqlSessionCallback;
 import uw.mydb.protocol.packet.ErrorPacket;
 import uw.mydb.protocol.packet.OkPacket;
 import uw.mydb.sqlparse.SqlParseResult;
+import uw.mydb.stats.StatsManager;
+import uw.mydb.util.SystemClock;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -43,6 +46,11 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     private static final int PACKET_STEP_EOF = 2;
 
     /**
+     * 创建时间.
+     */
+    private final long createTime = SystemClock.now();
+
+    /**
      * 客户端信息。
      */
     private String clientInfo;
@@ -53,9 +61,14 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     private ChannelHandlerContext ctx;
 
     /**
+     * 数据行计数。
+     */
+    private AtomicInteger dataRowsCount = new AtomicInteger();
+
+    /**
      * 行数
      */
-    private AtomicLong affectedRows = new AtomicLong( -1 );
+    private AtomicInteger affectRowsCount = new AtomicInteger();
 
     /**
      * 门栓
@@ -65,7 +78,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     /**
      * packet序列。
      */
-    private AtomicInteger packetSeq = new AtomicInteger( 0 );
+    private AtomicInteger packetSeq = new AtomicInteger();
 
     /**
      * 是否已经进入data传输。
@@ -75,7 +88,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     /**
      * 错误计数。
      */
-    private AtomicInteger errorCount = new AtomicInteger( 0 );
+    private AtomicInteger errorCount = new AtomicInteger();
 
     /**
      * 第一个错误包。
@@ -85,30 +98,12 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     /**
      * 要查询的mysqlGroups
      */
-    private SqlParseResult routeResult;
+    private SqlParseResult parseResult;
 
-    /**
-     * 数据行计数。
-     */
-    private AtomicLong dataRowsCount = new AtomicLong();
-
-    /**
-     * 执行消耗时间。
-     */
-    private long exeTime;
     /**
      * 发送字节数。
      */
-    private AtomicLong sendBytes = new AtomicLong();
-    /**
-     * 接收字节数。
-     */
-    private long recvBytes;
-
-    /**
-     * 是否是只读sql
-     */
-    private boolean isMasterSql = false;
+    private AtomicLong txBytes = new AtomicLong();
 
     /**
      * 是否执行失败了
@@ -116,11 +111,11 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     private boolean isExeSuccess = true;
 
 
-    public ProxyMultiNodeHandler(String clientInfo, ChannelHandlerContext ctx, SqlParseResult routeResult) {
+    public ProxyMultiNodeHandler(String clientInfo, ChannelHandlerContext ctx, SqlParseResult parseResult) {
         this.clientInfo = clientInfo;
         this.ctx = ctx;
-        this.routeResult = routeResult;
-        countDownLatch = new CountDownLatch( routeResult.getSqlInfoList().size() );
+        this.parseResult = parseResult;
+        countDownLatch = new CountDownLatch( parseResult.getSqlInfoList().size() );
     }
 
     /**
@@ -143,9 +138,9 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         OkPacket okPacket = new OkPacket();
         okPacket.readPayLoad( buf );
         if (okPacket.affectedRows > 0) {
-            affectedRows.addAndGet( okPacket.affectedRows );
+            affectRowsCount.addAndGet( (int)okPacket.affectedRows );
         } else {
-            affectedRows.compareAndSet( -1, 0 );
+            affectRowsCount.compareAndSet( -1, 0 );
         }
     }
 
@@ -174,7 +169,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             return;
         }
         if (packetSeq.compareAndSet( 0, packetId )) {
-            sendBytes.addAndGet( buf.readableBytes() );
+            txBytes.addAndGet( buf.readableBytes() );
             ctx.write( buf.retain() );
         }
     }
@@ -190,7 +185,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             return;
         }
         if (packetSeq.compareAndSet( packetId - 1, packetId )) {
-            sendBytes.addAndGet( buf.readableBytes() );
+            txBytes.addAndGet( buf.readableBytes() );
             ctx.write( buf.retain() );
         }
     }
@@ -203,7 +198,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     @Override
     public synchronized void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
         if (packetStep.compareAndSet( PACKET_STEP_INIT, PACKET_STEP_EOF_FIELD )) {
-            sendBytes.addAndGet( buf.readableBytes() );
+            txBytes.addAndGet( buf.readableBytes() );
             ctx.write( buf.retain() );
             packetSeq.incrementAndGet();
         }
@@ -216,7 +211,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      */
     @Override
     public synchronized void receiveRowDataPacket(byte packetId, ByteBuf buf) {
-        sendBytes.addAndGet( buf.readableBytes() );
+        txBytes.addAndGet( buf.readableBytes() );
         dataRowsCount.incrementAndGet();
         packetId = (byte) (packetSeq.incrementAndGet());
         buf.setByte( 3, packetId );
@@ -259,13 +254,13 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
 
     @Override
     public void run() {
-        for (SqlParseResult.SqlInfo sqlInfo : routeResult.getSqlInfoList()) {
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), routeResult.isMasterQuery() );
+        for (SqlParseResult.SqlInfo sqlInfo : parseResult.getSqlInfoList()) {
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), parseResult.isMasterQuery() );
             if (mySqlSession == null) {
                 logger.warn( "无法找到合适的mysqlSession!" );
                 continue;
             }
-            mySqlSession.addCommand( this, sqlInfo, routeResult.isMasterQuery() );
+            mySqlSession.addCommand( this, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), parseResult.getSqlType() );
         }
         //等待最长180s
         try {
@@ -282,24 +277,29 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             eofPacket.warningCount = errorCount.get();
             eofPacket.serverStatus = 0x22;
             eofPacket.writeToChannel( ctx );
-            sendBytes.addAndGet( eofPacket.getPacketLength() );
+            txBytes.addAndGet( eofPacket.getPacketLength() );
         } else {
-            if (affectedRows.get() > -1) {
+            if (affectRowsCount.get() > -1) {
                 //说明有ok包。
                 OkPacket okPacket = new OkPacket();
                 okPacket.packetId = 1;
-                okPacket.affectedRows = affectedRows.get();
+                okPacket.affectedRows = affectRowsCount.get();
                 okPacket.warningCount = errorCount.get();
                 okPacket.writeToChannel( ctx );
-                sendBytes.addAndGet( okPacket.getPacketLength() );
+                txBytes.addAndGet( okPacket.getPacketLength() );
             } else {
                 //说明全部就是错误包啦，直接返回第一個error包
                 errorPacket.writeToChannel( ctx );
-                sendBytes.addAndGet( errorPacket.getPacketLength() );
+                txBytes.addAndGet( errorPacket.getPacketLength() );
                 isExeSuccess = false;
             }
         }
+        //开始统计数据了。
+        if (!isExeSuccess) {
+            long now = SystemClock.now();
+            StatsManager.reportErrorSql( this.clientInfo, 0, 0, parseResult.getSourceDatabase(), null, parseResult.getSourceSql(), SQLType.OTHER.getValue(),
+                    Math.max( dataRowsCount.get(), this.affectRowsCount.get() ), 0, txBytes.get(), now - createTime, now, 0, "Proxy Multi Node Error!", null );
+        }
         ctx.flush();
-//        StatsManager.statsMydb();
     }
 }

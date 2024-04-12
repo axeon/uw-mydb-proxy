@@ -37,8 +37,8 @@ public class OkPacket extends MySqlPacket {
      * @param ctx
      */
     public static void writeOkToChannel(ChannelHandlerContext ctx) {
-        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.OK.length).writeBytes( OkPacket.OK);
-        ctx.writeAndFlush(byteBuf);
+        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.OK.length ).writeBytes( OkPacket.OK );
+        ctx.writeAndFlush( byteBuf );
     }
 
     /**
@@ -47,8 +47,8 @@ public class OkPacket extends MySqlPacket {
      * @param channel
      */
     public static void writeOkToChannel(Channel channel) {
-        ByteBuf byteBuf = channel.alloc().buffer( OkPacket.OK.length).writeBytes( OkPacket.OK);
-        channel.writeAndFlush(byteBuf);
+        ByteBuf byteBuf = channel.alloc().buffer( OkPacket.OK.length ).writeBytes( OkPacket.OK );
+        channel.writeAndFlush( byteBuf );
     }
 
     /**
@@ -57,8 +57,8 @@ public class OkPacket extends MySqlPacket {
      * @param ctx
      */
     public static void writeAuthOkToChannel(ChannelHandlerContext ctx) {
-        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.AUTH_OK.length).writeBytes( OkPacket.AUTH_OK);
-        ctx.writeAndFlush(byteBuf);
+        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.AUTH_OK.length ).writeBytes( OkPacket.AUTH_OK );
+        ctx.writeAndFlush( byteBuf );
     }
 
     public boolean hasStatusFlag(long flag) {
@@ -67,25 +67,25 @@ public class OkPacket extends MySqlPacket {
 
     @Override
     protected void write(ByteBuf buf) {
-        ByteBufUtils.writeLenEncInt(buf, packetType);
-        ByteBufUtils.writeLenEncInt(buf, affectedRows);
-        ByteBufUtils.writeLenEncInt(buf, insertId);
-        ByteBufUtils.writeUB2(buf, serverStatus);
-        ByteBufUtils.writeUB2(buf, warningCount);
+        ByteBufUtils.writeLenEncInt( buf, packetType );
+        ByteBufUtils.writeLenEncInt( buf, affectedRows );
+        ByteBufUtils.writeLenEncInt( buf, insertId );
+        ByteBufUtils.writeUB2( buf, serverStatus );
+        ByteBufUtils.writeUB2( buf, warningCount );
         if (message != null) {
-            ByteBufUtils.writeBytesWithLenEnc(buf, message);
+            ByteBufUtils.writeBytesWithLenEnc( buf, message );
         }
     }
 
     @Override
     protected void read(ByteBuf buf) {
         packetType = buf.readByte();
-        affectedRows = ByteBufUtils.readLenEncInt(buf);
-        insertId = ByteBufUtils.readLenEncInt(buf);
-        serverStatus = ByteBufUtils.readUB2(buf);
-        warningCount = ByteBufUtils.readUB2(buf);
+        affectedRows = ByteBufUtils.readLenEncInt( buf );
+        insertId = ByteBufUtils.readLenEncInt( buf );
+        serverStatus = ByteBufUtils.readUB2( buf );
+        warningCount = ByteBufUtils.readUB2( buf );
         if (buf.readableBytes() > 0) {
-            message = ByteBufUtils.readBytesWithLenEnc(buf);
+            message = ByteBufUtils.readBytesWithLenEnc( buf );
         }
     }
 

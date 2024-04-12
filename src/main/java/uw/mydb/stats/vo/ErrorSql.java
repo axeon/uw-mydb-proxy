@@ -7,6 +7,8 @@ package uw.mydb.stats.vo;
  */
 public class ErrorSql {
 
+    private long proxyId;
+
     /**
      * 发起客户端。
      */
@@ -77,12 +79,9 @@ public class ErrorSql {
      */
     private String errorMsg;
 
-    /**
-     * 异常信息。
-     */
-    private String exception;
 
-    public ErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
+    public ErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes,
+                    long exeMillis, long runDate, int errorCode, String errorMsg) {
         this.clientIp = clientIp;
         this.clusterId = clusterId;
         this.serverId = serverId;
@@ -97,10 +96,17 @@ public class ErrorSql {
         this.runDate = runDate;
         this.errorCode = errorCode;
         this.errorMsg = errorMsg;
-        this.exception = exception;
     }
 
     public ErrorSql() {
+    }
+
+    public long getProxyId() {
+        return proxyId;
+    }
+
+    public void setProxyId(long proxyId) {
+        this.proxyId = proxyId;
     }
 
     public String getClientIp() {
@@ -213,13 +219,5 @@ public class ErrorSql {
 
     public void setErrorMsg(String errorMsg) {
         this.errorMsg = errorMsg;
-    }
-
-    public String getException() {
-        return exception;
-    }
-
-    public void setException(String exception) {
-        this.exception = exception;
     }
 }

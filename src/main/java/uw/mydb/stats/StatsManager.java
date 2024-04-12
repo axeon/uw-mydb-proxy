@@ -9,6 +9,7 @@ import uw.mydb.proxy.ProxySessionManager;
 import uw.mydb.stats.vo.*;
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,8 +53,8 @@ public class StatsManager {
     /**
      * 统计慢sql。
      */
-    public static void statsSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum, long txBytes,
-                                long rxBytes, long exeMillis, long runDate) {
+    public static void statsSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum,
+                                long txBytes, long rxBytes, long exeMillis, long runDate) {
         //获得schema统计表。
         SchemaSqlStats schemaSqlStats =
                 sqlStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaSqlStats( clusterId, serverId, database, table ) );
@@ -143,8 +144,9 @@ public class StatsManager {
     /**
      * 记录错误SQL。
      */
-    public static void reportErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
-        ErrorSql errorSql = new ErrorSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate, errorCode, errorMsg, exception);
+    public static void reportErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes,
+                                      long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
+        ErrorSql errorSql = new ErrorSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate, errorCode, errorMsg );
         reportExecutor.submit( () -> MydbConfigService.reportErrorSql( errorSql ) );
     }
 
@@ -160,9 +162,11 @@ public class StatsManager {
         MydbProperties properties = MydbConfigService.getMydbProperties();
         report.setProxyHost( properties.getProxyHost() );
         report.setProxyPort( properties.getProxyPort() );
-        report.setAppName( properties.getAppName() );
-        report.setAppVersion( properties.getAppVersion() );
-        //设置内存和线程信息。
+        report.setProxyName( properties.getAppName() );
+        report.setProxyVersion( properties.getAppVersion() );
+        //设置CPU内存和线程信息。
+        OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
+        report.setCpuLoad( osMxBean.getSystemLoadAverage() / osMxBean.getAvailableProcessors() * 100 );
         Runtime runtime = Runtime.getRuntime();
         report.setJvmMemMax( runtime.maxMemory() );
         report.setJvmMemTotal( runtime.totalMemory() );

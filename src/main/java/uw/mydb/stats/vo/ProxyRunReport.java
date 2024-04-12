@@ -1,7 +1,5 @@
 package uw.mydb.stats.vo;
 
-import org.apache.commons.lang3.tuple.Triple;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +29,17 @@ public class ProxyRunReport {
     /**
      * 应用名称
      */
-    private String appName;
+    private String ProxyName;
 
     /**
      * 应用版本
      */
-    private String appVersion;
+    private String ProxyVersion;
+
+    /**
+     * CPU负载。
+     */
+    private double cpuLoad;
 
     /**
      * jvm内存总数
@@ -122,20 +125,28 @@ public class ProxyRunReport {
         this.proxyPort = proxyPort;
     }
 
-    public String getAppName() {
-        return appName;
+    public String getProxyName() {
+        return ProxyName;
     }
 
-    public void setAppName(String appName) {
-        this.appName = appName;
+    public void setProxyName(String proxyName) {
+        this.ProxyName = proxyName;
     }
 
-    public String getAppVersion() {
-        return appVersion;
+    public String getProxyVersion() {
+        return ProxyVersion;
     }
 
-    public void setAppVersion(String appVersion) {
-        this.appVersion = appVersion;
+    public void setProxyVersion(String proxyVersion) {
+        this.ProxyVersion = proxyVersion;
+    }
+
+    public double getCpuLoad() {
+        return cpuLoad;
+    }
+
+    public void setCpuLoad(double cpuLoad) {
+        this.cpuLoad = cpuLoad;
     }
 
     public long getJvmMemMax() {
