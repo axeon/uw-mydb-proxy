@@ -9,7 +9,7 @@ import java.util.Map;
  *
  * @author axeon
  */
-public class ProxyRunReport {
+public class ProxyRunStats extends SqlStats{
 
     /**
      * proxyId
@@ -77,19 +77,34 @@ public class ProxyRunReport {
     private long threadStarted;
 
     /**
-     * 连接数量。
+     * 客户端数。
      */
-    private int connectionNum;
+    private int clientNum;
 
     /**
-     * 代理 sql stats统计。
+     * 客户端连接数量。
      */
-    private SqlStats ProxySqlStats;
+    private int clientConnNum;
 
     /**
      * 客户端连接信息。
      */
     private Map<String,Long> clientConnMap;
+
+    /**
+     * mysql数量。
+     */
+    private int mysqlNum;
+
+    /**
+     * mysql忙连接数量。
+     */
+    private int mysqlBusyConnNum;
+
+    /**
+     * mysql空闲链接数量。
+     */
+    private int mysqlIdleConnNum;
 
     /**
      * mysql链接信息。
@@ -99,7 +114,7 @@ public class ProxyRunReport {
     /**
      * 分组统计sqlStats集合。
      */
-    private Collection<SchemaSqlStats> schemaSqlStatsList;
+    private Collection<SchemaRunStats> schemaRunStatsList;
 
     public long getProxyId() {
         return proxyId;
@@ -130,7 +145,7 @@ public class ProxyRunReport {
     }
 
     public void setProxyName(String proxyName) {
-        this.ProxyName = proxyName;
+        ProxyName = proxyName;
     }
 
     public String getProxyVersion() {
@@ -138,7 +153,7 @@ public class ProxyRunReport {
     }
 
     public void setProxyVersion(String proxyVersion) {
-        this.ProxyVersion = proxyVersion;
+        ProxyVersion = proxyVersion;
     }
 
     public double getCpuLoad() {
@@ -205,13 +220,20 @@ public class ProxyRunReport {
         this.threadStarted = threadStarted;
     }
 
-
-    public int getConnectionNum() {
-        return connectionNum;
+    public int getClientNum() {
+        return clientNum;
     }
 
-    public void setConnectionNum(int connectionNum) {
-        this.connectionNum = connectionNum;
+    public void setClientNum(int clientNum) {
+        this.clientNum = clientNum;
+    }
+
+    public int getClientConnNum() {
+        return clientConnNum;
+    }
+
+    public void setClientConnNum(int clientConnNum) {
+        this.clientConnNum = clientConnNum;
     }
 
     public Map<String, Long> getClientConnMap() {
@@ -222,6 +244,30 @@ public class ProxyRunReport {
         this.clientConnMap = clientConnMap;
     }
 
+    public int getMysqlNum() {
+        return mysqlNum;
+    }
+
+    public void setMysqlNum(int mysqlNum) {
+        this.mysqlNum = mysqlNum;
+    }
+
+    public int getMysqlBusyConnNum() {
+        return mysqlBusyConnNum;
+    }
+
+    public void setMysqlBusyConnNum(int mysqlBusyConnNum) {
+        this.mysqlBusyConnNum = mysqlBusyConnNum;
+    }
+
+    public int getMysqlIdleConnNum() {
+        return mysqlIdleConnNum;
+    }
+
+    public void setMysqlIdleConnNum(int mysqlIdleConnNum) {
+        this.mysqlIdleConnNum = mysqlIdleConnNum;
+    }
+
     public List<long[]> getMysqlConnList() {
         return mysqlConnList;
     }
@@ -230,19 +276,11 @@ public class ProxyRunReport {
         this.mysqlConnList = mysqlConnList;
     }
 
-    public SqlStats getProxySqlStats() {
-        return ProxySqlStats;
+    public Collection<SchemaRunStats> getSchemaRunStatsList() {
+        return schemaRunStatsList;
     }
 
-    public void setProxySqlStats(SqlStats proxySqlStats) {
-        ProxySqlStats = proxySqlStats;
-    }
-
-    public Collection<SchemaSqlStats> getSchemaSqlStatsList() {
-        return schemaSqlStatsList;
-    }
-
-    public void setSchemaSqlStatsList(Collection<SchemaSqlStats> schemaSqlStatsList) {
-        this.schemaSqlStatsList = schemaSqlStatsList;
+    public void setSchemaRunStatsList(Collection<SchemaRunStats> schemaRunStatsList) {
+        this.schemaRunStatsList = schemaRunStatsList;
     }
 }

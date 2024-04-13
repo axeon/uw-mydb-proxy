@@ -7,7 +7,7 @@ import org.springframework.web.client.RestTemplate;
 import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
 import uw.mydb.stats.vo.ErrorSql;
-import uw.mydb.stats.vo.ProxyRunReport;
+import uw.mydb.stats.vo.ProxyRunStats;
 import uw.mydb.stats.vo.SlowSql;
 import uw.mydb.vo.*;
 
@@ -211,7 +211,7 @@ public class MydbConfigService {
      *
      * @param report
      */
-    public static void report(ProxyRunReport report) {
+    public static void report(ProxyRunStats report) {
         ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/report", report, ProxyReportResponse.class );
         if (response != null) {
             proxyId = response.getProxyId();

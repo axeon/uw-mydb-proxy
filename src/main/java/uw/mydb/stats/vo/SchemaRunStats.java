@@ -5,7 +5,7 @@ package uw.mydb.stats.vo;
  *
  * @author axeon
  */
-public class SchemaSqlStats extends SqlStats{
+public class SchemaRunStats extends SqlStats{
 
     /**
      * 集群ID。
@@ -27,14 +27,14 @@ public class SchemaSqlStats extends SqlStats{
      */
     private String table;
 
-    public SchemaSqlStats(long clusterId, long serverId, String database, String table) {
+    public SchemaRunStats(long clusterId, long serverId, String database, String table) {
         this.clusterId = clusterId;
         this.serverId = serverId;
         this.database = database;
         this.table = table;
     }
 
-    public SchemaSqlStats() {
+    public SchemaRunStats() {
     }
 
     public long getClusterId() {

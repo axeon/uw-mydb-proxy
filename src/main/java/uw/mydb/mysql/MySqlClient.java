@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
 import uw.cache.FusionCache;
+import uw.mydb.stats.vo.MysqlConnStats;
 import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
 
@@ -160,16 +161,21 @@ public class MySqlClient {
      *
      * @return
      */
-    public static List<long[]> getMysqlConnList() {
-        List<long[]> list = new ArrayList<>();
+    public static MysqlConnStats getMysqlConnStats() {
+        long sumBusyConnNum = 0, sumIdleConnNum = 0;
+        List<long[]> mysqlConnList = new ArrayList<>();
         Iterator<Map.Entry<MysqlServerConfig, MySqlPool>> iterator = channelPoolMap.iterator();
         while (iterator.hasNext()) {
             Map.Entry<MysqlServerConfig, MySqlPool> kv = iterator.next();
             MysqlServerConfig config = kv.getKey();
             MySqlPool pool = kv.getValue();
-            list.add( new long[]{config.getId(), pool.getBusyConnNum(), pool.getIdleConnNum()} );
+            int busyConnNum = pool.getBusyConnNum();
+            int idleConnNum = pool.getIdleConnNum();
+            sumBusyConnNum += busyConnNum;
+            sumIdleConnNum += idleConnNum;
+            mysqlConnList.add( new long[]{config.getId(), busyConnNum, idleConnNum} );
         }
-        return list;
+        return new MysqlConnStats(channelPoolMap.size(),sumBusyConnNum,sumIdleConnNum,mysqlConnList);
     }
 
     /**

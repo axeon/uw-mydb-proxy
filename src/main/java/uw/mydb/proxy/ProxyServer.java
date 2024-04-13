@@ -10,7 +10,7 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import org.slf4j.LoggerFactory;
 import uw.mydb.conf.MydbConfigService;
 import uw.mydb.stats.StatsManager;
-import uw.mydb.stats.vo.ProxyRunReport;
+import uw.mydb.stats.vo.ProxyRunStats;
 
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -65,7 +65,7 @@ public class ProxyServer {
         //连接池维护。
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             try {
-                ProxyRunReport report = StatsManager.getProxyRunStats();
+                ProxyRunStats report = StatsManager.getProxyRunStats();
                 MydbConfigService.report( report );
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );

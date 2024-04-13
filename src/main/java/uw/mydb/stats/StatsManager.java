@@ -34,21 +34,12 @@ public class StatsManager {
     /**
      * 服务器统计表。
      */
-    private static SqlStats proxySqlStats = new SqlStats();
+    private static ProxyRunStats proxyRunStats = new ProxyRunStats();
 
     /**
      * 基于访问库表的统计表。
      */
-    private static Map<String, SchemaSqlStats> sqlStatsMap = new ConcurrentHashMap();
-
-    /**
-     * 获得server Sql统计。
-     *
-     * @return
-     */
-    public static SqlStats getProxySqlStats() {
-        return proxySqlStats;
-    }
+    private static Map<String, SchemaRunStats> schemaRunStatsMap = new ConcurrentHashMap();
 
     /**
      * 统计慢sql。
@@ -56,83 +47,83 @@ public class StatsManager {
     public static void statsSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum,
                                 long txBytes, long rxBytes, long exeMillis, long runDate) {
         //获得schema统计表。
-        SchemaSqlStats schemaSqlStats =
-                sqlStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaSqlStats( clusterId, serverId, database, table ) );
+        SchemaRunStats schemaSqlStats =
+                schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( clusterId, serverId, database, table ) );
         if (sqlType == SQLType.SELECT.getValue()) {
             schemaSqlStats.addSelectNum( 1 );
-            proxySqlStats.addSelectErrorNum( 1 );
+            proxyRunStats.addSelectErrorNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addSelectErrorNum( 1 );
-                proxySqlStats.addSelectErrorNum( 1 );
+                proxyRunStats.addSelectErrorNum( 1 );
             }
             schemaSqlStats.addSelectExeMillis( exeMillis );
-            proxySqlStats.addSelectExeMillis( exeMillis );
+            proxyRunStats.addSelectExeMillis( exeMillis );
             schemaSqlStats.addSelectRowNum( rowNum );
-            proxySqlStats.addSelectRowNum( rowNum );
+            proxyRunStats.addSelectRowNum( rowNum );
             schemaSqlStats.addSelectTxBytes( txBytes );
-            proxySqlStats.addSelectTxBytes( txBytes );
+            proxyRunStats.addSelectTxBytes( txBytes );
             schemaSqlStats.addSelectRxBytes( rxBytes );
-            proxySqlStats.addSelectRxBytes( rxBytes );
+            proxyRunStats.addSelectRxBytes( rxBytes );
         } else if (sqlType == SQLType.INSERT.getValue()) {
             schemaSqlStats.addInsertNum( 1 );
-            proxySqlStats.addInsertErrorNum( 1 );
+            proxyRunStats.addInsertErrorNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addInsertErrorNum( 1 );
-                proxySqlStats.addInsertErrorNum( 1 );
+                proxyRunStats.addInsertErrorNum( 1 );
             }
             schemaSqlStats.addInsertExeMillis( exeMillis );
-            proxySqlStats.addInsertExeMillis( exeMillis );
+            proxyRunStats.addInsertExeMillis( exeMillis );
             schemaSqlStats.addInsertRowNum( rowNum );
-            proxySqlStats.addInsertRowNum( rowNum );
+            proxyRunStats.addInsertRowNum( rowNum );
             schemaSqlStats.addInsertTxBytes( txBytes );
-            proxySqlStats.addInsertTxBytes( txBytes );
+            proxyRunStats.addInsertTxBytes( txBytes );
             schemaSqlStats.addInsertRxBytes( rxBytes );
-            proxySqlStats.addInsertRxBytes( rxBytes );
+            proxyRunStats.addInsertRxBytes( rxBytes );
         } else if (sqlType == SQLType.UPDATE.getValue()) {
             schemaSqlStats.addUpdateNum( 1 );
-            proxySqlStats.addUpdateErrorNum( 1 );
+            proxyRunStats.addUpdateErrorNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addUpdateErrorNum( 1 );
-                proxySqlStats.addUpdateErrorNum( 1 );
+                proxyRunStats.addUpdateErrorNum( 1 );
             }
             schemaSqlStats.addUpdateExeMillis( exeMillis );
-            proxySqlStats.addUpdateExeMillis( exeMillis );
+            proxyRunStats.addUpdateExeMillis( exeMillis );
             schemaSqlStats.addUpdateRowNum( rowNum );
-            proxySqlStats.addUpdateRowNum( rowNum );
+            proxyRunStats.addUpdateRowNum( rowNum );
             schemaSqlStats.addUpdateTxBytes( txBytes );
-            proxySqlStats.addUpdateTxBytes( txBytes );
+            proxyRunStats.addUpdateTxBytes( txBytes );
             schemaSqlStats.addUpdateRxBytes( rxBytes );
-            proxySqlStats.addUpdateRxBytes( rxBytes );
+            proxyRunStats.addUpdateRxBytes( rxBytes );
         } else if (sqlType == SQLType.DELETE.getValue()) {
             schemaSqlStats.addDeleteNum( 1 );
-            proxySqlStats.addDeleteErrorNum( 1 );
+            proxyRunStats.addDeleteErrorNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addDeleteErrorNum( 1 );
-                proxySqlStats.addDeleteErrorNum( 1 );
+                proxyRunStats.addDeleteErrorNum( 1 );
             }
             schemaSqlStats.addDeleteExeMillis( exeMillis );
-            proxySqlStats.addDeleteExeMillis( exeMillis );
+            proxyRunStats.addDeleteExeMillis( exeMillis );
             schemaSqlStats.addDeleteRowNum( rowNum );
-            proxySqlStats.addDeleteRowNum( rowNum );
+            proxyRunStats.addDeleteRowNum( rowNum );
             schemaSqlStats.addDeleteTxBytes( txBytes );
-            proxySqlStats.addDeleteTxBytes( txBytes );
+            proxyRunStats.addDeleteTxBytes( txBytes );
             schemaSqlStats.addDeleteRxBytes( rxBytes );
-            proxySqlStats.addDeleteRxBytes( rxBytes );
+            proxyRunStats.addDeleteRxBytes( rxBytes );
         } else {
             schemaSqlStats.addOtherNum( 1 );
-            proxySqlStats.addOtherErrorNum( 1 );
+            proxyRunStats.addOtherErrorNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addOtherErrorNum( 1 );
-                proxySqlStats.addOtherErrorNum( 1 );
+                proxyRunStats.addOtherErrorNum( 1 );
             }
             schemaSqlStats.addOtherExeMillis( exeMillis );
-            proxySqlStats.addOtherExeMillis( exeMillis );
+            proxyRunStats.addOtherExeMillis( exeMillis );
             schemaSqlStats.addOtherRowNum( rowNum );
-            proxySqlStats.addOtherRowNum( rowNum );
+            proxyRunStats.addOtherRowNum( rowNum );
             schemaSqlStats.addOtherTxBytes( txBytes );
-            proxySqlStats.addOtherTxBytes( txBytes );
+            proxyRunStats.addOtherTxBytes( txBytes );
             schemaSqlStats.addOtherRxBytes( rxBytes );
-            proxySqlStats.addOtherRxBytes( rxBytes );
+            proxyRunStats.addOtherRxBytes( rxBytes );
         }
         if (exeMillis >= MydbConfigService.getMydbProperties().getSlowQueryMillis()) {
             SlowSql slowSql = new SlowSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate );
@@ -155,34 +146,37 @@ public class StatsManager {
      *
      * @return
      */
-    public static ProxyRunReport getProxyRunStats() {
+    public static ProxyRunStats getProxyRunStats() {
         //获得按主机分组统计的map。
-        ProxyRunReport report = new ProxyRunReport();
-        report.setProxyId( MydbConfigService.getProxyId() );
+        proxyRunStats.setProxyId( MydbConfigService.getProxyId() );
         MydbProperties properties = MydbConfigService.getMydbProperties();
-        report.setProxyHost( properties.getProxyHost() );
-        report.setProxyPort( properties.getProxyPort() );
-        report.setProxyName( properties.getAppName() );
-        report.setProxyVersion( properties.getAppVersion() );
+        proxyRunStats.setProxyHost( properties.getProxyHost() );
+        proxyRunStats.setProxyPort( properties.getProxyPort() );
+        proxyRunStats.setProxyName( properties.getAppName() );
+        proxyRunStats.setProxyVersion( properties.getAppVersion() );
         //设置CPU内存和线程信息。
         OperatingSystemMXBean osMxBean = ManagementFactory.getOperatingSystemMXBean();
-        report.setCpuLoad( osMxBean.getSystemLoadAverage() / osMxBean.getAvailableProcessors() * 100 );
+        proxyRunStats.setCpuLoad( osMxBean.getSystemLoadAverage() / osMxBean.getAvailableProcessors() * 100 );
         Runtime runtime = Runtime.getRuntime();
-        report.setJvmMemMax( runtime.maxMemory() );
-        report.setJvmMemTotal( runtime.totalMemory() );
-        report.setJvmMemFree( runtime.freeMemory() );
+        proxyRunStats.setJvmMemMax( runtime.maxMemory() );
+        proxyRunStats.setJvmMemTotal( runtime.totalMemory() );
+        proxyRunStats.setJvmMemFree( runtime.freeMemory() );
         ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
-        report.setThreadActive( threadMXBean.getThreadCount() );
-        report.setThreadDaemon( threadMXBean.getDaemonThreadCount() );
-        report.setThreadPeak( threadMXBean.getPeakThreadCount() );
-        report.setThreadStarted( threadMXBean.getTotalStartedThreadCount() );
+        proxyRunStats.setThreadActive( threadMXBean.getThreadCount() );
+        proxyRunStats.setThreadDaemon( threadMXBean.getDaemonThreadCount() );
+        proxyRunStats.setThreadPeak( threadMXBean.getPeakThreadCount() );
+        proxyRunStats.setThreadStarted( threadMXBean.getTotalStartedThreadCount() );
         //统计信息。
-        report.setConnectionNum( ProxySessionManager.getConnectionNum() );
-        report.setClientConnMap( ProxySessionManager.getClientConnMap() );
-        report.setMysqlConnList( MySqlClient.getMysqlConnList() );
-        report.setProxySqlStats( proxySqlStats );
-        report.setSchemaSqlStatsList( sqlStatsMap.values() );
-        return report;
+        proxyRunStats.setClientConnMap( ProxySessionManager.getClientConnMap() );
+        proxyRunStats.setClientNum( proxyRunStats.getClientConnMap().size() );
+        proxyRunStats.setClientConnNum( ProxySessionManager.getConnectionNum() );
+        MysqlConnStats mysqlConnStats = MySqlClient.getMysqlConnStats();
+        proxyRunStats.setMysqlNum( mysqlConnStats.getMysqlNum() );
+        proxyRunStats.setMysqlBusyConnNum( (int) mysqlConnStats.getMysqlBusyConnNum() );
+        proxyRunStats.setMysqlIdleConnNum( (int) mysqlConnStats.getMysqlIdleConnNum() );
+        proxyRunStats.setMysqlConnList( mysqlConnStats.getMysqlConnList() );
+        proxyRunStats.setSchemaRunStatsList( schemaRunStatsMap.values() );
+        return proxyRunStats;
     }
 
 }
