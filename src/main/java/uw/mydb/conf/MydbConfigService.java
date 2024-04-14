@@ -69,7 +69,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<Long, RouteConfig>() {
             @Override
             public RouteConfig load(Long key) throws Exception {
-                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId=" + key
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId=" + key
                         , RouteConfig.class );
             }
         }, (key, oldValue, newValue) -> {
@@ -81,7 +81,7 @@ public class MydbConfigService {
             @Override
             public MysqlClusterConfig load(Long key) throws Exception {
                 MysqlClusterConfig clusterConfig =
-                        restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
+                        restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + key, MysqlClusterConfig.class );
                 clusterConfig.initServerWeightList();
                 return clusterConfig;
             }
@@ -94,7 +94,7 @@ public class MydbConfigService {
             @Override
             public String[] load(String key) throws Exception {
                 DataNode node = new DataNode( key );
-                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + node.getClusterId() + "&database=" + node.getDatabase(), String[].class );
             }
         }, (key, oldValue, newValue) -> {
 
@@ -104,7 +104,7 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<Long, DataNode[]>() {
             @Override
             public DataNode[] load(Long key) throws Exception {
-                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key,
+                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key,
                         DataNode[].class );
             }
         } );
@@ -118,7 +118,7 @@ public class MydbConfigService {
         if (!tableSet.contains( dataTable.getTable() )) {
             //创建成功则加入set。
             String createdTable =
-                    MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/getSaasNode?configKey=" + mydbProperties.getConfigKey() +
+                    MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() +
                             "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
             if (StringUtils.isNotBlank( createdTable )) {
                 tableSet.add( createdTable );
@@ -209,10 +209,10 @@ public class MydbConfigService {
     /**
      * 报告执行情况。
      *
-     * @param report
+     * @param runStats
      */
-    public static void report(ProxyRunStats report) {
-        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/agent/report", report, ProxyReportResponse.class );
+    public static void reportStats(ProxyRunStats runStats) {
+        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/report", runStats, ProxyReportResponse.class );
         if (response != null) {
             proxyId = response.getProxyId();
         }
@@ -225,7 +225,7 @@ public class MydbConfigService {
      * @param slowSql
      */
     public static void reportSlowSql(SlowSql slowSql) {
-
+        restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class );
     }
 
     /**
@@ -234,6 +234,6 @@ public class MydbConfigService {
      * @param errorSql
      */
     public static void reportErrorSql(ErrorSql errorSql) {
-
+        restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
     }
 }

@@ -66,7 +66,7 @@ public class ProxyServer {
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             try {
                 ProxyRunStats report = StatsManager.getProxyRunStats();
-                MydbConfigService.report( report );
+                MydbConfigService.reportStats( report );
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );
             }
