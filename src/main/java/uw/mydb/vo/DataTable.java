@@ -92,7 +92,7 @@ public class DataTable {
      * @return
      */
     public String genSqlIdentity() {
-        if (dataNode.getDatabase() == null) {
+        if (dataNode == null) {
             return table;
         } else {
             return dataNode.getDatabase() + '.' + table;
