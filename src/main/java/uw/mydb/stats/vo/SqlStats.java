@@ -13,152 +13,152 @@ public class SqlStats {
     /**
      * insert计数。
      */
-    protected AtomicInteger insertNum;
+    protected AtomicInteger insertNum = new AtomicInteger();
 
     /**
      * update计数。
      */
-    protected AtomicInteger updateNum;
+    protected AtomicInteger updateNum = new AtomicInteger();
 
     /**
      * delete计数。
      */
-    protected AtomicInteger deleteNum;
+    protected AtomicInteger deleteNum = new AtomicInteger();
 
     /**
      * select计数。
      */
-    protected AtomicInteger selectNum;
+    protected AtomicInteger selectNum = new AtomicInteger();
 
     /**
      * other计数。
      */
-    protected AtomicInteger otherNum;
+    protected AtomicInteger otherNum = new AtomicInteger();
 
     /**
      * insert错误计数。
      */
-    protected AtomicInteger insertErrorNum;
+    protected AtomicInteger insertErrorNum = new AtomicInteger();
 
     /**
      * update错误计数。
      */
-    protected AtomicInteger updateErrorNum;
+    protected AtomicInteger updateErrorNum = new AtomicInteger();
 
     /**
      * delete错误计数。
      */
-    protected AtomicInteger deleteErrorNum;
+    protected AtomicInteger deleteErrorNum = new AtomicInteger();
 
     /**
      * select错误计数。
      */
-    protected AtomicInteger selectErrorNum;
+    protected AtomicInteger selectErrorNum = new AtomicInteger();
 
     /**
      * other错误计数。
      */
-    protected AtomicInteger otherErrorNum;
+    protected AtomicInteger otherErrorNum = new AtomicInteger();
 
     /**
      * insert执行耗时毫秒数。
      */
-    protected AtomicLong insertExeMillis;
+    protected AtomicLong insertExeMillis = new AtomicLong();
 
     /**
      * update执行耗时毫秒数。
      */
-    protected AtomicLong updateExeMillis;
+    protected AtomicLong updateExeMillis = new AtomicLong();
 
     /**
      * delete执行耗时毫秒数。
      */
-    protected AtomicLong deleteExeMillis;
+    protected AtomicLong deleteExeMillis = new AtomicLong();
 
     /**
      * select执行耗时毫秒数。
      */
-    protected AtomicLong selectExeMillis;
+    protected AtomicLong selectExeMillis = new AtomicLong();
 
     /**
      * other执行耗时毫秒数。
      */
-    protected AtomicLong otherExeMillis;
+    protected AtomicLong otherExeMillis = new AtomicLong();
 
     /**
      * insert影响行数。
      */
-    protected AtomicLong insertRowNum;
+    protected AtomicLong insertRowNum = new AtomicLong();
 
     /**
      * insert影响行数。
      */
-    protected AtomicLong updateRowNum;
+    protected AtomicLong updateRowNum = new AtomicLong();
 
     /**
      * insert影响行数。
      */
-    protected AtomicLong deleteRowNum;
+    protected AtomicLong deleteRowNum = new AtomicLong();
 
     /**
      * insert影响行数。
      */
-    protected AtomicLong selectRowNum;
+    protected AtomicLong selectRowNum = new AtomicLong();
 
     /**
      * insert影响行数。
      */
-    protected AtomicLong otherRowNum;
+    protected AtomicLong otherRowNum = new AtomicLong();
 
     /**
      * insert发送字节数。
      */
-    protected AtomicLong insertTxBytes;
+    protected AtomicLong insertTxBytes = new AtomicLong();
 
     /**
      * insert接收字节数。
      */
-    protected AtomicLong insertRxBytes;
+    protected AtomicLong insertRxBytes = new AtomicLong();
 
     /**
      * update发送字节数。
      */
-    protected AtomicLong updateTxBytes;
+    protected AtomicLong updateTxBytes = new AtomicLong();
 
     /**
      * update接收字节数。
      */
-    protected AtomicLong updateRxBytes;
+    protected AtomicLong updateRxBytes = new AtomicLong();
 
     /**
      * delete发送字节数。
      */
-    protected AtomicLong deleteTxBytes;
+    protected AtomicLong deleteTxBytes = new AtomicLong();
 
     /**
      * delete接收字节数。
      */
-    protected AtomicLong deleteRxBytes;
+    protected AtomicLong deleteRxBytes = new AtomicLong();
 
     /**
      * select发送字节数。
      */
-    protected AtomicLong selectTxBytes;
+    protected AtomicLong selectTxBytes = new AtomicLong();
 
     /**
      * select接收字节数。
      */
-    protected AtomicLong selectRxBytes;
+    protected AtomicLong selectRxBytes = new AtomicLong();
 
     /**
      * other发送字节数。
      */
-    protected AtomicLong otherTxBytes;
+    protected AtomicLong otherTxBytes = new AtomicLong();
 
     /**
      * other接收字节数。
      */
-    protected AtomicLong otherRxBytes;
+    protected AtomicLong otherRxBytes = new AtomicLong();
 
 
     public int getInsertNum() {

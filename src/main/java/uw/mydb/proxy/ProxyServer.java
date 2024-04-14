@@ -65,12 +65,12 @@ public class ProxyServer {
         //连接池维护。
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             try {
-                ProxyRunStats report = StatsManager.getProxyRunStats();
-                MydbConfigService.reportStats( report );
+                ProxyRunStats proxyRunStats = StatsManager.getProxyRunStats();
+                MydbConfigService.reportStats( proxyRunStats );
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );
             }
-        }, 0, 60, TimeUnit.SECONDS );
+        }, 10, 60, TimeUnit.SECONDS );
         logger.info( "mydb proxy server started!" );
     }
 

@@ -209,10 +209,10 @@ public class MydbConfigService {
     /**
      * 报告执行情况。
      *
-     * @param runStats
+     * @param proxyRunStats
      */
-    public static void reportStats(ProxyRunStats runStats) {
-        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/report", runStats, ProxyReportResponse.class );
+    public static void reportStats(ProxyRunStats proxyRunStats) {
+        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportStats", proxyRunStats, ProxyReportResponse.class );
         if (response != null) {
             proxyId = response.getProxyId();
         }

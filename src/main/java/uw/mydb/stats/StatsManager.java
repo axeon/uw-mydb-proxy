@@ -150,6 +150,7 @@ public class StatsManager {
         //获得按主机分组统计的map。
         proxyRunStats.setProxyId( MydbConfigService.getProxyId() );
         MydbProperties properties = MydbConfigService.getMydbProperties();
+        proxyRunStats.setConfigKey( properties.getConfigKey() );
         proxyRunStats.setProxyHost( properties.getProxyHost() );
         proxyRunStats.setProxyPort( properties.getProxyPort() );
         proxyRunStats.setProxyName( properties.getAppName() );

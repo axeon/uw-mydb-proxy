@@ -17,6 +17,11 @@ public class ProxyRunStats extends SqlStats{
     private long proxyId;
 
     /**
+     * 配置key。
+     */
+    private String configKey;
+
+    /**
      * proxyHost。
      */
     private String proxyHost;
@@ -122,6 +127,14 @@ public class ProxyRunStats extends SqlStats{
 
     public void setProxyId(long proxyId) {
         this.proxyId = proxyId;
+    }
+
+    public String getConfigKey() {
+        return configKey;
+    }
+
+    public void setConfigKey(String configKey) {
+        this.configKey = configKey;
     }
 
     public String getProxyHost() {
