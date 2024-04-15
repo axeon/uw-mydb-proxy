@@ -2,10 +2,8 @@ package uw.mydb.parse;
 
 import org.junit.Before;
 import org.junit.Test;
-import uw.cache.FusionCache;
 import uw.mydb.sqlparse.SqlParseResult;
 import uw.mydb.sqlparse.SqlParser;
-import uw.mydb.vo.TableConfig;
 
 
 /**
@@ -37,6 +35,14 @@ public class ParserTest {
     @Test
     public void testSelect() {
         SqlParseResult result = new SqlParser( SqlTest.database, SqlTest.select ).parse();
+        System.out.println( result );
+    }
+
+    @Test
+    public void testExceptionSql() {
+        String sql = "/* ApplicationName=DBeaver Ultimate 23.3.1 - Metadata */ SELECT * FROM information_schema.COLUMNS WHERE TABLE_SCHEMA='auth' AND TABLE_NAME='msc_perm' ORDER" +
+                " BY ORDINAL_POSITION";
+        SqlParseResult result = new SqlParser( (String) null, sql ).parse();
         System.out.println( result );
     }
 }

@@ -7,10 +7,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import uw.cache.FusionCache;
 import uw.mydb.sqlparse.SqlParseResult;
 import uw.mydb.sqlparse.SqlParser;
-import uw.mydb.vo.TableConfig;
 
 import java.util.concurrent.TimeUnit;
 

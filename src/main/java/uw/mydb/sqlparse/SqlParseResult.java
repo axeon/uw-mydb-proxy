@@ -3,8 +3,6 @@ package uw.mydb.sqlparse;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 import org.slf4j.LoggerFactory;
-import uw.mydb.protocol.packet.CommandPacket;
-import uw.mydb.protocol.packet.MySqlPacket;
 import uw.mydb.vo.DataTable;
 
 import java.util.List;
@@ -77,7 +75,7 @@ public class SqlParseResult {
 
     @Override
     public String toString() {
-        return new ToStringBuilder( this ,ToStringStyle.MULTI_LINE_STYLE)
+        return new ToStringBuilder( this, ToStringStyle.MULTI_LINE_STYLE )
                 .append( "sourceTable", sourceTable )
                 .append( "sourceSql", sourceSql )
                 .append( "sourceDatabase", sourceDatabase )

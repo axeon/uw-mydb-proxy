@@ -37,6 +37,17 @@ public class MydbProxyConfig {
      */
     private long lastUpdate;
 
+    public MydbProxyConfig() {
+    }
+
+    public MydbProxyConfig(String configKey, String username, String password, long baseCluster) {
+        this.configKey = configKey;
+        this.username = username;
+        this.password = password;
+        this.baseCluster = baseCluster;
+        this.lastUpdate = System.currentTimeMillis();
+    }
+
     public String getConfigKey() {
         return configKey;
     }

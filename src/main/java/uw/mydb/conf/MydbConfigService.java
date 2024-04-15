@@ -61,7 +61,9 @@ public class MydbConfigService {
         FusionCache.config( new FusionCache.Config( TableConfig.class, 10000, 0L ), new CacheDataLoader<String, TableConfig>() {
             @Override
             public TableConfig load(String key) throws Exception {
-                return restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
+                TableConfig tableConfig =
+                        restTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() + "&tableName=" + key, TableConfig.class );
+                return tableConfig;
             }
         } );
 
