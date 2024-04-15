@@ -655,6 +655,8 @@ public class SqlParser {
         //如果没有配置的，直接返回吧。
         if (tableConfig == null) {
             tableConfig = new TableConfig( tableName, MydbConfigService.getBaseClusterId(), database );
+            //加入本地缓存，减少不必要的落地查询。
+            MydbConfigService.putTableConfigToLocalCache( tableName, tableConfig );
         }
         TableRouteData tableRouteData = new TableRouteData( tableConfig, aliasName );
         //如果有route信息的，拉一下routeKeyData。
@@ -773,8 +775,8 @@ public class SqlParser {
      */
     private void generateSqlInfo() {
         //没有匹配到表名，直接给默认schema了。
-        if (subSqlList.size() <= 1 || tableRouteDataMain== null) {
-            this.parseResult.setSqlInfo( new SqlParseResult.SqlInfo( DataTable.newDataWithClusterId( MydbConfigService.getBaseClusterId() ),parseResult.sourceSql ) );
+        if (subSqlList.size() <= 1 || tableRouteDataMain == null) {
+            this.parseResult.setSqlInfo( new SqlParseResult.SqlInfo( DataTable.newDataWithClusterId( MydbConfigService.getBaseClusterId() ), parseResult.sourceSql ) );
             return;
         }
         //每个mainRouteInfoData对应一个mysqlGroup

@@ -173,6 +173,15 @@ public class MydbConfigService {
     }
 
     /**
+     * 获得表配置。
+     *
+     * @return
+     */
+    public static void putTableConfigToLocalCache(String tableName, TableConfig tableConfig) {
+        FusionCache.put( TableConfig.class, tableName, tableConfig, true );
+    }
+
+    /**
      * 获得路由配置。
      *
      * @return
