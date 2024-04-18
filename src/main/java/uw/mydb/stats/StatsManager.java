@@ -7,6 +7,7 @@ import uw.mydb.constant.SQLType;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.proxy.ProxySessionManager;
 import uw.mydb.stats.vo.*;
+import uw.mydb.util.SystemClock;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -49,6 +50,8 @@ public class StatsManager {
         //获得schema统计表。
         SchemaRunStats schemaSqlStats =
                 schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( clusterId, serverId, database, table ) );
+        //设置更新标记，用于优化。
+        schemaSqlStats.updateStatus();
         if (sqlType == SQLType.SELECT.getValue()) {
             schemaSqlStats.addSelectNum( 1 );
             proxyRunStats.addSelectErrorNum( 1 );
@@ -176,7 +179,9 @@ public class StatsManager {
         proxyRunStats.setMysqlBusyConnNum( (int) mysqlConnStats.getMysqlBusyConnNum() );
         proxyRunStats.setMysqlIdleConnNum( (int) mysqlConnStats.getMysqlIdleConnNum() );
         proxyRunStats.setMysqlConnList( mysqlConnStats.getMysqlConnList() );
-        proxyRunStats.setSchemaRunStatsList( schemaRunStatsMap.values() );
+        //过滤统计信息，65秒内有更新的才发送，否则不发送。
+        long statsStartTime = SystemClock.now() - 65_000L;
+        proxyRunStats.setSchemaRunStatsList( schemaRunStatsMap.values().stream().filter( x -> x.getLastUpdate() > statsStartTime ).toList() );
         return proxyRunStats;
     }
 

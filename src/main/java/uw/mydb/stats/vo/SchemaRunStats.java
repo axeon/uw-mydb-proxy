@@ -1,11 +1,13 @@
 package uw.mydb.stats.vo;
 
+import uw.mydb.util.SystemClock;
+
 /**
  * 基于schema的sql统计信息。
  *
  * @author axeon
  */
-public class SchemaRunStats extends SqlStats{
+public class SchemaRunStats extends SqlStats {
 
     /**
      * 集群ID。
@@ -26,6 +28,11 @@ public class SchemaRunStats extends SqlStats{
      * 表名。
      */
     private String table;
+
+    /**
+     * 上次更新时间。
+     */
+    private long lastUpdate;
 
     public SchemaRunStats(long clusterId, long serverId, String database, String table) {
         this.clusterId = clusterId;
@@ -67,5 +74,20 @@ public class SchemaRunStats extends SqlStats{
 
     public void setTable(String table) {
         this.table = table;
+    }
+
+    public long getLastUpdate() {
+        return lastUpdate;
+    }
+
+    public void setLastUpdate(long lastUpdate) {
+        this.lastUpdate = lastUpdate;
+    }
+
+    /**
+     * 更新标记。
+     */
+    public void updateStatus() {
+        this.lastUpdate = SystemClock.now();
     }
 }
