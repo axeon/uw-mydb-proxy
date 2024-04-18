@@ -1,6 +1,6 @@
 package uw.mydb.vo;
 
-import uw.mydb.constant.MysqlClusterType;
+import uw.mydb.constant.MysqlServerType;
 
 /**
  * mysql服务器配置
@@ -20,7 +20,7 @@ public class MysqlServerConfig {
     /**
      * 服务器类型。
      */
-    private int serverType = MysqlClusterType.MASTER.getValue();
+    private int serverType = MysqlServerType.MASTER.getValue();
 
     /**
      * 读取权重
