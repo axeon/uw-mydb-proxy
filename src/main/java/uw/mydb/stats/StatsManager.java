@@ -144,12 +144,21 @@ public class StatsManager {
         reportExecutor.submit( () -> MydbConfigService.reportErrorSql( errorSql ) );
     }
 
+
     /**
-     * 返回mydb服务状态。
+     * 报告schema运行统计。。
+     */
+    public static void reportSchemaRunStats() {
+        MydbConfigService.reportSchemaRunStats( schemaRunStatsMap.values() );
+    }
+
+
+    /**
+     * 报告proxy运行统计。
      *
      * @return
      */
-    public static ProxyRunStats getProxyRunStats() {
+    public static void reportProxyRunStats() {
         //获得按主机分组统计的map。
         proxyRunStats.setProxyId( MydbConfigService.getProxyId() );
         MydbProperties properties = MydbConfigService.getMydbProperties();
@@ -181,8 +190,8 @@ public class StatsManager {
         proxyRunStats.setMysqlConnList( mysqlConnStats.getMysqlConnList() );
         //过滤统计信息，65秒内有更新的才发送，否则不发送。
         long statsStartTime = SystemClock.now() - 65_000L;
-        proxyRunStats.setSchemaRunStatsList( schemaRunStatsMap.values().stream().filter( x -> x.getLastUpdate() > statsStartTime ).toList() );
-        return proxyRunStats;
+        proxyRunStats.setSchemaStatsNum( (int) schemaRunStatsMap.values().stream().filter( x -> x.getLastUpdate() > statsStartTime ).count() );
+        MydbConfigService.reportProxyRunStats( proxyRunStats );
     }
 
 }

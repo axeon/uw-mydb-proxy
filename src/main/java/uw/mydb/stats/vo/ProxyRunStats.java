@@ -117,9 +117,9 @@ public class ProxyRunStats extends SqlStats{
     private List<long[]> mysqlConnList;
 
     /**
-     * 分组统计sqlStats集合。
+     * schema统计数量。
      */
-    private Collection<SchemaRunStats> schemaRunStatsList;
+    private int schemaStatsNum;
 
     public long getProxyId() {
         return proxyId;
@@ -289,11 +289,11 @@ public class ProxyRunStats extends SqlStats{
         this.mysqlConnList = mysqlConnList;
     }
 
-    public Collection<SchemaRunStats> getSchemaRunStatsList() {
-        return schemaRunStatsList;
+    public int getSchemaStatsNum() {
+        return schemaStatsNum;
     }
 
-    public void setSchemaRunStatsList(Collection<SchemaRunStats> schemaRunStatsList) {
-        this.schemaRunStatsList = schemaRunStatsList;
+    public void setSchemaStatsNum(int schemaStatsNum) {
+        this.schemaStatsNum = schemaStatsNum;
     }
 }

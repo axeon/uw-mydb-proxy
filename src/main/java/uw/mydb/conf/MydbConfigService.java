@@ -8,9 +8,11 @@ import uw.cache.CacheDataLoader;
 import uw.cache.FusionCache;
 import uw.mydb.stats.vo.ErrorSql;
 import uw.mydb.stats.vo.ProxyRunStats;
+import uw.mydb.stats.vo.SchemaRunStats;
 import uw.mydb.stats.vo.SlowSql;
 import uw.mydb.vo.*;
 
+import java.util.Collection;
 import java.util.Set;
 
 /**
@@ -218,17 +220,25 @@ public class MydbConfigService {
     }
 
     /**
-     * 报告执行情况。
+     * 报告proxy情况。
      *
      * @param proxyRunStats
      */
-    public static void reportStats(ProxyRunStats proxyRunStats) {
-        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportStats", proxyRunStats, ProxyReportResponse.class );
+    public static void reportProxyRunStats(ProxyRunStats proxyRunStats) {
+        ProxyReportResponse response = restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportProxyRunStats", proxyRunStats, ProxyReportResponse.class );
         if (response != null) {
             proxyId = response.getProxyId();
         }
     }
 
+    /**
+     * 报告schema统计信息。
+     *
+     * @param schemaRunStats
+     */
+    public static void reportSchemaRunStats(Collection<SchemaRunStats> schemaRunStats) {
+        restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSchemaRunStats", schemaRunStats, Void.class );
+    }
 
     /**
      * 报告慢sql。
@@ -247,4 +257,6 @@ public class MydbConfigService {
     public static void reportErrorSql(ErrorSql errorSql) {
         restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
     }
+
+
 }
