@@ -12,127 +12,6 @@ import java.util.concurrent.atomic.AtomicLong;
  * @author axeon
  */
 public class SchemaRunStats {
-
-    /**
-     * insert计数。
-     */
-    protected AtomicInteger insertNum = new AtomicInteger();
-    /**
-     * update计数。
-     */
-    protected AtomicInteger updateNum = new AtomicInteger();
-    /**
-     * delete计数。
-     */
-    protected AtomicInteger deleteNum = new AtomicInteger();
-    /**
-     * select计数。
-     */
-    protected AtomicInteger selectNum = new AtomicInteger();
-    /**
-     * other计数。
-     */
-    protected AtomicInteger otherNum = new AtomicInteger();
-    /**
-     * insert错误计数。
-     */
-    protected AtomicInteger insertErrorNum = new AtomicInteger();
-    /**
-     * update错误计数。
-     */
-    protected AtomicInteger updateErrorNum = new AtomicInteger();
-    /**
-     * delete错误计数。
-     */
-    protected AtomicInteger deleteErrorNum = new AtomicInteger();
-    /**
-     * select错误计数。
-     */
-    protected AtomicInteger selectErrorNum = new AtomicInteger();
-    /**
-     * other错误计数。
-     */
-    protected AtomicInteger otherErrorNum = new AtomicInteger();
-    /**
-     * insert执行耗时毫秒数。
-     */
-    protected AtomicLong insertExeMillis = new AtomicLong();
-    /**
-     * update执行耗时毫秒数。
-     */
-    protected AtomicLong updateExeMillis = new AtomicLong();
-    /**
-     * delete执行耗时毫秒数。
-     */
-    protected AtomicLong deleteExeMillis = new AtomicLong();
-    /**
-     * select执行耗时毫秒数。
-     */
-    protected AtomicLong selectExeMillis = new AtomicLong();
-    /**
-     * other执行耗时毫秒数。
-     */
-    protected AtomicLong otherExeMillis = new AtomicLong();
-    /**
-     * insert影响行数。
-     */
-    protected AtomicLong insertRowNum = new AtomicLong();
-    /**
-     * insert影响行数。
-     */
-    protected AtomicLong updateRowNum = new AtomicLong();
-    /**
-     * insert影响行数。
-     */
-    protected AtomicLong deleteRowNum = new AtomicLong();
-    /**
-     * insert影响行数。
-     */
-    protected AtomicLong selectRowNum = new AtomicLong();
-    /**
-     * insert影响行数。
-     */
-    protected AtomicLong otherRowNum = new AtomicLong();
-    /**
-     * insert发送字节数。
-     */
-    protected AtomicLong insertTxBytes = new AtomicLong();
-    /**
-     * insert接收字节数。
-     */
-    protected AtomicLong insertRxBytes = new AtomicLong();
-    /**
-     * update发送字节数。
-     */
-    protected AtomicLong updateTxBytes = new AtomicLong();
-    /**
-     * update接收字节数。
-     */
-    protected AtomicLong updateRxBytes = new AtomicLong();
-    /**
-     * delete发送字节数。
-     */
-    protected AtomicLong deleteTxBytes = new AtomicLong();
-    /**
-     * delete接收字节数。
-     */
-    protected AtomicLong deleteRxBytes = new AtomicLong();
-    /**
-     * select发送字节数。
-     */
-    protected AtomicLong selectTxBytes = new AtomicLong();
-    /**
-     * select接收字节数。
-     */
-    protected AtomicLong selectRxBytes = new AtomicLong();
-    /**
-     * other发送字节数。
-     */
-    protected AtomicLong otherTxBytes = new AtomicLong();
-    /**
-     * other接收字节数。
-     */
-    protected AtomicLong otherRxBytes = new AtomicLong();
     /**
      * 集群ID。
      */
@@ -153,6 +32,127 @@ public class SchemaRunStats {
      * 上次更新时间。
      */
     private long lastUpdate;
+    /**
+     * insert计数。
+     */
+    private AtomicInteger insertNum = new AtomicInteger();
+    /**
+     * update计数。
+     */
+    private AtomicInteger updateNum = new AtomicInteger();
+    /**
+     * delete计数。
+     */
+    private AtomicInteger deleteNum = new AtomicInteger();
+    /**
+     * select计数。
+     */
+    private AtomicInteger selectNum = new AtomicInteger();
+    /**
+     * other计数。
+     */
+    private AtomicInteger otherNum = new AtomicInteger();
+    /**
+     * insert错误计数。
+     */
+    private AtomicInteger insertErrorNum = new AtomicInteger();
+    /**
+     * update错误计数。
+     */
+    private AtomicInteger updateErrorNum = new AtomicInteger();
+    /**
+     * delete错误计数。
+     */
+    private AtomicInteger deleteErrorNum = new AtomicInteger();
+    /**
+     * select错误计数。
+     */
+    private AtomicInteger selectErrorNum = new AtomicInteger();
+    /**
+     * other错误计数。
+     */
+    private AtomicInteger otherErrorNum = new AtomicInteger();
+    /**
+     * insert执行耗时毫秒数。
+     */
+    private AtomicLong insertExeMillis = new AtomicLong();
+    /**
+     * update执行耗时毫秒数。
+     */
+    private AtomicLong updateExeMillis = new AtomicLong();
+    /**
+     * delete执行耗时毫秒数。
+     */
+    private AtomicLong deleteExeMillis = new AtomicLong();
+    /**
+     * select执行耗时毫秒数。
+     */
+    private AtomicLong selectExeMillis = new AtomicLong();
+    /**
+     * other执行耗时毫秒数。
+     */
+    private AtomicLong otherExeMillis = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    private AtomicLong insertRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    private AtomicLong updateRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    private AtomicLong deleteRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    private AtomicLong selectRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    private AtomicLong otherRowNum = new AtomicLong();
+    /**
+     * insert发送字节数。
+     */
+    private AtomicLong insertTxBytes = new AtomicLong();
+    /**
+     * insert接收字节数。
+     */
+    private AtomicLong insertRxBytes = new AtomicLong();
+    /**
+     * update发送字节数。
+     */
+    private AtomicLong updateTxBytes = new AtomicLong();
+    /**
+     * update接收字节数。
+     */
+    private AtomicLong updateRxBytes = new AtomicLong();
+    /**
+     * delete发送字节数。
+     */
+    private AtomicLong deleteTxBytes = new AtomicLong();
+    /**
+     * delete接收字节数。
+     */
+    private AtomicLong deleteRxBytes = new AtomicLong();
+    /**
+     * select发送字节数。
+     */
+    private AtomicLong selectTxBytes = new AtomicLong();
+    /**
+     * select接收字节数。
+     */
+    private AtomicLong selectRxBytes = new AtomicLong();
+    /**
+     * other发送字节数。
+     */
+    private AtomicLong otherTxBytes = new AtomicLong();
+    /**
+     * other接收字节数。
+     */
+    private AtomicLong otherRxBytes = new AtomicLong();
+
 
     public SchemaRunStats(long clusterId, long serverId, String database, String table) {
         this.clusterId = clusterId;
