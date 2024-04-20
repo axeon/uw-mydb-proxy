@@ -2,33 +2,153 @@ package uw.mydb.stats.vo;
 
 import uw.mydb.util.SystemClock;
 
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * 基于schema的sql统计信息。
+ * schema统计数据考虑到服务器端合并的因素，所以每次序列化之后清零。
  *
  * @author axeon
  */
-public class SchemaRunStats extends SqlStats {
+public class SchemaRunStats {
 
+    /**
+     * insert计数。
+     */
+    protected AtomicInteger insertNum = new AtomicInteger();
+    /**
+     * update计数。
+     */
+    protected AtomicInteger updateNum = new AtomicInteger();
+    /**
+     * delete计数。
+     */
+    protected AtomicInteger deleteNum = new AtomicInteger();
+    /**
+     * select计数。
+     */
+    protected AtomicInteger selectNum = new AtomicInteger();
+    /**
+     * other计数。
+     */
+    protected AtomicInteger otherNum = new AtomicInteger();
+    /**
+     * insert错误计数。
+     */
+    protected AtomicInteger insertErrorNum = new AtomicInteger();
+    /**
+     * update错误计数。
+     */
+    protected AtomicInteger updateErrorNum = new AtomicInteger();
+    /**
+     * delete错误计数。
+     */
+    protected AtomicInteger deleteErrorNum = new AtomicInteger();
+    /**
+     * select错误计数。
+     */
+    protected AtomicInteger selectErrorNum = new AtomicInteger();
+    /**
+     * other错误计数。
+     */
+    protected AtomicInteger otherErrorNum = new AtomicInteger();
+    /**
+     * insert执行耗时毫秒数。
+     */
+    protected AtomicLong insertExeMillis = new AtomicLong();
+    /**
+     * update执行耗时毫秒数。
+     */
+    protected AtomicLong updateExeMillis = new AtomicLong();
+    /**
+     * delete执行耗时毫秒数。
+     */
+    protected AtomicLong deleteExeMillis = new AtomicLong();
+    /**
+     * select执行耗时毫秒数。
+     */
+    protected AtomicLong selectExeMillis = new AtomicLong();
+    /**
+     * other执行耗时毫秒数。
+     */
+    protected AtomicLong otherExeMillis = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong insertRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong updateRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong deleteRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong selectRowNum = new AtomicLong();
+    /**
+     * insert影响行数。
+     */
+    protected AtomicLong otherRowNum = new AtomicLong();
+    /**
+     * insert发送字节数。
+     */
+    protected AtomicLong insertTxBytes = new AtomicLong();
+    /**
+     * insert接收字节数。
+     */
+    protected AtomicLong insertRxBytes = new AtomicLong();
+    /**
+     * update发送字节数。
+     */
+    protected AtomicLong updateTxBytes = new AtomicLong();
+    /**
+     * update接收字节数。
+     */
+    protected AtomicLong updateRxBytes = new AtomicLong();
+    /**
+     * delete发送字节数。
+     */
+    protected AtomicLong deleteTxBytes = new AtomicLong();
+    /**
+     * delete接收字节数。
+     */
+    protected AtomicLong deleteRxBytes = new AtomicLong();
+    /**
+     * select发送字节数。
+     */
+    protected AtomicLong selectTxBytes = new AtomicLong();
+    /**
+     * select接收字节数。
+     */
+    protected AtomicLong selectRxBytes = new AtomicLong();
+    /**
+     * other发送字节数。
+     */
+    protected AtomicLong otherTxBytes = new AtomicLong();
+    /**
+     * other接收字节数。
+     */
+    protected AtomicLong otherRxBytes = new AtomicLong();
     /**
      * 集群ID。
      */
     private long clusterId;
-
     /**
      * 服务器ID。
      */
     private long serverId;
-
     /**
      * 数据库名。
      */
     private String database;
-
     /**
      * 表名。
      */
     private String table;
-
     /**
      * 上次更新时间。
      */
@@ -77,7 +197,9 @@ public class SchemaRunStats extends SqlStats {
     }
 
     public long getLastUpdate() {
-        return lastUpdate;
+        long data = lastUpdate;
+        lastUpdate = 0;
+        return data;
     }
 
     public void setLastUpdate(long lastUpdate) {
@@ -89,5 +211,245 @@ public class SchemaRunStats extends SqlStats {
      */
     public void updateStatus() {
         this.lastUpdate = SystemClock.now();
+    }
+
+    public int getInsertNum() {
+        return insertNum.getAndSet( 0 );
+    }
+
+    public void addInsertNum(int insertNum) {
+        this.insertNum.addAndGet( insertNum );
+    }
+
+    public int getUpdateNum() {
+        return updateNum.getAndSet( 0 );
+    }
+
+    public void addUpdateNum(int updateNum) {
+        this.updateNum.addAndGet( updateNum );
+    }
+
+    public int getDeleteNum() {
+        return deleteNum.getAndSet( 0 );
+    }
+
+    public void addDeleteNum(int deleteNum) {
+        this.deleteNum.addAndGet( deleteNum );
+    }
+
+    public int getSelectNum() {
+        return selectNum.getAndSet( 0 );
+    }
+
+    public void addSelectNum(int selectNum) {
+        this.selectNum.addAndGet( selectNum );
+    }
+
+    public int getOtherNum() {
+        return otherNum.getAndSet( 0 );
+    }
+
+    public void addOtherNum(int otherNum) {
+        this.otherNum.addAndGet( otherNum );
+    }
+
+    public int getInsertErrorNum() {
+        return insertErrorNum.getAndSet( 0 );
+    }
+
+    public void addInsertErrorNum(int insertErrorNum) {
+        this.insertErrorNum.addAndGet( insertErrorNum );
+    }
+
+    public int getUpdateErrorNum() {
+        return updateErrorNum.getAndSet( 0 );
+    }
+
+    public void addUpdateErrorNum(int updateErrorNum) {
+        this.updateErrorNum.addAndGet( updateErrorNum );
+    }
+
+    public int getDeleteErrorNum() {
+        return deleteErrorNum.getAndSet( 0 );
+    }
+
+    public void addDeleteErrorNum(int deleteErrorNum) {
+        this.deleteErrorNum.addAndGet( deleteErrorNum );
+    }
+
+    public int getSelectErrorNum() {
+        return selectErrorNum.getAndSet( 0 );
+    }
+
+    public void addSelectErrorNum(int selectErrorNum) {
+        this.selectErrorNum.addAndGet( selectErrorNum );
+    }
+
+    public int getOtherErrorNum() {
+        return otherErrorNum.getAndSet( 0 );
+    }
+
+    public void addOtherErrorNum(int otherErrorNum) {
+        this.otherErrorNum.addAndGet( otherErrorNum );
+    }
+
+    public long getInsertExeMillis() {
+        return insertExeMillis.getAndSet( 0 );
+    }
+
+    public void addInsertExeMillis(long insertExeMillis) {
+        this.insertExeMillis.addAndGet( insertExeMillis );
+    }
+
+    public long getUpdateExeMillis() {
+        return updateExeMillis.getAndSet( 0 );
+    }
+
+    public void addUpdateExeMillis(long updateExeMillis) {
+        this.updateExeMillis.addAndGet( updateExeMillis );
+    }
+
+    public long getDeleteExeMillis() {
+        return deleteExeMillis.getAndSet( 0 );
+    }
+
+    public void addDeleteExeMillis(long deleteExeMillis) {
+        this.deleteExeMillis.addAndGet( deleteExeMillis );
+    }
+
+    public long getSelectExeMillis() {
+        return selectExeMillis.getAndSet( 0 );
+    }
+
+    public void addSelectExeMillis(long selectExeMillis) {
+        this.selectExeMillis.addAndGet( selectExeMillis );
+    }
+
+    public long getOtherExeMillis() {
+        return otherExeMillis.getAndSet( 0 );
+    }
+
+    public void addOtherExeMillis(long otherExeMillis) {
+        this.otherExeMillis.addAndGet( otherExeMillis );
+    }
+
+    public long getInsertRowNum() {
+        return insertRowNum.getAndSet( 0 );
+    }
+
+    public void addInsertRowNum(long insertRowNum) {
+        this.insertRowNum.addAndGet( insertRowNum );
+    }
+
+    public long getUpdateRowNum() {
+        return updateRowNum.getAndSet( 0 );
+    }
+
+    public void addUpdateRowNum(long updateRowNum) {
+        this.updateRowNum.addAndGet( updateRowNum );
+    }
+
+    public long getDeleteRowNum() {
+        return deleteRowNum.getAndSet( 0 );
+    }
+
+    public void addDeleteRowNum(long deleteRowNum) {
+        this.deleteRowNum.addAndGet( deleteRowNum );
+    }
+
+    public long getSelectRowNum() {
+        return selectRowNum.getAndSet( 0 );
+    }
+
+    public void addSelectRowNum(long selectRowNum) {
+        this.selectRowNum.addAndGet( selectRowNum );
+    }
+
+    public long getOtherRowNum() {
+        return otherRowNum.getAndSet( 0 );
+    }
+
+    public void addOtherRowNum(long otherRowNum) {
+        this.otherRowNum.addAndGet( otherRowNum );
+    }
+
+    public long getInsertTxBytes() {
+        return insertTxBytes.getAndSet( 0 );
+    }
+
+    public void addInsertTxBytes(long insertTxBytes) {
+        this.insertTxBytes.addAndGet( insertTxBytes );
+    }
+
+    public long getInsertRxBytes() {
+        return insertRxBytes.getAndSet( 0 );
+    }
+
+    public void addInsertRxBytes(long insertRxBytes) {
+        this.insertRxBytes.addAndGet( insertRxBytes );
+    }
+
+    public long getUpdateTxBytes() {
+        return updateTxBytes.getAndSet( 0 );
+    }
+
+    public void addUpdateTxBytes(long updateTxBytes) {
+        this.updateTxBytes.addAndGet( updateTxBytes );
+    }
+
+    public long getUpdateRxBytes() {
+        return updateRxBytes.getAndSet( 0 );
+    }
+
+    public void addUpdateRxBytes(long updateRxBytes) {
+        this.updateRxBytes.addAndGet( updateRxBytes );
+    }
+
+    public long getDeleteTxBytes() {
+        return deleteTxBytes.getAndSet( 0 );
+    }
+
+    public void addDeleteTxBytes(long deleteTxBytes) {
+        this.deleteTxBytes.addAndGet( deleteTxBytes );
+    }
+
+    public long getDeleteRxBytes() {
+        return deleteRxBytes.getAndSet( 0 );
+    }
+
+    public void addDeleteRxBytes(long deleteRxBytes) {
+        this.deleteRxBytes.addAndGet( deleteRxBytes );
+    }
+
+    public long getSelectTxBytes() {
+        return selectTxBytes.getAndSet( 0 );
+    }
+
+    public void addSelectTxBytes(long selectTxBytes) {
+        this.selectTxBytes.addAndGet( selectTxBytes );
+    }
+
+    public long getSelectRxBytes() {
+        return selectRxBytes.getAndSet( 0 );
+    }
+
+    public void addSelectRxBytes(long selectRxBytes) {
+        this.selectRxBytes.addAndGet( selectRxBytes );
+    }
+
+    public long getOtherTxBytes() {
+        return otherTxBytes.getAndSet( 0 );
+    }
+
+    public void addOtherTxBytes(long otherTxBytes) {
+        this.otherTxBytes.addAndGet( otherTxBytes );
+    }
+
+    public long getOtherRxBytes() {
+        return otherRxBytes.getAndSet( 0 );
+    }
+
+    public void addOtherRxBytes(long otherRxBytes) {
+        this.otherRxBytes.addAndGet( otherRxBytes );
     }
 }
