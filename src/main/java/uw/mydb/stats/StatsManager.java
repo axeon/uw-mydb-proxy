@@ -12,6 +12,7 @@ import uw.mydb.util.SystemClock;
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
 import java.lang.management.ThreadMXBean;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.SynchronousQueue;
@@ -51,7 +52,7 @@ public class StatsManager {
         SchemaRunStats schemaSqlStats =
                 schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( clusterId, serverId, database, table ) );
         //设置更新标记，用于优化。
-        schemaSqlStats.updateStatus();
+        schemaSqlStats.updateReportStatus();
         if (sqlType == SQLType.SELECT.getValue()) {
             schemaSqlStats.addSelectNum( 1 );
             proxyRunStats.addSelectErrorNum( 1 );
@@ -149,7 +150,10 @@ public class StatsManager {
      * 报告schema运行统计。。
      */
     public static void reportSchemaRunStats() {
-        MydbConfigService.reportSchemaRunStats( schemaRunStatsMap.values() );
+        List<SchemaRunStats> schemaRunStatsList =  schemaRunStatsMap.values().stream().filter( x -> x.checkReportSchema() ).toList();
+        if (schemaRunStatsList.size() > 0) {
+            MydbConfigService.reportSchemaRunStats( schemaRunStatsList );
+        }
     }
 
 
@@ -188,9 +192,7 @@ public class StatsManager {
         proxyRunStats.setMysqlBusyConnNum( (int) mysqlConnStats.getMysqlBusyConnNum() );
         proxyRunStats.setMysqlIdleConnNum( (int) mysqlConnStats.getMysqlIdleConnNum() );
         proxyRunStats.setMysqlConnList( mysqlConnStats.getMysqlConnList() );
-        //过滤统计信息，65秒内有更新的才发送，否则不发送。
-        long statsStartTime = SystemClock.now() - 65_000L;
-        proxyRunStats.setSchemaStatsNum( (int) schemaRunStatsMap.values().stream().filter( x -> x.getLastUpdate() > statsStartTime ).count() );
+        proxyRunStats.setSchemaStatsNum( (int) schemaRunStatsMap.values().stream().filter( x -> x.checkReportProxy() ).count() );
         MydbConfigService.reportProxyRunStats( proxyRunStats );
     }
 

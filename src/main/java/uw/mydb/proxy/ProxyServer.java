@@ -68,7 +68,7 @@ public class ProxyServer {
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );
             }
-        }, 0, 60, TimeUnit.SECONDS );
+        }, 0, 1, TimeUnit.MINUTES );
         //每隔3小时报告一次schema统计信息。
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             try {
@@ -76,7 +76,7 @@ public class ProxyServer {
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );
             }
-        }, 1, 3, TimeUnit.HOURS );
+        }, 1, 1, TimeUnit.MINUTES );
         logger.info( "mydb proxy server started!" );
     }
 

@@ -1,7 +1,5 @@
 package uw.mydb.stats.vo;
 
-import uw.mydb.util.SystemClock;
-
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,10 +26,17 @@ public class SchemaRunStats {
      * 表名。
      */
     private String table;
+
     /**
-     * 上次更新时间。
+     * 是否报告给proxy。
      */
-    private long lastUpdate;
+    private transient boolean reportProxy;
+
+    /**
+     * 是否报告给Schema。
+     */
+    private transient boolean reportSchema;
+
     /**
      * insert计数。
      */
@@ -196,21 +201,40 @@ public class SchemaRunStats {
         this.table = table;
     }
 
-    public long getLastUpdate() {
-        long data = lastUpdate;
-        lastUpdate = 0;
-        return data;
+    /**
+     * 检查是否报告给proxy。
+     *
+     * @return
+     */
+    public boolean checkReportProxy() {
+        if (reportProxy) {
+            reportProxy = false;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    public void setLastUpdate(long lastUpdate) {
-        this.lastUpdate = lastUpdate;
+    /**
+     * 检查是否报告给schema。
+     *
+     * @return
+     */
+    public boolean checkReportSchema() {
+        if (reportSchema) {
+            reportSchema = false;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
      * 更新标记。
      */
-    public void updateStatus() {
-        this.lastUpdate = SystemClock.now();
+    public void updateReportStatus() {
+        this.reportProxy = true;
+        this.reportSchema = true;
     }
 
     public int getInsertNum() {
