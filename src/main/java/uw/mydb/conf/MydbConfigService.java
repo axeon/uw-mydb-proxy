@@ -122,7 +122,7 @@ public class MydbConfigService {
         if (!tableSet.contains( dataTable.getTable() )) {
             //创建成功则加入set。
             String createdTable =
-                    MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() +
+                    MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() +
                             "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
             if (StringUtils.isNotBlank( createdTable )) {
                 tableSet.add( createdTable );
