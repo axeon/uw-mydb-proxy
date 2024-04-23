@@ -11,6 +11,7 @@ import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
 import uw.cache.FusionCache;
+import uw.mydb.conf.MydbConfigService;
 import uw.mydb.stats.vo.MysqlConnStats;
 import uw.mydb.vo.MysqlClusterConfig;
 import uw.mydb.vo.MysqlServerConfig;
@@ -96,7 +97,7 @@ public class MySqlClient {
      * @return
      */
     public static MySqlSession getMySqlSession(long clusterId, boolean isMaster) {
-        MysqlClusterConfig clusterConfig = FusionCache.get( MysqlClusterConfig.class, clusterId );
+        MysqlClusterConfig clusterConfig = MydbConfigService.getMysqlCluster( clusterId );
         if (clusterConfig == null) {
             return null;
         }

@@ -2,11 +2,13 @@ package uw.mydb.route.algorithm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.cache.FusionCache;
+import uw.mydb.conf.MydbConfigService;
 import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.vo.DataNode;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.TableConfig;
+
+import java.util.List;
 
 /**
  * 特别为saas模式优化的一种分库方案。
@@ -40,11 +42,11 @@ public class RouteDatabaseBySaas extends RouteAlgorithm {
 
     @Override
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
-        DataNode dataNode = FusionCache.get( DataNode.class, value );
-        if (dataNode == null) {
+        List<DataNode> dataNodeList = MydbConfigService.getSaasNode( value );
+        if (dataNodeList == null || dataNodeList.size() == 0) {
             throw new RouteException( "calculate计算失败，参数值[" + value + "]错误！" );
         }
-        routeInfo.setDataNode( dataNode );
+        routeInfo.setDataNode( dataNodeList.get( 0 ) );
         return routeInfo;
     }
 

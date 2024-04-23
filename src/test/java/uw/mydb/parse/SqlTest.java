@@ -13,7 +13,7 @@ public class SqlTest {
     /**
      * 普通插入。
      */
-    static String insert = "insert into test_table\n" +
+    static String insert = "insert into test_table" +
             "(saas_id,distributor_mch_id,channel_room_id,channel_hotel_id,channel_room_name,sys_hotel_id,sys_roomtype_id,\n" +
             "channel_room_state,channel_room_match_state,channel_bed_type,create_date,modify_date)\n" +
             "values (10002,10009,40965089034,24733008034,'杨过4房','10001_587517','10001_587517_764478',0,0,'大床','2018-07-03 14:56:29.2')";

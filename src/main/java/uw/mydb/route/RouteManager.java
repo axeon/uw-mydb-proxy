@@ -129,8 +129,7 @@ public class RouteManager {
      * @return
      */
     public static List<DataTable> getAllRouteList(TableConfig tableConfig) throws RouteAlgorithm.RouteException {
-        List<DataTable> routeInfo = new ArrayList<>();
-        return routeInfo;
+        return MydbConfigService.getTableListByPrefix( tableConfig.getTableName() + "_" );
     }
 
     /**

@@ -10,6 +10,11 @@ public class TableConfig {
     private String tableName;
 
     /**
+     * 建表SQL。
+     */
+    private String tableSql;
+
+    /**
      * 表信息。
      */
     private String tableDesc;
@@ -45,8 +50,9 @@ public class TableConfig {
         this.baseNode = new DataNode( baseCluster, baseDatabase );
     }
 
-    public TableConfig(String tableName, String tableDesc, long baseCluster, String baseDatabase, long routeId, int matchType) {
+    public TableConfig(String tableName, String tableSql, String tableDesc, long baseCluster, String baseDatabase, long routeId, int matchType) {
         this.tableName = tableName;
+        this.tableSql = tableSql;
         this.tableDesc = tableDesc;
         this.baseNode = new DataNode( baseCluster, baseDatabase );
         this.routeId = routeId;
@@ -63,6 +69,14 @@ public class TableConfig {
 
     public void setTableName(String tableName) {
         this.tableName = tableName;
+    }
+
+    public String getTableSql() {
+        return tableSql;
+    }
+
+    public void setTableSql(String tableSql) {
+        this.tableSql = tableSql;
     }
 
     public String getTableDesc() {
