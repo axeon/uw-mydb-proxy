@@ -5,6 +5,8 @@ import uw.mydb.vo.DataNode;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.TableConfig;
 
+import java.util.Map;
+
 /**
  * 根据给定的key，来判断是否存在表，如果没有表，则动态自动创建以key为后缀的表。。
  * 需要在配置参数中配置mysqlGroup和database属性。
@@ -20,7 +22,8 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
 
     @Override
     public void config() {
-        dataNode = new DataNode(Long.parseLong( this.routeConfig.getRouteParamMap().get( "clusterId" )),this.routeConfig.getRouteParamMap().get( "database" ) );
+        Map<String, String> params = routeConfig.getRouteParamMap();
+        dataNode = new DataNode( params.get( "baseNode" ) );
     }
 
 
@@ -46,7 +49,7 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
 
     @Override
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
-        String table =  routeInfo.getTable() + "_" +value;
+        String table = routeInfo.getTable() + "_" + value;
         routeInfo.setTable( table );
         routeInfo.setDataNode( dataNode );
         return routeInfo;

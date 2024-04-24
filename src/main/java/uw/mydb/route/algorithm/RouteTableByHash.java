@@ -41,7 +41,6 @@ public class RouteTableByHash extends RouteAlgorithm {
                 continue;
             }
             routeInfos.add(new DataTable( new DataNode(Long.parseLong( data[0] ), data[1]), data[2] ) );
-
         }
         consistentHash = new ConsistentHash<>( 128, routeInfos );
     }

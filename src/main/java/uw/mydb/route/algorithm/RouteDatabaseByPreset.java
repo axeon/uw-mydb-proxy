@@ -32,13 +32,7 @@ public class RouteDatabaseByPreset extends RouteAlgorithm {
     @Override
     public void config() {
         for (Map.Entry<String, String> kv : routeConfig.getRouteParamMap().entrySet()) {
-            String[] data = kv.getValue().trim().split( "\\." );
-            if (data.length != 2) {
-                logger.error( "参数配置错误！key:[{}], value:[{}]", kv.getKey(), kv.getValue() );
-                continue;
-            }
-            params.put( kv.getKey(), new DataNode( Long.parseLong( data[0] ), data[1] ) );
-
+            params.put( kv.getKey(), new DataNode( kv.getValue()) );
         }
     }
 
