@@ -11,6 +11,10 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SchemaRunStats {
     /**
+     * proxyId
+     */
+    private long proxyId;
+    /**
      * 集群ID。
      */
     private long clusterId;
@@ -159,7 +163,8 @@ public class SchemaRunStats {
     private AtomicLong otherRxBytes = new AtomicLong();
 
 
-    public SchemaRunStats(long clusterId, long serverId, String database, String table) {
+    public SchemaRunStats(long proxyId,long clusterId, long serverId, String database, String table) {
+        this.proxyId = proxyId;
         this.clusterId = clusterId;
         this.serverId = serverId;
         this.database = database;
@@ -167,6 +172,14 @@ public class SchemaRunStats {
     }
 
     public SchemaRunStats() {
+    }
+
+    public long getProxyId() {
+        return proxyId;
+    }
+
+    public void setProxyId(long proxyId) {
+        this.proxyId = proxyId;
     }
 
     public long getClusterId() {

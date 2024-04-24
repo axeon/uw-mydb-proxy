@@ -7,7 +7,6 @@ import uw.mydb.constant.SQLType;
 import uw.mydb.mysql.MySqlClient;
 import uw.mydb.proxy.ProxySessionManager;
 import uw.mydb.stats.vo.*;
-import uw.mydb.util.SystemClock;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.OperatingSystemMXBean;
@@ -50,7 +49,7 @@ public class StatsManager {
                                 long txBytes, long rxBytes, long exeMillis, long runDate) {
         //获得schema统计表。
         SchemaRunStats schemaSqlStats =
-                schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( clusterId, serverId, database, table ) );
+                schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( MydbConfigService.getProxyId(), clusterId, serverId, database, table ) );
         //设置更新标记，用于优化。
         schemaSqlStats.updateReportStatus();
         if (sqlType == SQLType.SELECT.getValue()) {
@@ -150,7 +149,7 @@ public class StatsManager {
      * 报告schema运行统计。。
      */
     public static void reportSchemaRunStats() {
-        List<SchemaRunStats> schemaRunStatsList =  schemaRunStatsMap.values().stream().filter( x -> x.checkReportSchema() ).toList();
+        List<SchemaRunStats> schemaRunStatsList = schemaRunStatsMap.values().stream().filter( x -> x.checkReportSchema() ).toList();
         if (schemaRunStatsList.size() > 0) {
             MydbConfigService.reportSchemaRunStats( schemaRunStatsList );
         }
