@@ -197,7 +197,7 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public boolean isSingle() {
-            return key2 == null;
+            return key2 != null;
         }
 
         /**

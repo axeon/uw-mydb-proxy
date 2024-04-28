@@ -61,8 +61,8 @@ public class RouteManager {
                 //在路由名单里的，不指定参数，根据匹配类型确定转发。
                 switch (MydbRouteMatchMode.findByValue( tableConfig.getMatchType() )) {
                     case MATCH_DEFAULT:
-                        //此时是非sharding配置表，给schema默认数据。
-                        routeResult = new RouteAlgorithm.RouteResult();
+                        //此时说明参数没有匹配上。
+                        defaultRoute = routeAlgorithm.getDefaultRoute( tableConfig, defaultRoute );
                         routeResult.setSingle( defaultRoute );
                         break;
                     case MATCH_ALL:
@@ -144,9 +144,6 @@ public class RouteManager {
             long loadRouteId = routeId;
             //重试最多10次。
             for (int i = 0; i < 10; i++) {
-                if (loadRouteId < 1) {
-                    return algorithmList;
-                }
                 RouteConfig routeConfig = MydbConfigService.getRouteConfig( loadRouteId );
                 if (routeConfig == null) {
                     return algorithmList;

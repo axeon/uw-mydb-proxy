@@ -44,7 +44,7 @@ public class RouteDatabaseBySaas extends RouteAlgorithm {
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
         List<DataNode> dataNodeList = MydbConfigService.getSaasNode( value );
         if (dataNodeList == null || dataNodeList.size() == 0) {
-            throw new RouteException( "calculate计算失败，参数值[" + value + "]错误！" );
+            throw new RouteException( "calculate计算失败，参数值[" + value + "]无法找到对应路由！" );
         }
         routeInfo.setDataNode( dataNodeList.get( 0 ) );
         return routeInfo;

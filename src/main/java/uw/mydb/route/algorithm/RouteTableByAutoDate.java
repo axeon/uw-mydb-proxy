@@ -1,5 +1,8 @@
 package uw.mydb.route.algorithm;
 
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import uw.mydb.route.RouteAlgorithm;
 import uw.mydb.vo.DataTable;
 import uw.mydb.vo.TableConfig;
@@ -20,40 +23,34 @@ import java.util.Map;
  */
 public class RouteTableByAutoDate extends RouteAlgorithm {
 
+    private static final Logger log = LoggerFactory.getLogger( RouteTableByAutoDate.class );
+
     /**
      * 日期数据格式。
      */
-    private static final DateTimeFormatter DATE_PATTERN_DEFAULT = DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" );
-    /**
-     * 日期数据格式。
-     */
-    private DateTimeFormatter DATE_PATTERN = null;
+    private DateTimeFormatter DATE_PATTERN = DateTimeFormatter.ofPattern( "yyyy-MM-dd HH:mm:ss" );
     /**
      * 格式化的格式。
      */
     private DateTimeFormatter FORMAT_PATTERN = null;
+
     /**
      * 格式化的样式字符串。
      */
-    private String FORMAT_PATTERN_CODE = null;
+    private String FORMAT_PATTERN_CODE = "yyyy";
 
     @Override
     public void config() {
         Map<String, String> params = routeConfig.getRouteParamMap();
 
-        //datePattern,日期时间格式
-        String datePattern = params.get( "date-pattern" );
-        if (datePattern != null) {
-            DATE_PATTERN = DateTimeFormatter.ofPattern( datePattern );
-        }
         //formatPattern,格式化的日期时间格式
         String formatPattern = params.get( "format-pattern" );
-        if (formatPattern != null) {
-            FORMAT_PATTERN = DateTimeFormatter.ofPattern( formatPattern );
+        if (StringUtils.isNotBlank( formatPattern )) {
             if ("yyyyMMdd".equals( formatPattern ) || "yyyyMM".equals( formatPattern ) || "yyyy".equals( formatPattern ) || "yyMMdd".equals( formatPattern ) || "yyMM".equals( formatPattern ) || "yy".equals( formatPattern ) || "MMdd".equals( formatPattern ) || "MM".equals( formatPattern ) || "dd".equals( formatPattern )) {
                 FORMAT_PATTERN_CODE = formatPattern;
             }
         }
+        FORMAT_PATTERN = DateTimeFormatter.ofPattern( FORMAT_PATTERN_CODE );
     }
 
     /**
@@ -74,20 +71,9 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
 
     @Override
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
-        String text = null;
         //优先选择快速格式化
-        if (DATE_PATTERN == null && FORMAT_PATTERN_CODE != null) {
-            text = quickFormat( routeInfo.getTable(), value, FORMAT_PATTERN_CODE );
-        }
-        if (text == null) {
-            if (DATE_PATTERN != null) {
-                LocalDateTime date = LocalDateTime.parse( value, DATE_PATTERN );
-                if (FORMAT_PATTERN != null) {
-                    text = date.format( FORMAT_PATTERN );
-                }
-            }
-        }
-        routeInfo.setTable( text );
+        String table = quickFormat( routeInfo.getTable(), value, FORMAT_PATTERN_CODE );
+        routeInfo.setTable( table );
         return routeInfo;
     }
 
@@ -104,13 +90,8 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
         }
         List<String> list = new ArrayList<>();
         LocalDateTime startDate, endDate;
-        if (DATE_PATTERN != null) {
-            startDate = LocalDateTime.parse( startValue, DATE_PATTERN );
-            endDate = LocalDateTime.parse( endValue, DATE_PATTERN );
-        } else {
-            startDate = fitParse( startValue );
-            endDate = fitParse( endValue );
-        }
+        startDate = fitParse( startValue );
+        endDate = fitParse( endValue );
         //判定先后顺序
         while (startDate.compareTo( endDate ) <= 0) {
             list.add( startDate.format( FORMAT_PATTERN ) );
@@ -147,34 +128,8 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
     @Override
     public DataTable getDefaultRoute(TableConfig tableConfig, DataTable routeInfo) throws RouteException {
         //此处有性能问题，最好缓存当前时间
-        String now = LocalDateTime.now().format( DATE_PATTERN_DEFAULT );
+        String now = LocalDateTime.now().format( DATE_PATTERN );
         return calculate( tableConfig, routeInfo, now );
-    }
-
-    /**
-     * 此方法用于返回创建表信息。
-     *
-     * @param tableConfig
-     * @param routeInfos
-     * @return
-     */
-    @Override
-    public List<DataTable> getAllRouteList(TableConfig tableConfig, List<DataTable> routeInfos) throws RouteException {
-        //循环赋值
-//        List<RouteResult> newList = new ArrayList<>();
-//        for (RouteResult routeInfo : routeInfos) {
-//            List<String> list = SchemaInfoService.getMatchTables(routeInfo.getMysqlCluster(), routeInfo.getDatabase(), routeInfo.getTable() + "_");
-//            if (list.size() == 0) {
-//                newList.add(routeInfo);
-//            } else {
-//                for (String tab : list) {
-//                    RouteResult copy = routeInfo.copy();
-//                    copy.setTable(tab);
-//                    newList.add(copy);
-//                }
-//            }
-//        }
-        return routeInfos;
     }
 
     /**
@@ -182,11 +137,11 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
      *
      * @return
      */
-    private final LocalDateTime fitParse(String dateValue) {
+    private LocalDateTime fitParse(String dateValue) {
         if (dateValue.length() > 19) {
             dateValue = dateValue.substring( 0, 19 );
         }
-        return LocalDateTime.parse( dateValue, DATE_PATTERN_DEFAULT );
+        return LocalDateTime.parse( dateValue, DATE_PATTERN );
     }
 
     /**
