@@ -165,6 +165,8 @@ public class RouteManager {
                 //继续循环上级。
                 if (routeConfig.getParentId() > 0) {
                     loadRouteId = routeConfig.getParentId();
+                } else {
+                    return algorithmList;
                 }
             }
             return algorithmList;

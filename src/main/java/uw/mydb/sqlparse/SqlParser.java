@@ -412,7 +412,7 @@ public class SqlParser {
                         lexer.nextToken();
                     }
                     RouteAlgorithm.RouteValue routeValue = findRouteValue( tableName, colName );
-                    if (routeValue != null && !routeValue.isEmpty()) {
+                    if (routeValue != null && routeValue.isEmpty()) {
                         //判断操作符，取参数。
                         switch (lexer.token()) {
                             case EQ:
