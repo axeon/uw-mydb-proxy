@@ -27,17 +27,17 @@ public class ErrorSql {
     /**
      * 数据库名。
      */
-    private String database;
+    private String dbName;
 
     /**
      * 表名。
      */
-    private String table;
+    private String tableName;
 
     /**
      * sql
      */
-    private String sql;
+    private String sqlInfo;
 
     /**
      * sql类型。
@@ -80,14 +80,14 @@ public class ErrorSql {
     private String errorMsg;
 
 
-    public ErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes, long rxBytes,
+    public ErrorSql(String clientIp, long clusterId, long serverId, String dbName, String tableName, String sqlInfo, int sqlType, int rowNum, long txBytes, long rxBytes,
                     long exeMillis, long runDate, int errorCode, String errorMsg) {
         this.clientIp = clientIp;
         this.clusterId = clusterId;
         this.serverId = serverId;
-        this.database = database;
-        this.table = table;
-        this.sql = sql;
+        this.dbName = dbName;
+        this.tableName = tableName;
+        this.sqlInfo = sqlInfo;
         this.sqlType = sqlType;
         this.rowNum = rowNum;
         this.txBytes = txBytes;
@@ -133,28 +133,28 @@ public class ErrorSql {
         this.serverId = serverId;
     }
 
-    public String getDatabase() {
-        return database;
+    public String getDbName() {
+        return dbName;
     }
 
-    public void setDatabase(String database) {
-        this.database = database;
+    public void setDbName(String dbName) {
+        this.dbName = dbName;
     }
 
-    public String getTable() {
-        return table;
+    public String getTableName() {
+        return tableName;
     }
 
-    public void setTable(String table) {
-        this.table = table;
+    public void setTableName(String tableName) {
+        this.tableName = tableName;
     }
 
-    public String getSql() {
-        return sql;
+    public String getSqlInfo() {
+        return sqlInfo;
     }
 
-    public void setSql(String sql) {
-        this.sql = sql;
+    public void setSqlInfo(String sqlInfo) {
+        this.sqlInfo = sqlInfo;
     }
 
     public int getSqlType() {
