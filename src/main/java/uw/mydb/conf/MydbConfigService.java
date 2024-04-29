@@ -126,7 +126,7 @@ public class MydbConfigService {
                         String database = key.substring( splitPos + 1 );
                         return restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
                                 HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<HashSet<String>>() {
-                        } ).getBody();
+                                } ).getBody();
                     }
                 }
                 return null;
@@ -158,6 +158,8 @@ public class MydbConfigService {
     public static boolean checkTableExists(String tableConfigName, DataTable dataTable) {
         HashSet<String> tableSet = FusionCache.get( DataTable.class, dataTable.getClusterId() + ":" + dataTable.getDatabase() );
         if (!tableSet.contains( dataTable.getTable() )) {
+            if (logger.isDebugEnabled())
+                logger.debug( "向center服务器请求[{}]checkTableExists!", dataTable );
             String tableName =
                     MydbConfigService.restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() + "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
             if (StringUtils.isNotBlank( tableName )) {
@@ -176,7 +178,7 @@ public class MydbConfigService {
         ArrayList<DataTable> dataTableList =
                 MydbConfigService.restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() +
                         "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
-        } ).getBody();
+                } ).getBody();
         return dataTableList;
     }
 
