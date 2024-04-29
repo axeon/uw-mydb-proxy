@@ -54,7 +54,7 @@ public class StatsManager {
         schemaSqlStats.updateReportStatus();
         if (sqlType == SQLType.SELECT.getValue()) {
             schemaSqlStats.addSelectNum( 1 );
-            proxyRunStats.addSelectErrorNum( 1 );
+            proxyRunStats.addSelectNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addSelectErrorNum( 1 );
                 proxyRunStats.addSelectErrorNum( 1 );
@@ -69,7 +69,7 @@ public class StatsManager {
             proxyRunStats.addSelectRxBytes( rxBytes );
         } else if (sqlType == SQLType.INSERT.getValue()) {
             schemaSqlStats.addInsertNum( 1 );
-            proxyRunStats.addInsertErrorNum( 1 );
+            proxyRunStats.addInsertNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addInsertErrorNum( 1 );
                 proxyRunStats.addInsertErrorNum( 1 );
@@ -84,7 +84,7 @@ public class StatsManager {
             proxyRunStats.addInsertRxBytes( rxBytes );
         } else if (sqlType == SQLType.UPDATE.getValue()) {
             schemaSqlStats.addUpdateNum( 1 );
-            proxyRunStats.addUpdateErrorNum( 1 );
+            proxyRunStats.addUpdateNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addUpdateErrorNum( 1 );
                 proxyRunStats.addUpdateErrorNum( 1 );
@@ -99,7 +99,7 @@ public class StatsManager {
             proxyRunStats.addUpdateRxBytes( rxBytes );
         } else if (sqlType == SQLType.DELETE.getValue()) {
             schemaSqlStats.addDeleteNum( 1 );
-            proxyRunStats.addDeleteErrorNum( 1 );
+            proxyRunStats.addDeleteNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addDeleteErrorNum( 1 );
                 proxyRunStats.addDeleteErrorNum( 1 );
@@ -114,7 +114,7 @@ public class StatsManager {
             proxyRunStats.addDeleteRxBytes( rxBytes );
         } else {
             schemaSqlStats.addOtherNum( 1 );
-            proxyRunStats.addOtherErrorNum( 1 );
+            proxyRunStats.addOtherNum( 1 );
             if (!isSuccess) {
                 schemaSqlStats.addOtherErrorNum( 1 );
                 proxyRunStats.addOtherErrorNum( 1 );
