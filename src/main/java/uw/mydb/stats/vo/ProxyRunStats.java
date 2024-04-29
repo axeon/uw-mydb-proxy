@@ -13,9 +13,18 @@ import java.util.concurrent.atomic.AtomicLong;
 public class ProxyRunStats {
 
     /**
+     * 报告版本。
+     */
+    private final long reportVersion = System.currentTimeMillis();
+    /**
      * proxyId
      */
     private long proxyId;
+    /**
+     * 报告次数。
+     */
+    private AtomicLong reportCount = new AtomicLong();
+
     /**
      * 配置key。
      */
@@ -229,6 +238,14 @@ public class ProxyRunStats {
 
     public void setProxyId(long proxyId) {
         this.proxyId = proxyId;
+    }
+
+    public long getReportVersion() {
+        return reportVersion;
+    }
+
+    public long getReportCount() {
+        return reportCount.incrementAndGet();
     }
 
     public String getConfigKey() {
