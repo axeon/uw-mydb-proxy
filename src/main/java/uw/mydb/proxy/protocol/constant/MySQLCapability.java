@@ -179,12 +179,12 @@ public class MySQLCapability {
     public static final int CLIENT_TRANSACTIONS = 1 << 13;
 
     /**
-     * @deprecated DEPRECATED: Old flag for 4.1 protocol
+     * DEPRECATED: Old flag for 4.1 protocol
      */
     public static final int CLIENT_RESERVED = 1 << 14;
 
     /**
-     * @deprecated DEPRECATED: Old flag for 4.1 authentication \ CLIENT_SECURE_CONNECTION.
+     * DEPRECATED: Old flag for 4.1 authentication \ CLIENT_SECURE_CONNECTION.
      */
     public static final int CLIENT_SECURE_CONNECTION = 1 << 15;
 
