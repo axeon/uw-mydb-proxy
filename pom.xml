@@ -4,12 +4,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.umtone</groupId>
-    <artifactId>uw-mydb</artifactId>
+    <artifactId>uw-mydb-proxy</artifactId>
     <version>3.0.0</version>
     <packaging>jar</packaging>
 
-    <name>uw-mydb</name>
-    <description>一个基于netty的分布式mysql中间件。</description>
+    <name>uw-mydb-proxy</name>
+    <description>一个基于netty的分布式mysql代理服务器。</description>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

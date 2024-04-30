@@ -8,10 +8,10 @@ import uw.mydb.proxy.server.ProxyServer;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-public class MydbProxyApplication {
+public class UwMydbProxyApplication {
 
     public static void main(String[] args) throws InterruptedException {
-        SpringApplication.run( MydbProxyApplication.class, args );
+        SpringApplication.run( UwMydbProxyApplication.class, args );
         //启动mysql客户端
         MySqlClient.start();
         //代理服务器启动
