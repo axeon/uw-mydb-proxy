@@ -7,8 +7,8 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import uw.mydb.sqlparse.SqlParseResult;
-import uw.mydb.sqlparse.SqlParser;
+import uw.mydb.proxy.sqlparse.SqlParseResult;
+import uw.mydb.proxy.sqlparse.SqlParser;
 
 import java.util.concurrent.TimeUnit;
 
@@ -34,24 +34,24 @@ public class BenchmarkTest {
 
     @Setup
     public void init() {
-        SqlTest.init();
+        uw.mydb.parse.SqlTest.init();
     }
 
     @Benchmark
     public void testInsert() {
-        SqlParseResult result = new SqlParser( SqlTest.database, SqlTest.insert ).parse();
+        SqlParseResult result = new SqlParser( uw.mydb.parse.SqlTest.database, uw.mydb.parse.SqlTest.insert ).parse();
 
     }
 
     @Benchmark
     public void testUpdate() {
-        SqlParseResult result = new SqlParser( SqlTest.database, SqlTest.update ).parse();
+        SqlParseResult result = new SqlParser( uw.mydb.parse.SqlTest.database, uw.mydb.parse.SqlTest.update ).parse();
 
     }
 
     @Benchmark
     public void testSelect() {
-        SqlParseResult result = new SqlParser( SqlTest.database, SqlTest.select ).parse();
+        SqlParseResult result = new SqlParser( uw.mydb.parse.SqlTest.database, uw.mydb.parse.SqlTest.select ).parse();
 
     }
 

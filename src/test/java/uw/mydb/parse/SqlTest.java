@@ -1,8 +1,8 @@
 package uw.mydb.parse;
 
 import uw.cache.FusionCache;
-import uw.mydb.vo.MydbProxyConfig;
-import uw.mydb.vo.TableConfig;
+import uw.mydb.common.conf.MydbProxyConfig;
+import uw.mydb.common.conf.TableConfig;
 
 /**
  * 测试sql。
