@@ -7,6 +7,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
+import uw.mydb.common.conf.MysqlServerConfig;
 import uw.mydb.proxy.constant.SQLType;
 import uw.mydb.proxy.protocol.constant.MySQLCapability;
 import uw.mydb.proxy.protocol.packet.*;
@@ -14,7 +15,6 @@ import uw.mydb.proxy.stats.StatsManager;
 import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
 import uw.mydb.proxy.util.SystemClock;
-import uw.mydb.common.conf.MysqlServerConfig;
 
 import java.security.NoSuchAlgorithmException;
 
@@ -204,19 +204,6 @@ public class MySqlSession {
         }
     }
 
-
-    /**
-     * 错误提示。
-     *
-     * @param errorNo
-     * @param info
-     */
-    public void failMessage(int errorNo, String info) {
-        if (sessionCallback != null) {
-            sessionCallback.onFailMessage( errorNo, info );
-        }
-    }
-
     /**
      * 获得创建时间。
      *
@@ -233,6 +220,18 @@ public class MySqlSession {
      */
     public long getLastRequestTime() {
         return lastRequestTime;
+    }
+
+    /**
+     * 错误提示。
+     *
+     * @param errorNo
+     * @param info
+     */
+    protected void failMessage(int errorNo, String info) {
+        if (sessionCallback != null) {
+            sessionCallback.onFailMessage( errorNo, info );
+        }
     }
 
     /**
@@ -407,6 +406,10 @@ public class MySqlSession {
                 }
                 break;
             case MySqlPacket.PACKET_ERROR:
+                ErrorPacket errorPacket = new ErrorPacket();
+                errorPacket.readPayLoad( buf );
+                buf.resetReaderIndex();
+                this.failMessage( errorPacket.errorNo, errorPacket.message );
                 //直接转发走
                 sessionCallback.receiveErrorPacket( packetId, buf );
                 isSuccess = false;

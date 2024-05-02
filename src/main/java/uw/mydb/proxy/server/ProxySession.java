@@ -295,13 +295,7 @@ public class ProxySession implements MySqlSessionCallback {
      */
     @Override
     public void onFailMessage(int errorNo, String info) {
-        ErrorPacket errorPacket = new ErrorPacket();
-        errorPacket.packetId = 1;
-        errorPacket.errorNo = errorNo;
-        errorPacket.message = info;
         sqlParseResult.setErrorInfo( errorNo, info );
-        errorPacket.writeToChannel( ctx );
-        this.ctx.flush();
     }
 
     /**
