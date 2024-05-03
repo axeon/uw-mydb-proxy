@@ -106,7 +106,7 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
                     session.heartbeat( ctx, buf );
                     break;
                 default:
-                    session.onFailMessage( ctx, MySqlErrorCode.ER_UNKNOWN_COM_ERROR, "Unknown command" );
+                    session.onProxyFailMessage( ctx, MySqlErrorCode.ER_UNKNOWN_COM_ERROR, "Unknown command" );
                     session.onFinish();
                     break;
             }

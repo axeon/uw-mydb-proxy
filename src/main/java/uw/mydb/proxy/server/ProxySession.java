@@ -294,7 +294,8 @@ public class ProxySession implements MySqlSessionCallback {
      * @param info
      */
     @Override
-    public void onFailMessage(int errorNo, String info) {
+    public void onMysqlFailMessage(int errorNo, String info) {
+        isExeSuccess = false;
         sqlParseResult.setErrorInfo( errorNo, info );
     }
 
@@ -386,7 +387,7 @@ public class ProxySession implements MySqlSessionCallback {
 
         //如果客户端开启压缩，那么直接返回不支持。
         if (MySQLCapability.isClientCompress( capabilities )) {
-            onFailMessage( ctx, MySqlErrorCode.ER_NET_UNCOMPRESS_ERROR, "Can not use compression protocol!" );
+            onProxyFailMessage( ctx, MySqlErrorCode.ER_NET_UNCOMPRESS_ERROR, "Can not use compression protocol!" );
             onFinish();
             ctx.close();
             return;
@@ -403,7 +404,7 @@ public class ProxySession implements MySqlSessionCallback {
 //        }
 
         if (!StringUtils.equals( config.getUsername(), authPacket.username )) {
-            onFailMessage( ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! " );
+            onProxyFailMessage( ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! " );
             onFinish();
             ctx.close();
             return;
@@ -418,7 +419,7 @@ public class ProxySession implements MySqlSessionCallback {
         }
 
         if (!Arrays.equals( encryptPass, authPacket.password )) {
-            onFailMessage( ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.username + "', because password is error " );
+            onProxyFailMessage( ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.username + "', because password is error " );
             onFinish();
             ctx.close();
             return;
@@ -473,7 +474,7 @@ public class ProxySession implements MySqlSessionCallback {
         //sql解析后，routeResult=null的，可能已经在parser里处理过了。
         if (sqlParseResult.hasError()) {
             //error code>0的，发送错误信息。
-            onFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
+            onProxyFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
             onFinish();
             return;
         }
@@ -483,7 +484,7 @@ public class ProxySession implements MySqlSessionCallback {
             this.sqlInfo = sqlParseResult.getSqlInfo();
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), sqlParseResult.isMasterQuery() );
             if (mySqlSession == null) {
-                onFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
+                onProxyFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
                 onFinish();
                 logger.warn( "MySQL Cluster[{}]无法找到合适的mysqlSession!", sqlInfo.getClusterId() );
                 return;
@@ -520,7 +521,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void kill(ChannelHandlerContext ctx, ByteBuf buf) {
-        onFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT KILL!" );
+        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT KILL!" );
         onFinish();
     }
 
@@ -531,7 +532,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtPrepare(ChannelHandlerContext ctx, ByteBuf buf) {
-        onFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_PREPARE!" );
+        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_PREPARE!" );
         onFinish();
     }
 
@@ -542,7 +543,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtExecute(ChannelHandlerContext ctx, ByteBuf buf) {
-        onFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_EXECUTE!" );
+        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_EXECUTE!" );
         onFinish();
     }
 
@@ -553,7 +554,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtClose(ChannelHandlerContext ctx, ByteBuf buf) {
-        onFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_CLOSE!" );
+        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_CLOSE!" );
         onFinish();
     }
 
@@ -575,7 +576,8 @@ public class ProxySession implements MySqlSessionCallback {
      * @param errorNo
      * @param info
      */
-    public void onFailMessage(ChannelHandlerContext ctx, int errorNo, String info) {
+    public void onProxyFailMessage(ChannelHandlerContext ctx, int errorNo, String info) {
+        isExeSuccess = false;
         ErrorPacket errorPacket = new ErrorPacket();
         errorPacket.packetId = 1;
         errorPacket.errorNo = errorNo;

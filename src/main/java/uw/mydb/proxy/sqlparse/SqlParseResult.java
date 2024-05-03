@@ -138,7 +138,7 @@ public class SqlParseResult {
      */
     public void setErrorInfo(int errorCode, String errorMessage) {
         if (errorCode > 0) {
-            logger.warn( "SQL_PARSE_ERR[{}]: {}", errorCode, errorMessage );
+            logger.warn( "SQL_ERR[{}]: {}", errorCode, errorMessage );
         }
         this.errorCode = errorCode;
         this.errorMessage = errorMessage;

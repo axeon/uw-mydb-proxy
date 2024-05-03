@@ -230,7 +230,7 @@ public class MySqlSession {
      */
     protected void failMessage(int errorNo, String info) {
         if (sessionCallback != null) {
-            sessionCallback.onFailMessage( errorNo, info );
+            sessionCallback.onMysqlFailMessage( errorNo, info );
         }
     }
 

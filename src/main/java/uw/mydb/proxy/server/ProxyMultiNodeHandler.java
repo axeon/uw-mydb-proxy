@@ -235,7 +235,8 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
      * @param info
      */
     @Override
-    public void onFailMessage(int errorNo, String info) {
+    public void onMysqlFailMessage(int errorNo, String info) {
+        isExeSuccess = false;
         ErrorPacket errorPacket = new ErrorPacket();
         errorPacket.packetId = 1;
         errorPacket.errorNo = errorNo;

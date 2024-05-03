@@ -147,7 +147,7 @@ public abstract class LocalTaskAdapter<T> implements MySqlSessionCallback {
      * @param info
      */
     @Override
-    public void onFailMessage(int errorNo, String info) {
+    public void onMysqlFailMessage(int errorNo, String info) {
         //此处不用实现，unbind的时候实现了。
     }
 
