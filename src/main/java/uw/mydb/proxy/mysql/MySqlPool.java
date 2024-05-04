@@ -232,6 +232,7 @@ public class MySqlPool implements ChannelPool {
             if (firstChannel == null) {
                 firstChannel = channel;
             } else if (channel == firstChannel) {
+                idleDeque.offer( channel );
                 break;
             }
             //如果超出了最小连接数数值，则进行检查。
