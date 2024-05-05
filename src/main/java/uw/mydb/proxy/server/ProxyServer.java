@@ -45,9 +45,9 @@ public class ProxyServer {
      */
     public static void start() throws InterruptedException {
         // acceptor
-        bossGroup = new NioEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "mydb_boss-%d" ).build() );
+        bossGroup = new NioEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "mydb-boss-%d" ).build() );
         // worker
-        workerGroup = new NioEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "mydb_worker-%d" ).build() );
+        workerGroup = new NioEventLoopGroup( 0, new ThreadFactoryBuilder().setNameFormat( "mydb-worker-%d" ).build() );
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group( bossGroup, workerGroup ).channel( NioServerSocketChannel.class ).option( ChannelOption.SO_BACKLOG, 100_000 ).childOption( ChannelOption.TCP_NODELAY,
                 true ).option( ChannelOption.SO_RCVBUF, 32 * 1024 * 1024 ).childOption( ChannelOption.SO_SNDBUF, 32 * 1024 * 1024 ).option( ChannelOption.ALLOCATOR,
