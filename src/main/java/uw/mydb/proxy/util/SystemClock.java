@@ -13,46 +13,40 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class SystemClock {
 
-    public static final SystemClock INSTANCE = new SystemClock(1L);
-
     /**
      * 更新时间。
      */
-    private final long period;
+    private static final long PERIOD = 11L;
 
     /**
      * 当前时间戳。
      */
-    private final AtomicLong now;
+    private static final AtomicLong NOW = new AtomicLong( System.currentTimeMillis() );
 
     /**
      * 默认构造器。
-     *
-     * @param period
      */
-    private SystemClock(long period) {
-        this.period = period;
-        this.now = new AtomicLong(System.currentTimeMillis());
+    private SystemClock() {
 
-        ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+        ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor( 1, new ThreadFactory() {
             @Override
             public Thread newThread(Runnable runnable) {
-                Thread thread = new Thread(runnable, "System Clock");
-                thread.setDaemon(true);
+                Thread thread = new Thread( runnable, "System Clock" );
+                thread.setDaemon( true );
                 return thread;
             }
-        });
+        } );
 
-        scheduler.scheduleAtFixedRate(new Runnable() {
+        scheduler.scheduleAtFixedRate( new Runnable() {
             @Override
             public void run() {
-                SystemClock.this.now.set(System.currentTimeMillis());
+                NOW.set( System.currentTimeMillis() );
             }
-        }, this.period, this.period, TimeUnit.MILLISECONDS);
+        }, PERIOD, PERIOD, TimeUnit.MILLISECONDS );
     }
 
     public static long now() {
-        return INSTANCE.now.get();
+        return NOW.get();
     }
 
     public static long elapsedMillis(long startTime) {
