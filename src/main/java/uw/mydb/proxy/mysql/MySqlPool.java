@@ -223,16 +223,10 @@ public class MySqlPool implements ChannelPool {
      */
     protected void housekeeping() {
         //先检查idleDeque。
-        Channel firstChannel = null; //第一个channel。
-        for (; ; ) {
+        int idleLoop = idleDeque.size();
+        for (int i = 0; i < idleLoop; i++) {
             Channel channel = idleDeque.pollFirst();
             if (channel == null) {
-                break;
-            }
-            if (firstChannel == null) {
-                firstChannel = channel;
-            } else if (channel == firstChannel) {
-                idleDeque.offer( channel );
                 break;
             }
             //如果超出了最小连接数数值，则进行检查。
