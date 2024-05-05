@@ -1,9 +1,6 @@
 package uw.mydb.proxy.util;
 
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadFactory;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
@@ -16,7 +13,7 @@ public class SystemClock {
     /**
      * 更新时间。
      */
-    private static final long PERIOD = 11L;
+    private static final long PERIOD = 1L;
 
     /**
      * 当前时间戳。
@@ -26,23 +23,14 @@ public class SystemClock {
     /**
      * 默认构造器。
      */
-    private SystemClock() {
-
-        ScheduledExecutorService scheduler = new ScheduledThreadPoolExecutor( 1, new ThreadFactory() {
-            @Override
-            public Thread newThread(Runnable runnable) {
-                Thread thread = new Thread( runnable, "System Clock" );
-                thread.setDaemon( true );
-                return thread;
-            }
+    static {
+        ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1, runnable -> {
+            Thread thread = new Thread( runnable, "system-clock" );
+            thread.setDaemon( true );
+            return thread;
         } );
 
-        scheduler.scheduleAtFixedRate( new Runnable() {
-            @Override
-            public void run() {
-                NOW.set( System.currentTimeMillis() );
-            }
-        }, PERIOD, PERIOD, TimeUnit.MILLISECONDS );
+        scheduler.scheduleAtFixedRate( () -> NOW.set( System.currentTimeMillis() ), PERIOD, PERIOD, TimeUnit.MILLISECONDS );
     }
 
     public static long now() {

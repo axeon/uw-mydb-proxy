@@ -30,14 +30,19 @@ public class SystemClockTest {
         new Runner( opt ).run();
     }
 
-//    @Benchmark
-//    public void currentTimeMillis() {
-//        System.currentTimeMillis();
-//    }
+    @Benchmark
+    public void currentTimeMillis() {
+        System.currentTimeMillis();
+    }
 
     @Benchmark
     public void systemClock() {
         SystemClock.now();
     }
+
+//    @Benchmark
+//    public void nanoTime() {
+//        System.nanoTime();
+//    }
 
 }

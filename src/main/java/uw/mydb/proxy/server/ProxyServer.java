@@ -55,9 +55,9 @@ public class ProxyServer {
         //此处写死了，应该可配置。
         bootstrap.bind( "0.0.0.0", MydbProxyConfigService.getMydbProperties().getProxyPort() ).sync();
         //设置后台调度任务。
-        scheduledExecutorService = Executors.newScheduledThreadPool( 1, r -> {
+        scheduledExecutorService = Executors.newScheduledThreadPool( 2, r -> {
             Thread thread = new Thread( r );
-            thread.setName( "mysql-housekeeping-task" );
+            thread.setName( "proxy-report-task" );
             thread.setDaemon( true );
             return thread;
         } );
@@ -69,14 +69,14 @@ public class ProxyServer {
                 logger.error( e.getMessage(), e );
             }
         }, 0, 1, TimeUnit.MINUTES );
-        //每隔3小时报告一次schema统计信息。
+        //每隔1小时报告一次schema统计信息。
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             try {
                 StatsManager.reportSchemaRunStats();
             } catch (Throwable e) {
                 logger.error( e.getMessage(), e );
             }
-        }, 1, 1, TimeUnit.MINUTES );
+        }, 1, 1, TimeUnit.HOURS );
         logger.info( "mydb proxy server started!" );
     }
 
