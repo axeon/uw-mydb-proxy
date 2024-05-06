@@ -484,9 +484,9 @@ public class ProxySession implements MySqlSessionCallback {
             this.sqlInfo = sqlParseResult.getSqlInfo();
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), sqlParseResult.isMasterQuery() );
             if (mySqlSession == null) {
+                logger.warn( "MySQL Cluster[{}]无法找到合适的mysqlSession!", sqlInfo.getClusterId() );
                 onProxyFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
                 onFinish();
-                logger.warn( "MySQL Cluster[{}]无法找到合适的mysqlSession!", sqlInfo.getClusterId() );
                 return;
             }
             mySqlSession.addCommand( this, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), sqlParseResult.getSqlType() );
