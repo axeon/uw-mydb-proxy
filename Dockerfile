@@ -1,4 +1,5 @@
 FROM eclipse-temurin:21-jre as builder
+WORKDIR application
 COPY target/*.jar application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
