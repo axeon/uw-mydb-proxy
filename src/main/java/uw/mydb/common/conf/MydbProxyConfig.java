@@ -33,19 +33,34 @@ public class MydbProxyConfig {
     private long baseCluster;
 
     /**
+     * 集群ID序列
+     */
+    private String clusterIds;
+
+    /**
+     * 每节点saas数
+     */
+    private int saasPerNode;
+
+    /**
      * 更新时间戳。
      */
     private long lastUpdate;
 
-    public MydbProxyConfig() {
+    public String getClusterIds() {
+        return clusterIds;
     }
 
-    public MydbProxyConfig(String configKey, String username, String password, long baseCluster) {
-        this.configKey = configKey;
-        this.username = username;
-        this.password = password;
-        this.baseCluster = baseCluster;
-        this.lastUpdate = System.currentTimeMillis();
+    public void setClusterIds(String clusterIds) {
+        this.clusterIds = clusterIds;
+    }
+
+    public int getSaasPerNode() {
+        return saasPerNode;
+    }
+
+    public void setSaasPerNode(int saasPerNode) {
+        this.saasPerNode = saasPerNode;
     }
 
     public String getConfigKey() {
