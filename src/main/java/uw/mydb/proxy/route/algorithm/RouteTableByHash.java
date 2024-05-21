@@ -59,9 +59,9 @@ public class RouteTableByHash extends RouteAlgorithm {
     @Override
     public String description() {
         return """
-                类型：分表算法
-                说明：根据给定的long值，按照表数量hash分表。
-                参数：key: routeList, value: mysqlCluster.database.table,mysqlCluster.database.table,...
+                根据给定的KEY值，按照表数量hash分表。
+                参数说明:
+                routeList: clusterId.database.table,clusterId.database.table,...
                 """;
     }
 

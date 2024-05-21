@@ -3,6 +3,7 @@ package uw.mydb.proxy.route.algorithm;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.common.conf.DataNode;
 import uw.mydb.proxy.route.RouteAlgorithm;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
@@ -39,12 +40,17 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
      */
     private String FORMAT_PATTERN_CODE = "yyyy";
 
+    /**
+     * 基础数据节点。
+     */
+    private DataNode baseNode;
+
     @Override
     public void config() {
         Map<String, String> params = routeConfig.getRouteParamMap();
-
+        baseNode = new DataNode( params.get( "baseNode" ) );
         //formatPattern,格式化的日期时间格式
-        String formatPattern = params.get( "format-pattern" );
+        String formatPattern = params.get( "datePattern" );
         if (StringUtils.isNotBlank( formatPattern )) {
             if ("yyyyMMdd".equals( formatPattern ) || "yyyyMM".equals( formatPattern ) || "yyyy".equals( formatPattern ) || "yyMMdd".equals( formatPattern ) || "yyMM".equals( formatPattern ) || "yy".equals( formatPattern ) || "MMdd".equals( formatPattern ) || "MM".equals( formatPattern ) || "dd".equals( formatPattern )) {
                 FORMAT_PATTERN_CODE = formatPattern;
@@ -66,7 +72,12 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
      */
     @Override
     public String description() {
-        return null;
+        return """
+                根据给定的日期，给出归属表名，支持动态自动建表。
+                参数说明:
+                datePattern：日期分表后缀。一般可以设定为yyyy, yyyyMM, yyyyMMdd。
+                baseNode: 默认基础节点，可以不指定。
+                """;
     }
 
     @Override

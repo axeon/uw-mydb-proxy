@@ -2,10 +2,10 @@ package uw.mydb.proxy.route.algorithm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.route.RouteAlgorithm;
 import uw.mydb.common.conf.DataNode;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.route.RouteAlgorithm;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -34,7 +34,6 @@ public class RouteTableByPreset extends RouteAlgorithm {
                 continue;
             }
             routeMap.put( kv.getKey(), new DataTable( new DataNode( Long.parseLong( data[0] ), data[1] ), data[2] ) );
-
         }
     }
 
@@ -53,9 +52,10 @@ public class RouteTableByPreset extends RouteAlgorithm {
     @Override
     public String description() {
         return """
-                类型：分表算法
-                说明：按照预定分表规则进行分表。
-                参数：key: key, value: mysqlCluster.database.table
+                按照预定分表规则进行分表。
+                参数说明：
+                key=routeKey
+                value=clusterId.database.table
                 """;
     }
 

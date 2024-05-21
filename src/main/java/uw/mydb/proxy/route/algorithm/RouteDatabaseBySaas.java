@@ -2,11 +2,11 @@ package uw.mydb.proxy.route.algorithm;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.conf.MydbProxyConfigService;
-import uw.mydb.proxy.route.RouteAlgorithm;
 import uw.mydb.common.conf.DataNode;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.conf.MydbProxyConfigService;
+import uw.mydb.proxy.route.RouteAlgorithm;
 
 import java.util.List;
 
@@ -37,7 +37,10 @@ public class RouteDatabaseBySaas extends RouteAlgorithm {
      */
     @Override
     public String description() {
-        return "特别为saas模式优化的一种分库方案。";
+        return """
+                特别为saas模式优化的一种分库方案。
+                执行的时候调用管理端的API。
+                """;
     }
 
     @Override

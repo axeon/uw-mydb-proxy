@@ -57,6 +57,16 @@ public class DataTable {
     }
 
     /**
+     * 检查dataNode是否设置。
+     * 必须都非null值才合法。
+     *
+     * @return
+     */
+    public boolean checkDataNode() {
+        return dataNode != null && dataNode.getClusterId() > 0 && dataNode.getDatabase() != null;
+    }
+
+    /**
      * 复制一个RouteInfo。
      */
     public DataTable copy() {

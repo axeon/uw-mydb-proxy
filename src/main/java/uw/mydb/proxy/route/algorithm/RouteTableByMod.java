@@ -45,7 +45,7 @@ public class RouteTableByMod extends RouteAlgorithm {
      */
     @Override
     public String name() {
-        return "余数分表路由";
+        return "Mod分表路由";
     }
 
     /**
@@ -54,9 +54,9 @@ public class RouteTableByMod extends RouteAlgorithm {
     @Override
     public String description() {
         return """
-                类型：分表算法
-                说明：根据给定的long值，按照表数量直接mod分表。
-                参数：key: routeList, value: mysqlCluster.database.table,mysqlCluster.database.table,...
+                根据给定的long值，按照表数量直接mod分表。
+                参数说明:
+                routeList: clusterId.database.table,clusterId.database.table,...
                 """;
     }
 

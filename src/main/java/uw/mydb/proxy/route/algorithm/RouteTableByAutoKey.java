@@ -16,14 +16,14 @@ import java.util.Map;
 public class RouteTableByAutoKey extends RouteAlgorithm {
 
     /**
-     * 数据节点
+     * 基础数据节点。
      */
-    private DataNode dataNode;
+    private DataNode baseNode;
 
     @Override
     public void config() {
         Map<String, String> params = routeConfig.getRouteParamMap();
-        dataNode = new DataNode( params.get( "baseNode" ) );
+        baseNode = new DataNode( params.get( "baseNode" ) );
     }
 
 
@@ -32,7 +32,7 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
      */
     @Override
     public String name() {
-        return "关键字分表路由";
+        return "自动KEY分表路由";
     }
 
     /**
@@ -41,9 +41,9 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
     @Override
     public String description() {
         return """
-                类型：分表算法
-                说明：根据给定的key，来判断是否存在表，如果没有表，则动态自动创建以key为后缀的表。
-                参数：需要在配置参数中配置"mysqlCluster"和"database"属性。
+                根据给定的key，来判断是否存在表，如果没有表，则动态自动创建以key为后缀的表。
+                参数说明:
+                baseNode: clusterId.database 默认基础节点，可以不指定。
                 """;
     }
 
@@ -51,7 +51,9 @@ public class RouteTableByAutoKey extends RouteAlgorithm {
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
         String table = routeInfo.getTable() + "_" + value;
         routeInfo.setTable( table );
-        routeInfo.setDataNode( dataNode );
+        if (!routeInfo.checkDataNode()){
+            routeInfo.setDataNode( baseNode );
+        }
         return routeInfo;
     }
 

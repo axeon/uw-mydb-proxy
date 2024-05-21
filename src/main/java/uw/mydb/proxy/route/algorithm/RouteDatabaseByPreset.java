@@ -49,7 +49,12 @@ public class RouteDatabaseByPreset extends RouteAlgorithm {
      */
     @Override
     public String description() {
-        return "根据预先配置的信息进行分库。";
+        return """
+                根据预设信息设置路由，此算法一般建立放在算法的最后，它会覆盖之前的配置。
+                参数说明：
+                key=routeKey
+                value=clusterId.database
+                """;
     }
 
 
