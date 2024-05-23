@@ -47,6 +47,17 @@ public class MydbProxyConfig {
      */
     private long lastUpdate;
 
+    public MydbProxyConfig(String configKey, String configName, String username, String password, long baseCluster, String clusterIds, int saasPerNode, long lastUpdate) {
+        this.configKey = configKey;
+        this.configName = configName;
+        this.username = username;
+        this.password = password;
+        this.baseCluster = baseCluster;
+        this.clusterIds = clusterIds;
+        this.saasPerNode = saasPerNode;
+        this.lastUpdate = lastUpdate;
+    }
+
     public String getClusterIds() {
         return clusterIds;
     }
