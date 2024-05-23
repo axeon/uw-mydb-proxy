@@ -5,7 +5,7 @@
 
     <groupId>com.umtone</groupId>
     <artifactId>uw-mydb-proxy</artifactId>
-    <version>3.0.1</version>
+    <version>3.0.2</version>
     <packaging>jar</packaging>
 
     <name>uw-mydb-proxy</name>
@@ -26,12 +26,12 @@
         <maven.compiler.target>21</maven.compiler.target>
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud.alibaba.version>2023.0.1.0</spring-cloud.alibaba.version>
-        <uw-auth-client.version>6.0.9</uw-auth-client.version>
-        <uw-logback-es.version>3.0.38</uw-logback-es.version>
-        <uw-cache.version>1.1.31</uw-cache.version>
+        <uw-auth-client.version>6.0.10</uw-auth-client.version>
+        <uw-logback-es.version>3.0.39</uw-logback-es.version>
+        <uw-cache.version>1.1.32</uw-cache.version>
         <guava.version>33.2.0-jre</guava.version>
         <netty.version>4.1.110.Final</netty.version>
-        <jmh.version>1.36</jmh.version>
+        <jmh.version>1.37</jmh.version>
     </properties>
 
     <dependencyManagement>
