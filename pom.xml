@@ -28,7 +28,7 @@
         <spring-cloud.alibaba.version>2023.0.1.0</spring-cloud.alibaba.version>
         <uw-auth-client.version>6.0.10</uw-auth-client.version>
         <uw-logback-es.version>3.0.39</uw-logback-es.version>
-        <uw-cache.version>1.1.32</uw-cache.version>
+        <uw-cache.version>1.1.33</uw-cache.version>
         <guava.version>33.2.0-jre</guava.version>
         <netty.version>4.1.110.Final</netty.version>
         <jmh.version>1.37</jmh.version>
