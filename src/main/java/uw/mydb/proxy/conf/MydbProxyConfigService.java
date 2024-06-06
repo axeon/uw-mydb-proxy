@@ -293,6 +293,7 @@ public class MydbProxyConfigService {
      * @param slowSql
      */
     public static void reportSlowSql(SlowSql slowSql) {
+        slowSql.setProxyId( getProxyId() );
         restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class );
     }
 
@@ -302,6 +303,7 @@ public class MydbProxyConfigService {
      * @param errorSql
      */
     public static void reportErrorSql(ErrorSql errorSql) {
+        errorSql.setProxyId( getProxyId() );
         restTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
     }
 

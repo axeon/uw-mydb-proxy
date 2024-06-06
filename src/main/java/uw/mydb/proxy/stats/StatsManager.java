@@ -29,7 +29,7 @@ public class StatsManager {
     /**
      * 报告异步线程池。
      */
-    private static final ThreadPoolExecutor reportExecutor = new ThreadPoolExecutor( 5, 500, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+    private static final ThreadPoolExecutor reportExecutor = new ThreadPoolExecutor( 1, 100, 180L, TimeUnit.SECONDS, new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "report-executor-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
 
     /**
@@ -140,7 +140,7 @@ public class StatsManager {
      */
     public static void reportErrorSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, int rowNum, long txBytes,
                                       long rxBytes, long exeMillis, long runDate, int errorCode, String errorMsg, String exception) {
-        ErrorSql errorSql = new ErrorSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate, errorCode, errorMsg );
+        ErrorSql errorSql = new ErrorSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate, errorCode, errorMsg+"\n"+exception );
         reportExecutor.submit( () -> MydbProxyConfigService.reportErrorSql( errorSql ) );
     }
 

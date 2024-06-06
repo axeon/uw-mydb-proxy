@@ -42,7 +42,7 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 多节点执行的异步线程池。
      */
-    private static final ThreadPoolExecutor multiNodeExecutor = new ThreadPoolExecutor( 5, 500, 30L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+    private static final ThreadPoolExecutor multiNodeExecutor = new ThreadPoolExecutor( 1, 100, 180L, TimeUnit.SECONDS, new SynchronousQueue<>(),
             new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "multi_node_executor-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
 
     /**
