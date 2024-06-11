@@ -1,9 +1,9 @@
-FROM eclipse-temurin:21-jre as builder
+FROM dev.xili.pub:5000/eclipse-temurin:21-jre as builder
 WORKDIR application
 COPY target/*.jar application.jar
 RUN java -Djarmode=layertools -jar application.jar extract
 
-FROM eclipse-temurin:21-jre
+FROM dev.xili.pub:5000/eclipse-temurin:21-jre
 WORKDIR application
 COPY --from=builder application/dependencies/ ./
 COPY --from=builder application/spring-boot-loader/ ./
