@@ -16,6 +16,9 @@ public class DataNode {
      */
     private String database;
 
+    public DataNode() {
+    }
+    
     public DataNode(long clusterId, String database) {
         this.clusterId = clusterId;
         this.database = database;
@@ -36,8 +39,6 @@ public class DataNode {
         }
     }
 
-    public DataNode() {
-    }
 
     public long getClusterId() {
         return clusterId;

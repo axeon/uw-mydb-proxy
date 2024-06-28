@@ -19,6 +19,9 @@ public class DataTable {
      */
     private String table;
 
+    public DataTable() {
+    }
+
     public DataTable(DataNode dataNode, String table) {
         this.dataNode = dataNode;
         this.table = table;

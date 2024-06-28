@@ -8,6 +8,38 @@ import java.util.Map;
  */
 public class RouteConfig {
 
+    /**
+     * 路由配置名称。
+     */
+    private long id;
+    /**
+     * 上级路由名称，会继承上级路由的信息，只能继承一级。
+     */
+    private long parentId;
+    /**
+     * 路由名。
+     */
+    private String routeName;
+    /**
+     * 路由键。
+     */
+    private String routeKey;
+    /**
+     * 路由算法。
+     */
+    private String routeAlgorithm;
+    /**
+     * 路由参数，可能为空。
+     */
+    private Map<String, String> routeParamMap = new HashMap<>();
+    /**
+     * 更新时间戳。
+     */
+    private long lastUpdate;
+
+    public RouteConfig() {
+    }
+    
     public RouteConfig(long id, long parentId, String routeName, String routeKey, String routeAlgorithm, Map<String, String> routeParamMap) {
         this.id = id;
         this.parentId = parentId;
@@ -16,44 +48,6 @@ public class RouteConfig {
         this.routeAlgorithm = routeAlgorithm;
         this.routeParamMap = routeParamMap;
     }
-
-    public RouteConfig() {
-    }
-
-    /**
-     * 路由配置名称。
-     */
-    private long id;
-
-    /**
-     * 上级路由名称，会继承上级路由的信息，只能继承一级。
-     */
-    private long parentId;
-
-    /**
-     * 路由名。
-     */
-    private String routeName;
-
-    /**
-     * 路由键。
-     */
-    private String routeKey;
-
-    /**
-     * 路由算法。
-     */
-    private String routeAlgorithm;
-
-    /**
-     * 路由参数，可能为空。
-     */
-    private Map<String, String> routeParamMap = new HashMap<>();
-
-    /**
-     * 更新时间戳。
-     */
-    private long lastUpdate;
 
     public long getId() {
         return id;
