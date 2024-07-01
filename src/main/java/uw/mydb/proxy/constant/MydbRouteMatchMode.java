@@ -16,12 +16,12 @@ public enum MydbRouteMatchMode {
     /**
      * 匹配默认值，如果没有匹配值，可以匹配到默认值上。
      */
-    MATCH_DEFAULT(1, "匹配默认值"),
+    MATCH_DEFAULT(1, "默认匹配"),
 
     /**
      * 匹配全部值，如果没有匹配值，则匹配所有数值。
      */
-    MATCH_ALL(1, "匹配全部值");
+    MATCH_ALL(2, "全部匹配");
 
     /**
      * 参数值
