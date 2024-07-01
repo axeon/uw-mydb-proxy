@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.common.conf.MydbProxyConfig;
 import uw.mydb.proxy.conf.MydbProxyConfigService;
 import uw.mydb.proxy.constant.GlobalConstants;
 import uw.mydb.proxy.mysql.MySqlClient;
@@ -22,7 +23,6 @@ import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
 import uw.mydb.proxy.util.RandomUtils;
 import uw.mydb.proxy.util.SystemClock;
-import uw.mydb.common.conf.MydbProxyConfig;
 
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;
@@ -473,8 +473,10 @@ public class ProxySession implements MySqlSessionCallback {
         sqlParseResult = parser.parse();
         //sql解析后，routeResult=null的，可能已经在parser里处理过了。
         if (sqlParseResult.hasError()) {
-            //error code>0的，发送错误信息。
-            onProxyFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
+            if (sqlParseResult.getErrorCode() > 0) {
+                //error code>0的，发送错误信息。
+                onProxyFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
+            }
             onFinish();
             return;
         }

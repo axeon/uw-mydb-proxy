@@ -750,7 +750,7 @@ public class SqlParser {
                 tableRouteData.routeResult = RouteManager.calculate( tableRouteData.tableConfig, tableRouteDataMain.routeData );
             } catch (Throwable e) {
                 this.parseResult.setErrorInfo( MySqlErrorCode.ERR_ROUTE_CALC, "ROUTE CALC ERROR: " + e.getMessage() + ", SQL: " + parseResult.getSourceSql() );
-                log.warn( "ROUTE CALC ERROR: {}, SQL: {}", e.getMessage(), parseResult.getSourceSql() );
+//                log.warn( "ROUTE CALC ERROR: {}, SQL: {}", e.getMessage(), parseResult.getSourceSql() );
             }
         }
     }
