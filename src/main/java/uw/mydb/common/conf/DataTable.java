@@ -1,6 +1,8 @@
 package uw.mydb.common.conf;
 
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.util.Objects;
 
 /**
@@ -108,7 +110,11 @@ public class DataTable {
         if (dataNode == null) {
             return table;
         } else {
-            return dataNode.getDatabase() + '.' + table;
+            if (StringUtils.isBlank( dataNode.getDatabase() )) {
+                return table;
+            } else {
+                return dataNode.getDatabase() + '.' + table;
+            }
         }
     }
 
