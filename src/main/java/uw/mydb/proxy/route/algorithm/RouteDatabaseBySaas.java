@@ -8,8 +8,6 @@ import uw.mydb.common.conf.TableConfig;
 import uw.mydb.proxy.conf.MydbProxyConfigService;
 import uw.mydb.proxy.route.RouteAlgorithm;
 
-import java.util.List;
-
 /**
  * 特别为saas模式优化的一种分库方案。
  *
@@ -45,11 +43,11 @@ public class RouteDatabaseBySaas extends RouteAlgorithm {
 
     @Override
     public DataTable calculate(TableConfig tableConfig, DataTable routeInfo, String value) throws RouteException {
-        List<DataNode> dataNodeList = MydbProxyConfigService.getSaasNode( value );
-        if (dataNodeList == null || dataNodeList.size() == 0) {
+        DataNode saasNode = MydbProxyConfigService.getSaasNode( value );
+        if (saasNode == null) {
             throw new RouteException( "calculate计算失败，参数值[" + value + "]无法找到对应路由！" );
         }
-        routeInfo.setDataNode( dataNodeList.get( 0 ) );
+        routeInfo.setDataNode( saasNode );
         return routeInfo;
     }
 

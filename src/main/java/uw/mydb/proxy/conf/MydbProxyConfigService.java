@@ -123,7 +123,7 @@ public class MydbProxyConfigService {
                         String database = key.substring( splitPos + 1 );
                         return restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
                                 HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<HashSet<String>>() {
-                                } ).getBody();
+                        } ).getBody();
                     }
                 }
                 return null;
@@ -131,17 +131,16 @@ public class MydbProxyConfigService {
         }, (key, oldValue, newValue) -> {
 
         } );
-        //saas node缓存： key:configKey:saasId value: List<DataNode>
-        FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<String, ArrayList<DataNode>>() {
+        //saas node缓存： key:configKey:saasId value: DataNode
+        FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<String, DataNode>() {
             @Override
-            public ArrayList<DataNode> load(String key) throws Exception {
+            public DataNode load(String key) throws Exception {
                 if (key != null) {
                     int splitPos = key.indexOf( ':' );
                     if (splitPos > -1) {
                         String configKey = key.substring( 0, splitPos );
                         String saasId = key.substring( splitPos + 1 );
-                        return restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataNode>>() {
-                        } ).getBody();
+                        return restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, DataNode.class ).getBody();
                     }
                 }
                 return null;
@@ -172,9 +171,8 @@ public class MydbProxyConfigService {
     public static List<DataTable> getTableListByPrefix(String tablePrefix) {
         //创建成功则加入set。
         ArrayList<DataTable> dataTableList =
-                MydbProxyConfigService.restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() +
-                        "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
-                } ).getBody();
+                MydbProxyConfigService.restTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() + "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
+        } ).getBody();
         return dataTableList;
     }
 
@@ -219,7 +217,7 @@ public class MydbProxyConfigService {
      *
      * @return
      */
-    public static List<DataNode> getSaasNode(String saasId) {
+    public static DataNode getSaasNode(String saasId) {
         return FusionCache.get( DataNode.class, mydbProperties.getConfigKey() + ":" + saasId );
     }
 
