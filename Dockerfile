@@ -1,14 +1,14 @@
 FROM dev.xili.pub:5000/eclipse-temurin:21-jre as builder
-WORKDIR application
+WORKDIR /builder
 COPY target/*.jar application.jar
-RUN java -Djarmode=layertools -jar application.jar extract
+RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
 FROM dev.xili.pub:5000/eclipse-temurin:21-jre
-WORKDIR application
-COPY --from=builder application/dependencies/ ./
-COPY --from=builder application/spring-boot-loader/ ./
-COPY --from=builder application/snapshot-dependencies/ ./
-COPY --from=builder application/application/ ./
+WORKDIR /application
+COPY --from=builder /builder/extracted/dependencies/ ./
+COPY --from=builder /builder/extracted/spring-boot-loader/ ./
+COPY --from=builder /builder/extracted/snapshot-dependencies/ ./
+COPY --from=builder /builder/extracted/application/ ./
 
 ENV JAVA_OPTS="" SPRING_OPTS=""
 
