@@ -12,4 +12,4 @@ COPY --from=builder /builder/extracted/application/ ./
 
 ENV JAVA_OPTS="" SPRING_OPTS=""
 
-ENTRYPOINT exec java $JAVA_OPTS org.springframework.boot.loader.launch.JarLauncher ${SPRING_OPTS}
+ENTRYPOINT exec java -jar $JAVA_OPTS application.jar ${SPRING_OPTS}
