@@ -34,7 +34,7 @@ public class MySqlPool implements ChannelPool {
     /**
      * 空闲连接池。
      */
-    private final Deque<Channel> idleDeque = new ConcurrentLinkedDeque();
+    private final Deque<Channel> idleDeque = new ConcurrentLinkedDeque<>();
 
     /**
      * 在用channelSet。

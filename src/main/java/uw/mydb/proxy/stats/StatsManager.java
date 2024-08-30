@@ -35,12 +35,12 @@ public class StatsManager {
     /**
      * 服务器统计表。
      */
-    private static ProxyRunStats proxyRunStats = new ProxyRunStats();
+    private static final ProxyRunStats proxyRunStats = new ProxyRunStats();
 
     /**
      * 基于访问库表的统计表。
      */
-    private static Map<String, SchemaRunStats> schemaRunStatsMap = new ConcurrentHashMap();
+    private static final Map<String, SchemaRunStats> schemaRunStatsMap = new ConcurrentHashMap();
 
     /**
      * 统计慢sql。

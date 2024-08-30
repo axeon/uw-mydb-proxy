@@ -18,7 +18,7 @@ public class MysqlPoolHandler implements ChannelPoolHandler {
     /**
      * mysql server 配置。
      */
-    private MysqlServerConfig mysqlServerConfig;
+    private final MysqlServerConfig mysqlServerConfig;
 
     public MysqlPoolHandler(MysqlServerConfig mysqlServerConfig) {
         this.mysqlServerConfig = mysqlServerConfig;

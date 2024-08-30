@@ -17,7 +17,7 @@ public class ProxySessionManager {
     /**
      * key是用户ip端口。
      */
-    private static ConcurrentHashMap<String, ProxySession> sessionMap = new ConcurrentHashMap();
+    private static final ConcurrentHashMap<String, ProxySession> sessionMap = new ConcurrentHashMap();
 
     /**
      * 获得在线计数。

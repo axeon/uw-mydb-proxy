@@ -48,7 +48,7 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 全局统一的sessionId生成器。
      */
-    private static AtomicLong sessionIdGenerator = new AtomicLong();
+    private static final AtomicLong sessionIdGenerator = new AtomicLong();
 
     /**
      * 创建时间.
@@ -88,12 +88,12 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 绑定的channel
      */
-    private ChannelHandlerContext ctx;
+    private final ChannelHandlerContext ctx;
 
     /**
      * session Id
      */
-    private long id;
+    private final long id;
 
     /**
      * 用户名
