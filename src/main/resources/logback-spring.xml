@@ -6,6 +6,8 @@
     <springProperty scope="context" name="appHost" source="APP_HOST" defaultValue=""/>
     <springProperty scope="context" name="appPort" source="APP_PORT" defaultValue=""/>
     <springProperty scope="context" name="esServer" source="LOG_ES_SERVER" defaultValue="http://192.168.88.21:9200"/>
+    <springProperty scope="context" name="esUsername" source="LOG_ES_USERNAME" defaultValue=""/>
+    <springProperty scope="context" name="esPassword" source="LOG_ES_PASSWORD" defaultValue=""/>
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
@@ -18,15 +20,15 @@
         <!-- 最大刷新时间间隔 单位秒 -->
         <maxFlushInSeconds>10</maxFlushInSeconds>
         <!-- 批量提交最小字节数 -->
-        <maxBytesOfBatch>2048</maxBytesOfBatch>
+        <maxBytesOfBatch>8192</maxBytesOfBatch>
         <!-- 批量提交日志最大线程数 -->
         <maxBatchThreads>5</maxBatchThreads>
         <!-- 最大批量线程队列数 -->
-        <maxBatchQueueSize>10</maxBatchQueueSize>
+        <maxBatchQueueSize>20</maxBatchQueueSize>
         <!-- 每个异常堆栈打印的最大层数 -->
-        <maxDepthPerThrowable>10</maxDepthPerThrowable>
+        <maxDepthPerThrowable>20</maxDepthPerThrowable>
         <!-- 需要排除的异常关键字，多个关键字之间用','分割。-->
-        <excludeThrowableKeys>org.spring,org.apache,java.base</excludeThrowableKeys>
+        <excludeThrowableKeys>org.spring,org.apache,org.apache,java.base,jakarta,com.mysql</excludeThrowableKeys>
         <!-- 开启JMX监控支持,默认未开启 -->
         <jmxMonitoring>false</jmxMonitoring>
     </appender>
@@ -42,5 +44,4 @@
             <appender-ref ref="ES"/>
         </root>
     </springProfile>
-
 </configuration>
