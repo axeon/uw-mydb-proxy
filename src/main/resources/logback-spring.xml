@@ -20,7 +20,7 @@
         <!-- 最大刷新时间间隔 单位秒 -->
         <maxFlushInSeconds>10</maxFlushInSeconds>
         <!-- 批量提交最小字节数 -->
-        <maxBytesOfBatch>8192</maxBytesOfBatch>
+        <maxKiloBytesOfBatch>8192</maxKiloBytesOfBatch>
         <!-- 批量提交日志最大线程数 -->
         <maxBatchThreads>5</maxBatchThreads>
         <!-- 最大批量线程队列数 -->
