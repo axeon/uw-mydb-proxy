@@ -5,7 +5,7 @@
     <springProperty scope="context" name="appVersion" source="project.version" defaultValue=""/>
     <springProperty scope="context" name="appHost" source="APP_HOST" defaultValue=""/>
     <springProperty scope="context" name="appPort" source="APP_PORT" defaultValue=""/>
-    <springProperty scope="context" name="esServer" source="LOG_ES_SERVER" defaultValue="http://192.168.88.21:9200"/>
+    <springProperty scope="context" name="esServer" source="LOG_ES_SERVER" defaultValue=""/>
     <springProperty scope="context" name="esUsername" source="LOG_ES_USERNAME" defaultValue=""/>
     <springProperty scope="context" name="esPassword" source="LOG_ES_PASSWORD" defaultValue=""/>
 
@@ -13,6 +13,8 @@
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
     <appender name="ES" class="uw.logback.es.appender.ElasticSearchAppender">
         <esServer>${esServer}</esServer>
+        <esUsername>${esUsername}</esUsername>
+        <esPassword>${esPassword}</esPassword>
         <index>${appName}</index>
         <indexPattern>yyyyMM</indexPattern>
         <appInfo>${appName}:${appVersion}</appInfo>
