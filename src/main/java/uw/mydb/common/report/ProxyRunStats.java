@@ -23,7 +23,7 @@ public class ProxyRunStats {
     /**
      * 报告次数。
      */
-    private AtomicLong reportCount = new AtomicLong();
+    private final AtomicLong reportCount = new AtomicLong();
 
     /**
      * 配置key。
@@ -80,11 +80,11 @@ public class ProxyRunStats {
     /**
      * 客户端数。
      */
-    private int clientNum;
+    private long clientNum;
     /**
      * 客户端连接数量。
      */
-    private int clientConnNum;
+    private long clientConnNum;
     /**
      * 客户端连接信息。
      */
@@ -96,11 +96,11 @@ public class ProxyRunStats {
     /**
      * mysql忙连接数量。
      */
-    private int mysqlBusyConnNum;
+    private long mysqlBusyConnNum;
     /**
      * mysql空闲链接数量。
      */
-    private int mysqlIdleConnNum;
+    private long mysqlIdleConnNum;
     /**
      * mysql链接信息。
      */
@@ -108,128 +108,128 @@ public class ProxyRunStats {
     /**
      * schema统计数量。
      */
-    private int schemaStatsNum;
+    private long schemaStatsNum;
 
     /**
      * insert计数。
      */
-    private AtomicInteger insertNum = new AtomicInteger();
+    private final AtomicLong insertNum = new AtomicLong();
     /**
      * update计数。
      */
-    private AtomicInteger updateNum = new AtomicInteger();
+    private final AtomicLong updateNum = new AtomicLong();
     /**
      * delete计数。
      */
-    private AtomicInteger deleteNum = new AtomicInteger();
+    private final AtomicLong deleteNum = new AtomicLong();
     /**
      * select计数。
      */
-    private AtomicInteger selectNum = new AtomicInteger();
+    private final AtomicLong selectNum = new AtomicLong();
     /**
      * other计数。
      */
-    private AtomicInteger otherNum = new AtomicInteger();
+    private final AtomicLong otherNum = new AtomicLong();
     /**
      * insert错误计数。
      */
-    private AtomicInteger insertErrorNum = new AtomicInteger();
+    private final AtomicLong insertErrorNum = new AtomicLong();
     /**
      * update错误计数。
      */
-    private AtomicInteger updateErrorNum = new AtomicInteger();
+    private final AtomicLong updateErrorNum = new AtomicLong();
     /**
      * delete错误计数。
      */
-    private AtomicInteger deleteErrorNum = new AtomicInteger();
+    private final AtomicLong deleteErrorNum = new AtomicLong();
     /**
      * select错误计数。
      */
-    private AtomicInteger selectErrorNum = new AtomicInteger();
+    private final AtomicLong selectErrorNum = new AtomicLong();
     /**
      * other错误计数。
      */
-    private AtomicInteger otherErrorNum = new AtomicInteger();
+    private final AtomicLong otherErrorNum = new AtomicLong();
     /**
      * insert执行耗时毫秒数。
      */
-    private AtomicLong insertExeMillis = new AtomicLong();
+    private final AtomicLong insertExeMillis = new AtomicLong();
     /**
      * update执行耗时毫秒数。
      */
-    private AtomicLong updateExeMillis = new AtomicLong();
+    private final AtomicLong updateExeMillis = new AtomicLong();
     /**
      * delete执行耗时毫秒数。
      */
-    private AtomicLong deleteExeMillis = new AtomicLong();
+    private final AtomicLong deleteExeMillis = new AtomicLong();
     /**
      * select执行耗时毫秒数。
      */
-    private AtomicLong selectExeMillis = new AtomicLong();
+    private final AtomicLong selectExeMillis = new AtomicLong();
     /**
      * other执行耗时毫秒数。
      */
-    private AtomicLong otherExeMillis = new AtomicLong();
+    private final AtomicLong otherExeMillis = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong insertRowNum = new AtomicLong();
+    private final AtomicLong insertRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong updateRowNum = new AtomicLong();
+    private final AtomicLong updateRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong deleteRowNum = new AtomicLong();
+    private final AtomicLong deleteRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong selectRowNum = new AtomicLong();
+    private final AtomicLong selectRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong otherRowNum = new AtomicLong();
+    private final AtomicLong otherRowNum = new AtomicLong();
     /**
      * insert发送字节数。
      */
-    private AtomicLong insertTxBytes = new AtomicLong();
+    private final AtomicLong insertTxBytes = new AtomicLong();
     /**
      * insert接收字节数。
      */
-    private AtomicLong insertRxBytes = new AtomicLong();
+    private final AtomicLong insertRxBytes = new AtomicLong();
     /**
      * update发送字节数。
      */
-    private AtomicLong updateTxBytes = new AtomicLong();
+    private final AtomicLong updateTxBytes = new AtomicLong();
     /**
      * update接收字节数。
      */
-    private AtomicLong updateRxBytes = new AtomicLong();
+    private final AtomicLong updateRxBytes = new AtomicLong();
     /**
      * delete发送字节数。
      */
-    private AtomicLong deleteTxBytes = new AtomicLong();
+    private final AtomicLong deleteTxBytes = new AtomicLong();
     /**
      * delete接收字节数。
      */
-    private AtomicLong deleteRxBytes = new AtomicLong();
+    private final AtomicLong deleteRxBytes = new AtomicLong();
     /**
      * select发送字节数。
      */
-    private AtomicLong selectTxBytes = new AtomicLong();
+    private final AtomicLong selectTxBytes = new AtomicLong();
     /**
      * select接收字节数。
      */
-    private AtomicLong selectRxBytes = new AtomicLong();
+    private final AtomicLong selectRxBytes = new AtomicLong();
     /**
      * other发送字节数。
      */
-    private AtomicLong otherTxBytes = new AtomicLong();
+    private final AtomicLong otherTxBytes = new AtomicLong();
     /**
      * other接收字节数。
      */
-    private AtomicLong otherRxBytes = new AtomicLong();
+    private final AtomicLong otherRxBytes = new AtomicLong();
 
 
     public long getProxyId() {
@@ -352,19 +352,19 @@ public class ProxyRunStats {
         this.threadStarted = threadStarted;
     }
 
-    public int getClientNum() {
+    public long getClientNum() {
         return clientNum;
     }
 
-    public void setClientNum(int clientNum) {
+    public void setClientNum(long clientNum) {
         this.clientNum = clientNum;
     }
 
-    public int getClientConnNum() {
+    public long getClientConnNum() {
         return clientConnNum;
     }
 
-    public void setClientConnNum(int clientConnNum) {
+    public void setClientConnNum(long clientConnNum) {
         this.clientConnNum = clientConnNum;
     }
 
@@ -384,19 +384,19 @@ public class ProxyRunStats {
         this.mysqlNum = mysqlNum;
     }
 
-    public int getMysqlBusyConnNum() {
+    public long getMysqlBusyConnNum() {
         return mysqlBusyConnNum;
     }
 
-    public void setMysqlBusyConnNum(int mysqlBusyConnNum) {
+    public void setMysqlBusyConnNum(long mysqlBusyConnNum) {
         this.mysqlBusyConnNum = mysqlBusyConnNum;
     }
 
-    public int getMysqlIdleConnNum() {
+    public long getMysqlIdleConnNum() {
         return mysqlIdleConnNum;
     }
 
-    public void setMysqlIdleConnNum(int mysqlIdleConnNum) {
+    public void setMysqlIdleConnNum(long mysqlIdleConnNum) {
         this.mysqlIdleConnNum = mysqlIdleConnNum;
     }
 
@@ -408,7 +408,7 @@ public class ProxyRunStats {
         this.mysqlConnList = mysqlConnList;
     }
 
-    public int getSchemaStatsNum() {
+    public long getSchemaStatsNum() {
         return schemaStatsNum;
     }
 
@@ -417,83 +417,83 @@ public class ProxyRunStats {
     }
 
 
-    public int getInsertNum() {
+    public long getInsertNum() {
         return insertNum.get();
     }
 
-    public void addInsertNum(int insertNum) {
+    public void addInsertNum(long insertNum) {
         this.insertNum.addAndGet( insertNum );
     }
 
-    public int getUpdateNum() {
+    public long getUpdateNum() {
         return updateNum.get();
     }
 
-    public void addUpdateNum(int updateNum) {
+    public void addUpdateNum(long updateNum) {
         this.updateNum.addAndGet( updateNum );
     }
 
-    public int getDeleteNum() {
+    public long getDeleteNum() {
         return deleteNum.get();
     }
 
-    public void addDeleteNum(int deleteNum) {
+    public void addDeleteNum(long deleteNum) {
         this.deleteNum.addAndGet( deleteNum );
     }
 
-    public int getSelectNum() {
+    public long getSelectNum() {
         return selectNum.get();
     }
 
-    public void addSelectNum(int selectNum) {
+    public void addSelectNum(long selectNum) {
         this.selectNum.addAndGet( selectNum );
     }
 
-    public int getOtherNum() {
+    public long getOtherNum() {
         return otherNum.get();
     }
 
-    public void addOtherNum(int otherNum) {
+    public void addOtherNum(long otherNum) {
         this.otherNum.addAndGet( otherNum );
     }
 
-    public int getInsertErrorNum() {
+    public long getInsertErrorNum() {
         return insertErrorNum.get();
     }
 
-    public void addInsertErrorNum(int insertErrorNum) {
+    public void addInsertErrorNum(long insertErrorNum) {
         this.insertErrorNum.addAndGet( insertErrorNum );
     }
 
-    public int getUpdateErrorNum() {
+    public long getUpdateErrorNum() {
         return updateErrorNum.get();
     }
 
-    public void addUpdateErrorNum(int updateErrorNum) {
+    public void addUpdateErrorNum(long updateErrorNum) {
         this.updateErrorNum.addAndGet( updateErrorNum );
     }
 
-    public int getDeleteErrorNum() {
+    public long getDeleteErrorNum() {
         return deleteErrorNum.get();
     }
 
-    public void addDeleteErrorNum(int deleteErrorNum) {
+    public void addDeleteErrorNum(long deleteErrorNum) {
         this.deleteErrorNum.addAndGet( deleteErrorNum );
     }
 
-    public int getSelectErrorNum() {
+    public long getSelectErrorNum() {
         return selectErrorNum.get();
     }
 
-    public void addSelectErrorNum(int selectErrorNum) {
+    public void addSelectErrorNum(long selectErrorNum) {
         this.selectErrorNum.addAndGet( selectErrorNum );
     }
 
-    public int getOtherErrorNum() {
+    public long getOtherErrorNum() {
         return otherErrorNum.get();
     }
 
-    public void addOtherErrorNum(int otherErrorNum) {
+    public void addOtherErrorNum(long otherErrorNum) {
         this.otherErrorNum.addAndGet( otherErrorNum );
     }
 

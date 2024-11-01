@@ -44,123 +44,123 @@ public class SchemaRunStats {
     /**
      * insert计数。
      */
-    private AtomicInteger insertNum = new AtomicInteger();
+    private final AtomicLong insertNum = new AtomicLong();
     /**
      * update计数。
      */
-    private AtomicInteger updateNum = new AtomicInteger();
+    private final AtomicLong updateNum = new AtomicLong();
     /**
      * delete计数。
      */
-    private AtomicInteger deleteNum = new AtomicInteger();
+    private final AtomicLong deleteNum = new AtomicLong();
     /**
      * select计数。
      */
-    private AtomicInteger selectNum = new AtomicInteger();
+    private final AtomicLong selectNum = new AtomicLong();
     /**
      * other计数。
      */
-    private AtomicInteger otherNum = new AtomicInteger();
+    private final AtomicLong otherNum = new AtomicLong();
     /**
      * insert错误计数。
      */
-    private AtomicInteger insertErrorNum = new AtomicInteger();
+    private final AtomicLong insertErrorNum = new AtomicLong();
     /**
      * update错误计数。
      */
-    private AtomicInteger updateErrorNum = new AtomicInteger();
+    private final AtomicLong updateErrorNum = new AtomicLong();
     /**
      * delete错误计数。
      */
-    private AtomicInteger deleteErrorNum = new AtomicInteger();
+    private final AtomicLong deleteErrorNum = new AtomicLong();
     /**
      * select错误计数。
      */
-    private AtomicInteger selectErrorNum = new AtomicInteger();
+    private final AtomicLong selectErrorNum = new AtomicLong();
     /**
      * other错误计数。
      */
-    private AtomicInteger otherErrorNum = new AtomicInteger();
+    private final AtomicLong otherErrorNum = new AtomicLong();
     /**
      * insert执行耗时毫秒数。
      */
-    private AtomicLong insertExeMillis = new AtomicLong();
+    private final AtomicLong insertExeMillis = new AtomicLong();
     /**
      * update执行耗时毫秒数。
      */
-    private AtomicLong updateExeMillis = new AtomicLong();
+    private final AtomicLong  updateExeMillis = new AtomicLong();
     /**
      * delete执行耗时毫秒数。
      */
-    private AtomicLong deleteExeMillis = new AtomicLong();
+    private final AtomicLong  deleteExeMillis = new AtomicLong();
     /**
      * select执行耗时毫秒数。
      */
-    private AtomicLong selectExeMillis = new AtomicLong();
+    private final AtomicLong  selectExeMillis = new AtomicLong();
     /**
      * other执行耗时毫秒数。
      */
-    private AtomicLong otherExeMillis = new AtomicLong();
+    private final AtomicLong  otherExeMillis = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong insertRowNum = new AtomicLong();
+    private final AtomicLong  insertRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong updateRowNum = new AtomicLong();
+    private final AtomicLong  updateRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong deleteRowNum = new AtomicLong();
+    private final AtomicLong  deleteRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong selectRowNum = new AtomicLong();
+    private final AtomicLong  selectRowNum = new AtomicLong();
     /**
      * insert影响行数。
      */
-    private AtomicLong otherRowNum = new AtomicLong();
+    private final AtomicLong  otherRowNum = new AtomicLong();
     /**
      * insert发送字节数。
      */
-    private AtomicLong insertTxBytes = new AtomicLong();
+    private final AtomicLong  insertTxBytes = new AtomicLong();
     /**
      * insert接收字节数。
      */
-    private AtomicLong insertRxBytes = new AtomicLong();
+    private final AtomicLong  insertRxBytes = new AtomicLong();
     /**
      * update发送字节数。
      */
-    private AtomicLong updateTxBytes = new AtomicLong();
+    private final AtomicLong  updateTxBytes = new AtomicLong();
     /**
      * update接收字节数。
      */
-    private AtomicLong updateRxBytes = new AtomicLong();
+    private final AtomicLong  updateRxBytes = new AtomicLong();
     /**
      * delete发送字节数。
      */
-    private AtomicLong deleteTxBytes = new AtomicLong();
+    private final AtomicLong  deleteTxBytes = new AtomicLong();
     /**
      * delete接收字节数。
      */
-    private AtomicLong deleteRxBytes = new AtomicLong();
+    private final AtomicLong  deleteRxBytes = new AtomicLong();
     /**
      * select发送字节数。
      */
-    private AtomicLong selectTxBytes = new AtomicLong();
+    private final AtomicLong  selectTxBytes = new AtomicLong();
     /**
      * select接收字节数。
      */
-    private AtomicLong selectRxBytes = new AtomicLong();
+    private final AtomicLong  selectRxBytes = new AtomicLong();
     /**
      * other发送字节数。
      */
-    private AtomicLong otherTxBytes = new AtomicLong();
+    private final AtomicLong  otherTxBytes = new AtomicLong();
     /**
      * other接收字节数。
      */
-    private AtomicLong otherRxBytes = new AtomicLong();
+    private final AtomicLong  otherRxBytes = new AtomicLong();
 
 
     public SchemaRunStats(long proxyId,long clusterId, long serverId, String database, String table) {
@@ -250,7 +250,7 @@ public class SchemaRunStats {
         this.reportSchema = true;
     }
 
-    public int getInsertNum() {
+    public long getInsertNum() {
         return insertNum.getAndSet( 0 );
     }
 
@@ -258,75 +258,75 @@ public class SchemaRunStats {
         this.insertNum.addAndGet( insertNum );
     }
 
-    public int getUpdateNum() {
+    public long getUpdateNum() {
         return updateNum.getAndSet( 0 );
     }
 
-    public void addUpdateNum(int updateNum) {
+    public void addUpdateNum(long updateNum) {
         this.updateNum.addAndGet( updateNum );
     }
 
-    public int getDeleteNum() {
+    public long getDeleteNum() {
         return deleteNum.getAndSet( 0 );
     }
 
-    public void addDeleteNum(int deleteNum) {
+    public void addDeleteNum(long deleteNum) {
         this.deleteNum.addAndGet( deleteNum );
     }
 
-    public int getSelectNum() {
+    public long getSelectNum() {
         return selectNum.getAndSet( 0 );
     }
 
-    public void addSelectNum(int selectNum) {
+    public void addSelectNum(long selectNum) {
         this.selectNum.addAndGet( selectNum );
     }
 
-    public int getOtherNum() {
+    public long getOtherNum() {
         return otherNum.getAndSet( 0 );
     }
 
-    public void addOtherNum(int otherNum) {
+    public void addOtherNum(long otherNum) {
         this.otherNum.addAndGet( otherNum );
     }
 
-    public int getInsertErrorNum() {
+    public long getInsertErrorNum() {
         return insertErrorNum.getAndSet( 0 );
     }
 
-    public void addInsertErrorNum(int insertErrorNum) {
+    public void addInsertErrorNum(long insertErrorNum) {
         this.insertErrorNum.addAndGet( insertErrorNum );
     }
 
-    public int getUpdateErrorNum() {
+    public long getUpdateErrorNum() {
         return updateErrorNum.getAndSet( 0 );
     }
 
-    public void addUpdateErrorNum(int updateErrorNum) {
+    public void addUpdateErrorNum(long updateErrorNum) {
         this.updateErrorNum.addAndGet( updateErrorNum );
     }
 
-    public int getDeleteErrorNum() {
+    public long getDeleteErrorNum() {
         return deleteErrorNum.getAndSet( 0 );
     }
 
-    public void addDeleteErrorNum(int deleteErrorNum) {
+    public void addDeleteErrorNum(long deleteErrorNum) {
         this.deleteErrorNum.addAndGet( deleteErrorNum );
     }
 
-    public int getSelectErrorNum() {
+    public long getSelectErrorNum() {
         return selectErrorNum.getAndSet( 0 );
     }
 
-    public void addSelectErrorNum(int selectErrorNum) {
+    public void addSelectErrorNum(long selectErrorNum) {
         this.selectErrorNum.addAndGet( selectErrorNum );
     }
 
-    public int getOtherErrorNum() {
+    public long getOtherErrorNum() {
         return otherErrorNum.getAndSet( 0 );
     }
 
-    public void addOtherErrorNum(int otherErrorNum) {
+    public void addOtherErrorNum(long otherErrorNum) {
         this.otherErrorNum.addAndGet( otherErrorNum );
     }
 
