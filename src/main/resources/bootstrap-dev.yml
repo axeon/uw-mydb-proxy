@@ -7,17 +7,13 @@ spring:
     name: ${project.name}
   cloud:
     nacos:
+      server-addr: 192.168.88.21:8848
+      username: nacos
+      password: nacos888
       config:
-        server-addr: 192.168.88.21:8848
-        namespace: dev
-        username: nacos
-        password: nacos888
-        file-extension: yaml
-        refresh-enabled: false
-      discovery:
-        service: ${spring.application.name}
-        ip: ${APP_HOST:192.168.88.68}
-        server-addr: ${spring.cloud.nacos.config.server-addr}
         namespace: test
-        username: ${spring.cloud.nacos.config.username}
-        password: ${spring.cloud.nacos.config.password}
+        file-extension: yaml
+      discovery:
+        namespace: ${spring.cloud.nacos.config.namespace}
+        service: ${spring.application.name}
+        ip: ${APP_HOST:}

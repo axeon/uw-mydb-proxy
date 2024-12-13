@@ -15,8 +15,7 @@
         <esServer>${esServer}</esServer>
         <esUsername>${esUsername}</esUsername>
         <esPassword>${esPassword}</esPassword>
-        <index>${appName}</index>
-        <indexPattern>yyyyMM</indexPattern>
+        <esIndex>${appName}</esIndex>
         <appInfo>${appName}:${appVersion}</appInfo>
         <appHost>${appHost}:${appPort}</appHost>
         <!-- 最大刷新时间间隔 单位秒 -->
