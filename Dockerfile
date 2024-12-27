@@ -1,4 +1,4 @@
-FROM dev.xili.pub:5000/eclipse-temurin:21-jre as builder
+FROM dev.xili.pub:5000/eclipse-temurin:21-jre AS builder
 WORKDIR /builder
 COPY target/*.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
@@ -12,4 +12,4 @@ COPY --from=builder /builder/extracted/application/ ./
 
 ENV JAVA_OPTS="" SPRING_OPTS=""
 
-ENTRYPOINT exec java -jar $JAVA_OPTS application.jar ${SPRING_OPTS}
+ENTRYPOINT ["exec","java","-jar","$JAVA_OPTS","application.jar","${SPRING_OPTS}"]
