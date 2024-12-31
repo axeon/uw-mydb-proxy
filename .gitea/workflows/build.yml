@@ -3,7 +3,7 @@ on:
   push:
     branches: main
 env:
-  REGISTRY: "dev.xili.pub:5000"
+  REGISTRY_SERVER: ${{vars.REGISTRY_SERVER}}
   APP_NAME: uw-mydb-proxy
   APP_PORT: 3300
 
@@ -17,6 +17,6 @@ jobs:
           git clone -q ${{gitea.server_url}}/${{ gitea.repository }}.git .
           mvn clean package -Dmaven.test.skip=true
           APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
-          docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY}/${APP_NAME}:${APP_VERSION} .
-          docker push ${REGISTRY}/${APP_NAME}:${APP_VERSION}
+          docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY_SERVER}/${APP_NAME}:${APP_VERSION} .
+          docker push ${REGISTRY_SERVER}/${APP_NAME}:${APP_VERSION}
           # /home/gitea/runner/deploy/deploy-registry-app.sh ${APP_NAME} ${APP_VERSION} ${APP_PORT}
