@@ -19,4 +19,4 @@ jobs:
           APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
           docker build --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY_SERVER}/${APP_NAME}:${APP_VERSION} .
           docker push ${REGISTRY_SERVER}/${APP_NAME}:${APP_VERSION}
-          # /home/gitea/runner/deploy/deploy-registry-app.sh ${APP_NAME} ${APP_VERSION} ${APP_PORT}
+          /home/gitea/runner/deploy/deploy-registry-app.sh ${APP_NAME} ${APP_VERSION} ${APP_PORT}
