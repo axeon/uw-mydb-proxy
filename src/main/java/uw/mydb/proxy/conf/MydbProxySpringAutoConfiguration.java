@@ -37,7 +37,7 @@ public class MydbProxySpringAutoConfiguration {
     }
 
     @Bean
-    public MydbProxyConfigService mydbConfigService(final MydbProxyProperties mydbProxyProperties, @Qualifier("tokenRestTemplate") final RestTemplate tokenRestTemplate) {
-        return new MydbProxyConfigService( mydbProxyProperties, tokenRestTemplate );
+    public MydbProxyConfigService mydbConfigService(final MydbProxyProperties mydbProxyProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
+        return new MydbProxyConfigService( mydbProxyProperties, authRestTemplate );
     }
 }

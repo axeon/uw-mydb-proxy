@@ -34,7 +34,7 @@ public class MydbProxyConfigService {
     /**
      * Rest模板类
      */
-    private static RestTemplate tokenRestTemplate;
+    private static RestTemplate authRestTemplate;
 
     /**
      * 基础集群ID。
@@ -47,14 +47,14 @@ public class MydbProxyConfigService {
     private static long proxyId;
 
 
-    protected MydbProxyConfigService(MydbProxyProperties mydbProperties, RestTemplate tokenRestTemplate) {
+    protected MydbProxyConfigService(MydbProxyProperties mydbProperties, RestTemplate authRestTemplate) {
         MydbProxyConfigService.mydbProperties = mydbProperties;
-        MydbProxyConfigService.tokenRestTemplate = tokenRestTemplate;
+        MydbProxyConfigService.authRestTemplate = authRestTemplate;
         //Proxy配置缓存 key: configKey value:ProxyConfig
         FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 20, 0L ), new CacheDataLoader<String, MydbProxyConfig>() {
             @Override
             public MydbProxyConfig load(String key) throws Exception {
-                return tokenRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getProxyConfig?configKey=" + mydbProperties.getConfigKey(),
+                return authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getProxyConfig?configKey=" + mydbProperties.getConfigKey(),
                         MydbProxyConfig.class );
             }
         } );
@@ -69,7 +69,7 @@ public class MydbProxyConfigService {
                         String configKey = key.substring( 0, splitPos );
                         String tableName = key.substring( splitPos + 1 );
                         TableConfig tableConfig =
-                                tokenRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() +
+                                authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() +
                                         "&tableName=" + tableName, TableConfig.class );
                         return tableConfig;
                     }
@@ -88,7 +88,7 @@ public class MydbProxyConfigService {
                     if (splitPos > -1) {
                         String configKey = key.substring( 0, splitPos );
                         long routeId = Long.parseLong( key.substring( splitPos + 1 ) );
-                        return tokenRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId"
+                        return authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId"
                                 + "=" + routeId, RouteConfig.class );
                     }
                 }
@@ -104,7 +104,7 @@ public class MydbProxyConfigService {
             @Override
             public MysqlClusterConfig load(Long clusterId) throws Exception {
                 MysqlClusterConfig clusterConfig =
-                        tokenRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + clusterId, MysqlClusterConfig.class );
+                        authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + clusterId, MysqlClusterConfig.class );
                 clusterConfig.initServerWeightList();
                 return clusterConfig;
             }
@@ -121,7 +121,7 @@ public class MydbProxyConfigService {
                     if (splitPos > -1) {
                         long clusterId = Long.parseLong( key.substring( 0, splitPos ) );
                         String database = key.substring( splitPos + 1 );
-                        return tokenRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
+                        return authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
                                 HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<HashSet<String>>() {
                         } ).getBody();
                     }
@@ -140,7 +140,7 @@ public class MydbProxyConfigService {
                     if (splitPos > -1) {
                         String configKey = key.substring( 0, splitPos );
                         String saasId = key.substring( splitPos + 1 );
-                        return tokenRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, DataNode.class ).getBody();
+                        return authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, DataNode.class ).getBody();
                     }
                 }
                 return null;
@@ -156,7 +156,7 @@ public class MydbProxyConfigService {
         if (!tableSet.contains( dataTable.getTable() )) {
             if (logger.isDebugEnabled()) logger.debug( "向center服务器请求[{}]checkTableExists!", dataTable );
             String tableName =
-                    tokenRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() + "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
+                    authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() + "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
             if (StringUtils.isNotBlank( tableName )) {
                 tableSet.add( tableName );
             }
@@ -171,7 +171,7 @@ public class MydbProxyConfigService {
     public static List<DataTable> getTableListByPrefix(String tablePrefix) {
         //创建成功则加入set。
         ArrayList<DataTable> dataTableList =
-                tokenRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() + "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
+                authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() + "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
         } ).getBody();
         return dataTableList;
     }
@@ -269,7 +269,7 @@ public class MydbProxyConfigService {
      * @param proxyRunStats
      */
     public static void reportProxyRunStats(ProxyRunStats proxyRunStats) {
-        ProxyReportResponse response = tokenRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportProxyRunStats", proxyRunStats,
+        ProxyReportResponse response = authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportProxyRunStats", proxyRunStats,
                 ProxyReportResponse.class );
         if (response != null) {
             proxyId = response.getProxyId();
@@ -282,7 +282,7 @@ public class MydbProxyConfigService {
      * @param schemaRunStats
      */
     public static void reportSchemaRunStats(Collection<SchemaRunStats> schemaRunStats) {
-        tokenRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSchemaRunStats", schemaRunStats, Void.class );
+        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSchemaRunStats", schemaRunStats, Void.class );
     }
 
     /**
@@ -292,7 +292,7 @@ public class MydbProxyConfigService {
      */
     public static void reportSlowSql(SlowSql slowSql) {
         slowSql.setProxyId( getProxyId() );
-        tokenRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class );
+        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class );
     }
 
     /**
@@ -302,7 +302,7 @@ public class MydbProxyConfigService {
      */
     public static void reportErrorSql(ErrorSql errorSql) {
         errorSql.setProxyId( getProxyId() );
-        tokenRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
+        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
     }
 
 
