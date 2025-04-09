@@ -13,7 +13,7 @@ import uw.mydb.proxy.protocol.packet.ErrorPacket;
 import uw.mydb.proxy.protocol.packet.OkPacket;
 import uw.mydb.proxy.sqlparse.SqlParseResult;
 import uw.mydb.proxy.stats.StatsManager;
-import uw.mydb.proxy.util.SystemClock;
+import uw.common.util.SystemClock;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

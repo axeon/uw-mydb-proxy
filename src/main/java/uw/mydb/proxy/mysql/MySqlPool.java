@@ -12,7 +12,7 @@ import io.netty.util.concurrent.GlobalEventExecutor;
 import io.netty.util.concurrent.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.util.SystemClock;
+import uw.common.util.SystemClock;
 
 import java.util.Deque;
 import java.util.Set;

@@ -14,7 +14,7 @@ import uw.mydb.proxy.protocol.packet.*;
 import uw.mydb.proxy.stats.StatsManager;
 import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
-import uw.mydb.proxy.util.SystemClock;
+import uw.common.util.SystemClock;
 
 import java.security.NoSuchAlgorithmException;
 

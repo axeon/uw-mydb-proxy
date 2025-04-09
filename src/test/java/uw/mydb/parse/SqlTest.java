@@ -1,6 +1,7 @@
 package uw.mydb.parse;
 
 import uw.cache.FusionCache;
+import uw.common.util.SystemClock;
 import uw.mydb.common.conf.MydbProxyConfig;
 import uw.mydb.common.conf.TableConfig;
 
@@ -68,7 +69,7 @@ public class SqlTest {
 
     static void init() {
         FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 1, -1 ) );
-        FusionCache.put( TableConfig.class, "default", new MydbProxyConfig( "default", "default", "root", "mysqlRootPassword", 1, "1",1, System.currentTimeMillis() ), true );
+        FusionCache.put( TableConfig.class, "default", new MydbProxyConfig( "default", "default", "root", "mysqlRootPassword", 1, "1",1, SystemClock.now() ), true );
 
         FusionCache.config( new FusionCache.Config( TableConfig.class, 100, -1 ) );
         FusionCache.put( TableConfig.class, "test_table", new TableConfig( "test_table", 1, "test" ), true );
