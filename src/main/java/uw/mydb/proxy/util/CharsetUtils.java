@@ -39,7 +39,7 @@ public class CharsetUtils {
 
     /**
      * 因为 每一个 charset 对应多个 collationIndex, 所以这里返回的是默认的那个 collationIndex；
-     * 如果想获得确定的值 index，而非默认的index, 那么需要使用 getIndexByCollationName 或者
+     * 如果想获取确定的值 index，而非默认的index, 那么需要使用 getIndexByCollationName 或者
      * getIndexByCharsetNameAndCollationName
      *
      * @param charset

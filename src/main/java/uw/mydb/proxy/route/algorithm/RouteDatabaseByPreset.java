@@ -69,7 +69,7 @@ public class RouteDatabaseByPreset extends RouteAlgorithm {
     }
 
     /**
-     * 获得全部路由。
+     * 获取全部路由。
      *
      * @param tableConfig
      * @param routeInfos

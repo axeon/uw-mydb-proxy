@@ -47,7 +47,7 @@ public class StatsManager {
      */
     public static void statsSql(String clientIp, long clusterId, long serverId, String database, String table, String sql, int sqlType, boolean isSuccess, int rowNum,
                                 long txBytes, long rxBytes, long exeMillis, long runDate) {
-        //获得schema统计表。
+        //获取schema统计表。
         SchemaRunStats schemaSqlStats =
                 schemaRunStatsMap.computeIfAbsent( new StringBuilder( 60 ).append( clusterId ).append( '.' ).append( serverId ).append( '.' ).append( database ).append( '.' ).append( table ).toString(), s -> new SchemaRunStats( MydbProxyConfigService.getProxyId(), clusterId, serverId, database, table ) );
         //设置更新标记，用于优化。
@@ -162,7 +162,7 @@ public class StatsManager {
      * @return
      */
     public static void reportProxyRunStats() {
-        //获得按主机分组统计的map。
+        //获取按主机分组统计的map。
         proxyRunStats.setProxyId( MydbProxyConfigService.getProxyId() );
         MydbProxyProperties properties = MydbProxyConfigService.getMydbProperties();
         proxyRunStats.setConfigKey( properties.getConfigKey() );

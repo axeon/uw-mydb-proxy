@@ -119,7 +119,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
     }
 
     /**
-     * 获得客户端信息。
+     * 获取客户端信息。
      *
      * @return
      */

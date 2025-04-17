@@ -594,7 +594,7 @@ public class SqlParser {
     }
 
     /**
-     * 获得RouteData。
+     * 获取RouteData。
      *
      * @param tableName
      * @return
@@ -908,7 +908,7 @@ public class SqlParser {
         }
 
         /**
-         * 获得单表路由结果。
+         * 获取单表路由结果。
          * 单表路由结果很有可能没有经过计算的。
          */
         public DataTable getSingleRouteResult() {

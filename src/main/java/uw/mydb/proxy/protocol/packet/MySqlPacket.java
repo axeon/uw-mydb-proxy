@@ -270,7 +270,7 @@ public abstract class MySqlPacket {
     }
 
     /**
-     * 获得packetId。
+     * 获取packetId。
      *
      * @return
      */

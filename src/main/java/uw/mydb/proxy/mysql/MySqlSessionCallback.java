@@ -10,7 +10,7 @@ import io.netty.buffer.ByteBuf;
 public interface MySqlSessionCallback {
 
     /**
-     * 获得客户端信息。
+     * 获取客户端信息。
      * @return
      */
     String getClientInfo();

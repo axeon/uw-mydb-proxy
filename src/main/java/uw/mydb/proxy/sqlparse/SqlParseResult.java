@@ -145,7 +145,7 @@ public class SqlParseResult {
     }
 
     /**
-     * 获得错误码。
+     * 获取错误码。
      *
      * @return
      */
@@ -154,7 +154,7 @@ public class SqlParseResult {
     }
 
     /**
-     * 获得错误信息。
+     * 获取错误信息。
      *
      * @return
      */

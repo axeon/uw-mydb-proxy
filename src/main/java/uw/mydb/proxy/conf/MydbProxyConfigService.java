@@ -177,7 +177,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得mydb配置文件。
+     * 获取mydb配置文件。
      *
      * @return
      */
@@ -186,7 +186,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得proxy配置。
+     * 获取proxy配置。
      *
      * @return
      */
@@ -195,7 +195,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得表配置。
+     * 获取表配置。
      *
      * @return
      */
@@ -204,7 +204,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得路由配置。
+     * 获取路由配置。
      *
      * @return
      */
@@ -213,7 +213,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得SAAS节点。
+     * 获取SAAS节点。
      *
      * @return
      */
@@ -222,7 +222,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得Mysql集群配置。
+     * 获取Mysql集群配置。
      *
      * @return
      */
@@ -231,7 +231,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得基础集群ID.
+     * 获取基础集群ID.
      *
      * @return
      */
@@ -246,7 +246,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得表配置。
+     * 获取表配置。
      *
      * @return
      */
@@ -255,7 +255,7 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 获得proxyId
+     * 获取proxyId
      *
      * @return
      */

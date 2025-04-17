@@ -195,7 +195,7 @@ public class ProxySession implements MySqlSessionCallback {
     }
 
     /**
-     * 获得客户端信息。
+     * 获取客户端信息。
      *
      * @return
      */
@@ -324,7 +324,7 @@ public class ProxySession implements MySqlSessionCallback {
     }
 
     /**
-     * 获得当前数据库。
+     * 获取当前数据库。
      *
      * @return
      */

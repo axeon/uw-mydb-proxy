@@ -90,7 +90,7 @@ public abstract class RouteAlgorithm {
     }
 
     /**
-     * 获得预设的表名信息。
+     * 获取预设的表名信息。
      * 返回集合中String。
      * 默认使用分库设置，加载一次。
      *
@@ -101,7 +101,7 @@ public abstract class RouteAlgorithm {
     }
 
     /**
-     * 获得预设的表名信息。
+     * 获取预设的表名信息。
      * 返回集合中String。
      * 默认使用分库设置，加载一次。
      *
@@ -201,7 +201,7 @@ public abstract class RouteAlgorithm {
         }
 
         /**
-         * 获得单一值列表。
+         * 获取单一值列表。
          *
          * @return
          */
@@ -210,7 +210,7 @@ public abstract class RouteAlgorithm {
         }
 
         /**
-         * 获得数值列表
+         * 获取数值列表
          *
          * @return
          */
@@ -246,7 +246,7 @@ public abstract class RouteAlgorithm {
         }
 
         /**
-         * 获得数值。
+         * 获取数值。
          *
          * @param key
          * @return

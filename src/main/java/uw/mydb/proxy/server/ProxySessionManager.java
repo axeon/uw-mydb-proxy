@@ -20,7 +20,7 @@ public class ProxySessionManager {
     private static final ConcurrentHashMap<String, ProxySession> sessionMap = new ConcurrentHashMap();
 
     /**
-     * 获得在线计数。
+     * 获取在线计数。
      *
      * @return
      */
@@ -29,7 +29,7 @@ public class ProxySessionManager {
     }
 
     /**
-     * 获得map实例。
+     * 获取map实例。
      *
      * @return
      */
@@ -57,7 +57,7 @@ public class ProxySessionManager {
     }
 
     /**
-     * 获得proxy映射表。
+     * 获取proxy映射表。
      * key: client IP
      * value: 连接数
      *
@@ -68,7 +68,7 @@ public class ProxySessionManager {
     }
 
     /**
-     * 获得当前连接数。
+     * 获取当前连接数。
      *
      * @return
      */

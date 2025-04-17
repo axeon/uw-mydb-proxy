@@ -90,7 +90,7 @@ public class MySqlClient {
 //    }
 
     /**
-     * 获得mysql session。
+     * 获取mysql session。
      *
      * @param clusterId
      * @return
@@ -156,7 +156,7 @@ public class MySqlClient {
     }
 
     /**
-     * 获得mysql连接列表。
+     * 获取mysql连接列表。
      * mysqlId,busyConnNum,idleConnNum
      *
      * @return

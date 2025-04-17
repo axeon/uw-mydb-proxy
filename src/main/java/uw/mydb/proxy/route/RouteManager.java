@@ -41,7 +41,7 @@ public class RouteManager {
     }
 
     /**
-     * 获得路由信息。
+     * 获取路由信息。
      *
      * @param tableConfig
      * @param routeData
@@ -49,7 +49,7 @@ public class RouteManager {
      */
     public static RouteAlgorithm.RouteResult calculate(TableConfig tableConfig, RouteAlgorithm.RouteData routeData) throws RouteAlgorithm.RouteException {
         RouteAlgorithm.RouteResult routeResult = new RouteAlgorithm.RouteResult();
-        //获得路由算法列表。
+        //获取路由算法列表。
         List<RouteAlgorithm> routeAlgorithms = getRouteAlgorithmList( tableConfig.getRouteId() );
         if (routeAlgorithms == null) {
             return routeResult;
@@ -122,7 +122,7 @@ public class RouteManager {
     }
 
     /**
-     * 获得所有表的信息。
+     * 获取所有表的信息。
      * 直接通过服务器端库表系统来查询。
      *
      * @param tableConfig
@@ -133,7 +133,7 @@ public class RouteManager {
     }
 
     /**
-     * 获得路由算法列表。
+     * 获取路由算法列表。
      *
      * @param routeId
      * @return

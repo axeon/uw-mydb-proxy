@@ -205,7 +205,7 @@ public class MySqlSession {
     }
 
     /**
-     * 获得创建时间。
+     * 获取创建时间。
      *
      * @return
      */
@@ -214,7 +214,7 @@ public class MySqlSession {
     }
 
     /**
-     * 获得最后访问时间。
+     * 获取最后访问时间。
      *
      * @return
      */

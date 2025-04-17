@@ -59,7 +59,7 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
     }
 
     /**
-     * 获得客户端信息。
+     * 获取客户端信息。
      *
      * @return
      */

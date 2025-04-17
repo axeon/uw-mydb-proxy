@@ -19,7 +19,7 @@ public class ExecuteSqlTask extends LocalTaskAdapter<Long> {
     }
 
     /**
-     * 获得客户端信息。
+     * 获取客户端信息。
      *
      * @return
      */
