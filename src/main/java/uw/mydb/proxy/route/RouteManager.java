@@ -2,11 +2,11 @@ package uw.mydb.proxy.route;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.conf.MydbProxyConfigService;
-import uw.mydb.proxy.constant.MydbRouteMatchMode;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.RouteConfig;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.conf.MydbProxyConfigService;
+import uw.mydb.proxy.constant.MydbRouteMatchMode;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

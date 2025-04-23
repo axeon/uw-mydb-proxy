@@ -3,18 +3,18 @@ package uw.mydb.proxy.sqlparse;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.conf.MydbProxyConfigService;
-import uw.mydb.proxy.constant.SQLType;
-import uw.mydb.proxy.protocol.constant.MySqlErrorCode;
-import uw.mydb.proxy.server.ProxySession;
-import uw.mydb.proxy.route.RouteAlgorithm;
-import uw.mydb.proxy.route.RouteManager;
-import uw.mydb.proxy.sqlparse.parser.HintTypes;
-import uw.mydb.proxy.sqlparse.parser.Lexer;
-import uw.mydb.proxy.sqlparse.parser.Token;
 import uw.mydb.common.conf.DataNode;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.conf.MydbProxyConfigService;
+import uw.mydb.proxy.constant.SQLType;
+import uw.mydb.proxy.protocol.constant.MySqlErrorCode;
+import uw.mydb.proxy.route.RouteAlgorithm;
+import uw.mydb.proxy.route.RouteManager;
+import uw.mydb.proxy.server.ProxySession;
+import uw.mydb.proxy.sqlparse.parser.HintTypes;
+import uw.mydb.proxy.sqlparse.parser.Lexer;
+import uw.mydb.proxy.sqlparse.parser.Token;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -4,8 +4,8 @@ import io.netty.channel.Channel;
 import io.netty.channel.pool.ChannelPoolHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.protocol.codec.MysqlPacketDecoder;
 import uw.mydb.common.conf.MysqlServerConfig;
+import uw.mydb.proxy.protocol.codec.MysqlPacketDecoder;
 
 /**
  * mysql连接池handler。

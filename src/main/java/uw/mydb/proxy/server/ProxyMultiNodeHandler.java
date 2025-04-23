@@ -5,6 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.mydb.proxy.constant.SQLType;
 import uw.mydb.proxy.mysql.MySqlClient;
 import uw.mydb.proxy.mysql.MySqlSession;
@@ -13,7 +14,6 @@ import uw.mydb.proxy.protocol.packet.ErrorPacket;
 import uw.mydb.proxy.protocol.packet.OkPacket;
 import uw.mydb.proxy.sqlparse.SqlParseResult;
 import uw.mydb.proxy.stats.StatsManager;
-import uw.common.util.SystemClock;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;

@@ -7,6 +7,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.mydb.common.conf.MysqlServerConfig;
 import uw.mydb.proxy.constant.SQLType;
 import uw.mydb.proxy.protocol.constant.MySQLCapability;
@@ -14,7 +15,6 @@ import uw.mydb.proxy.protocol.packet.*;
 import uw.mydb.proxy.stats.StatsManager;
 import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
-import uw.common.util.SystemClock;
 
 import java.security.NoSuchAlgorithmException;
 

@@ -1,9 +1,9 @@
 package uw.mydb.proxy.route.algorithm;
 
-import uw.mydb.proxy.route.RouteAlgorithm;
 import uw.mydb.common.conf.DataNode;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.route.RouteAlgorithm;
 
 import java.util.Map;
 

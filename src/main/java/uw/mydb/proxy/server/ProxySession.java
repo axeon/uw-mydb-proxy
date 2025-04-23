@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.common.util.SystemClock;
 import uw.mydb.common.conf.MydbProxyConfig;
 import uw.mydb.proxy.conf.MydbProxyConfigService;
 import uw.mydb.proxy.constant.GlobalConstants;
@@ -22,7 +23,6 @@ import uw.mydb.proxy.stats.StatsManager;
 import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
 import uw.mydb.proxy.util.RandomUtils;
-import uw.common.util.SystemClock;
 
 import java.util.Arrays;
 import java.util.concurrent.SynchronousQueue;

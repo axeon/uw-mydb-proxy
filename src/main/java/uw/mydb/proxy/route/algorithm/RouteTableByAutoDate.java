@@ -4,9 +4,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.mydb.common.conf.DataNode;
-import uw.mydb.proxy.route.RouteAlgorithm;
 import uw.mydb.common.conf.DataTable;
 import uw.mydb.common.conf.TableConfig;
+import uw.mydb.proxy.route.RouteAlgorithm;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;

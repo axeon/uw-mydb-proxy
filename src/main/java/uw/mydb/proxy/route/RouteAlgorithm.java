@@ -5,7 +5,9 @@ import uw.mydb.common.conf.RouteConfig;
 import uw.mydb.common.conf.TableConfig;
 
 import java.security.PrivilegedActionException;
-import java.util.*;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * 动态分表算法，一般来说表是完全动态创建的。

@@ -10,10 +10,10 @@ import io.netty.channel.pool.AbstractChannelPoolMap;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.util.concurrent.Future;
 import org.slf4j.LoggerFactory;
-import uw.mydb.proxy.conf.MydbProxyConfigService;
-import uw.mydb.common.report.MysqlConnStats;
 import uw.mydb.common.conf.MysqlClusterConfig;
 import uw.mydb.common.conf.MysqlServerConfig;
+import uw.mydb.common.report.MysqlConnStats;
+import uw.mydb.proxy.conf.MydbProxyConfigService;
 
 import java.util.ArrayList;
 import java.util.Iterator;

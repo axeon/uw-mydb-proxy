@@ -3,9 +3,9 @@ package uw.mydb.proxy.mysql.task;
 import io.netty.buffer.ByteBuf;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uw.mydb.proxy.mysql.MySqlClient;
 import uw.mydb.proxy.mysql.MySqlSession;
 import uw.mydb.proxy.mysql.MySqlSessionCallback;
-import uw.mydb.proxy.mysql.MySqlClient;
 
 /**
  * 本地任务Adapter。
