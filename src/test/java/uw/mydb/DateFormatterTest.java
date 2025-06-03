@@ -8,6 +8,7 @@ import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import uw.common.util.SystemClock;
 
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -27,7 +28,7 @@ public class DateFormatterTest {
     DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern( PATTERN );
     FastDateFormat fastDateFormat = FastDateFormat.getInstance( PATTERN );
     ZoneId zoneId = ZoneId.systemDefault();
-    Date date = new Date();
+    Date date = SystemClock.nowDate();
 
     public static void main(String[] args) throws RunnerException {
         //初始化路由管理器
