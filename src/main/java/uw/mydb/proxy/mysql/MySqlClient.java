@@ -140,13 +140,11 @@ public class MySqlClient {
         scheduledExecutorService.scheduleAtFixedRate( () -> {
             if (channelPoolMap != null) {
                 logger.debug( "MySqlPool start housekeeping schedule task..." );
-                Iterator<Map.Entry<MysqlServerConfig, MySqlPool>> iterator = channelPoolMap.iterator();
-                while (iterator.hasNext()) {
-                    Map.Entry<MysqlServerConfig, MySqlPool> kv = iterator.next();
+                for (Map.Entry<MysqlServerConfig, MySqlPool> kv : channelPoolMap) {
                     MysqlServerConfig config = kv.getKey();
                     MySqlPool pool = kv.getValue();
                     if (logger.isDebugEnabled()) {
-                        logger.debug( "MySql[{}]Pool run housekeeping...current idleConn[{}],busyConn[{}]", config.toString(), pool.getIdleConnNum(), pool.getBusyConnNum() );
+                        logger.debug("MySql[{}]Pool run housekeeping...current idleConn[{}],busyConn[{}]", config.toString(), pool.getIdleConnNum(), pool.getBusyConnNum());
                     }
                     pool.housekeeping();
                 }
