@@ -29,7 +29,7 @@
         <!-- 每个异常堆栈打印的最大层数 -->
         <maxDepthPerThrowable>20</maxDepthPerThrowable>
         <!-- 需要排除的异常关键字，多个关键字之间用','分割。-->
-        <excludeThrowableKeys>org.spring,org.apache,org.apache,java.base,jakarta,com.mysql</excludeThrowableKeys>
+        <excludeThrowableKeys>java.base,org.spring,jakarta,org.apache,com.mysql,okhttp,com.fasterxml,uw.auth.service.filter</excludeThrowableKeys>
         <!-- 开启JMX监控支持,默认未开启 -->
         <jmxMonitoring>false</jmxMonitoring>
     </appender>
