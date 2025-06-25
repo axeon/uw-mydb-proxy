@@ -11,12 +11,10 @@ spring:
       username: nacos
       password: nacos888
       config:
-        namespace: debug
+        namespace: dev
         file-extension: yaml
       discovery:
         namespace: ${spring.cloud.nacos.config.namespace}
         service: ${spring.application.name}
         ip: ${APP_HOST:}
-logging:
-  level:
-    uw.mydb: trace
+        register-enabled: false
