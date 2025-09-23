@@ -12,7 +12,7 @@
     <parent>
         <groupId>com.umtone</groupId>
         <artifactId>uw-base</artifactId>
-        <version>2025.0901.0001</version>
+        <version>2025.0901.0005</version>
         <relativePath/>
     </parent>
 

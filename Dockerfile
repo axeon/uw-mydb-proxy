@@ -1,9 +1,9 @@
-FROM dev.xili.pub:5000/eclipse-temurin:21-jre AS builder
+FROM bellsoft/liberica-openjre-debian:25-cds AS builder
 WORKDIR /builder
 COPY target/*.jar application.jar
 RUN java -Djarmode=tools -jar application.jar extract --layers --destination extracted
 
-FROM dev.xili.pub:5000/eclipse-temurin:21-jre
+FROM bellsoft/liberica-openjre-debian:25-cds
 WORKDIR /application
 COPY --from=builder /builder/extracted/dependencies/ ./
 COPY --from=builder /builder/extracted/spring-boot-loader/ ./
