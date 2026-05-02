@@ -13,10 +13,32 @@ jobs:
     steps:
       - name: build
         run: |
+          # 拉取代码并构建
           git clone -q ${{gitea.server_url}}/${{ gitea.repository }}.git .
           mvn clean package -U -Dmaven.test.skip=true
-          APP_VERSION=`grep '<version>' pom.xml |awk -F'>' '{print $2}'|awk -F"<" '{print $1}'|head -n 1`
+
+          # 从 pom.xml 提取项目版本号（取 /project/version 节点）
+          APP_VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
+
+          # 创建qemu & buildx 多架构 builder（已存在则跳过）
           grep -q qemu-aarch64 /proc/sys/fs/binfmt_misc/status 2>/dev/null || docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
           docker buildx use multiarch 2>/dev/null || docker buildx create --use --name multiarch --driver docker-container --driver-opt network=host --config /etc/docker/buildkitd.toml --platform linux/amd64,linux/arm64
-          docker buildx build --platform linux/amd64,linux/arm64 --build-arg APP_NAME=${APP_NAME} -t ${REGISTRY_SERVER}/${APP_NAME}:${APP_VERSION} --push .
+
+          # 登录、构建、推送多架构镜像到私有仓库
+          if  [ -n "${{secrets.REGISTRY_USERNAME}}" ] && [ -n "${{secrets.REGISTRY_TOKEN}}" ]; then
+            docker login ${{vars.REGISTRY_SERVER}} -u ${{secrets.REGISTRY_USERNAME}} --password-stdin <<< "${{secrets.REGISTRY_TOKEN}}"
+          else
+            echo "SKIP: registry secrets not configured."
+          fi
+          docker buildx build --platform linux/amd64,linux/arm64 --provenance=false --build-arg APP_NAME=${APP_NAME} -t ${{vars.REGISTRY_SERVER}}/${APP_NAME}:${APP_VERSION} --push .
+
+          # 如果配置了公有仓库凭据，则从私有仓库复制镜像到公有仓库（不重新构建，SHA 一致）
+          if [ -n "${{vars.PUBLIC_REGISTRY_SERVER}}" ] && [ -n "${{secrets.PUBLIC_REGISTRY_OWNER}}" ] && [ -n "${{secrets.PUBLIC_REGISTRY_USERNAME}}" ] && [ -n "${{secrets.PUBLIC_REGISTRY_TOKEN}}" ]; then
+            docker login ${{vars.PUBLIC_REGISTRY_SERVER}} -u ${{secrets.PUBLIC_REGISTRY_USERNAME}} --password-stdin <<< "${{secrets.PUBLIC_REGISTRY_TOKEN}}"
+            docker buildx imagetools create -t ${{vars.PUBLIC_REGISTRY_SERVER}}/${{secrets.PUBLIC_REGISTRY_OWNER}}/${APP_NAME}:${APP_VERSION} ${{vars.REGISTRY_SERVER}}/${APP_NAME}:${APP_VERSION} || echo "WARNING: push to public registry failed"
+          else
+            echo "SKIP: public registry not configured."
+          fi
+
+          # 部署到私有环境
           /home/gitea/runner/deploy/deploy-registry-app.sh ${APP_NAME} ${APP_VERSION} ${APP_PORT}
