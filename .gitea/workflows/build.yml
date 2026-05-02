@@ -21,7 +21,7 @@ jobs:
           APP_VERSION=`mvn help:evaluate -Dexpression=project.version -q -DforceStdout`
 
           # 创建qemu & buildx 多架构 builder（已存在则跳过）
-          grep -q qemu-aarch64 /proc/sys/fs/binfmt_misc/status 2>/dev/null || docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+          [ -f /proc/sys/fs/binfmt_misc/qemu-aarch64 ] || docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
           docker buildx use multiarch 2>/dev/null || docker buildx create --use --name multiarch --driver docker-container --driver-opt network=host --config /etc/docker/buildkitd.toml --platform linux/amd64,linux/arm64
 
           # 登录、构建、推送多架构镜像到私有仓库
