@@ -41,11 +41,11 @@ public class ProxyRunStats {
     /**
      * 应用名称
      */
-    private String ProxyName;
+    private String proxyName;
     /**
      * 应用版本
      */
-    private String ProxyVersion;
+    private String proxyVersion;
     /**
      * CPU负载。
      */
@@ -274,19 +274,19 @@ public class ProxyRunStats {
     }
 
     public String getProxyName() {
-        return ProxyName;
+        return proxyName;
     }
 
     public void setProxyName(String proxyName) {
-        ProxyName = proxyName;
+        this.proxyName = proxyName;
     }
 
     public String getProxyVersion() {
-        return ProxyVersion;
+        return proxyVersion;
     }
 
     public void setProxyVersion(String proxyVersion) {
-        ProxyVersion = proxyVersion;
+        this.proxyVersion = proxyVersion;
     }
 
     public double getCpuLoad() {

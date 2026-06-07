@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * mysql集群配置
@@ -40,13 +41,13 @@ public class MysqlClusterConfig {
      * 主服务器索引位置。
      */
     @JsonIgnore
-    private volatile int serverMasterWeightPos;
+    private final AtomicInteger serverMasterWeightPos = new AtomicInteger(0);
 
     /**
      * 所有服务器索引位置。
      */
     @JsonIgnore
-    private volatile int serverAllWeightPos;
+    private final AtomicInteger serverAllWeightPos = new AtomicInteger(0);
 
     /**
      * 主服务器列表。
@@ -79,9 +80,9 @@ public class MysqlClusterConfig {
      */
     public MysqlServerConfig fetchServerConfig(boolean isMaster) {
         if (isMaster){
-            return serverMasterWeightList.get( serverMasterWeightPos++ % serverMasterWeightList.size() );
+            return serverMasterWeightList.get( serverMasterWeightPos.getAndIncrement() % serverMasterWeightList.size() );
         }else {
-            return serverAllWeightList.get( serverAllWeightPos++ % serverAllWeightList.size() );
+            return serverAllWeightList.get( serverAllWeightPos.getAndIncrement() % serverAllWeightList.size() );
         }
     }
 
@@ -103,23 +104,23 @@ public class MysqlClusterConfig {
     /**
      * 计算服务器权重。
      */
-    public void initServerWeightList() {
+    public synchronized void initServerWeightList() {
         if (serverMasterWeightList == null || serverAllWeightList == null) {
-            List<MysqlServerConfig> serverMasterWeightList = new ArrayList<>();
-            List<MysqlServerConfig> serverAllWeightList = new ArrayList<>();
+            List<MysqlServerConfig> masterList = new ArrayList<>();
+            List<MysqlServerConfig> allList = new ArrayList<>();
             for (MysqlServerConfig config : serverList) {
                 if (config.getWeight()<1){
                     config.setWeight( 1 );
                 }
                 for (int i = 0; i < config.getWeight(); i++) {
-                    serverMasterWeightList.add( config );
-                    serverAllWeightList.add( config );
+                    masterList.add( config );
+                    allList.add( config );
                 }
             }
-            Collections.shuffle( serverMasterWeightList );
-            Collections.shuffle( serverAllWeightList );
-            this.serverMasterWeightList = serverMasterWeightList;
-            this.serverAllWeightList = serverAllWeightList;
+            Collections.shuffle( masterList );
+            Collections.shuffle( allList );
+            this.serverMasterWeightList = masterList;
+            this.serverAllWeightList = allList;
         }
     }
 
