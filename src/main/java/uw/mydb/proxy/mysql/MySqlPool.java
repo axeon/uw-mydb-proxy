@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import uw.common.util.SystemClock;
 
 import java.util.Deque;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -268,7 +269,9 @@ public class MySqlPool implements ChannelPool {
             }
         }
         //再检查busySet。
-        for (Channel channel : busySet) {
+        Iterator<Channel> busyIterator = busySet.iterator();
+        while (busyIterator.hasNext()) {
+            Channel channel = busyIterator.next();
             MySqlSession session = channel.attr( MYSQL_SESSION ).get();
             boolean readyClose = false;
             if (session != null) {
@@ -293,7 +296,7 @@ public class MySqlPool implements ChannelPool {
                 } catch (Exception e) {
                     log.error( e.getMessage(), e );
                 }
-                busySet.remove( channel );
+                busyIterator.remove();
             }
         }
     }

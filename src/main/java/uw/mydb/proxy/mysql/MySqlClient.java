@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 
 /**
@@ -105,9 +106,11 @@ public class MySqlClient {
         Future<Channel> channelFuture = channelPool.acquire();
         MySqlSession mySqlSession = null;
         try {
-            mySqlSession = channelFuture.get().attr( MySqlHandler.MYSQL_SESSION ).get();
+            mySqlSession = channelFuture.get( 30, TimeUnit.SECONDS ).attr( MySqlHandler.MYSQL_SESSION ).get();
             //绑定连接池，这个非常重要。
             mySqlSession.bindChannelPool( channelPool );
+        } catch (TimeoutException e) {
+            logger.error( "获取MySQL连接超时[clusterId={}]: {}", clusterId, e.getMessage() );
         } catch (Throwable e) {
             logger.error( e.toString(), e );
         }

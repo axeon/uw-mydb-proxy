@@ -1,5 +1,7 @@
 package uw.mydb.proxy.util;
 
+import java.util.concurrent.ThreadLocalRandom;
+
 /**
  * 随机数工具。
  *
@@ -10,42 +12,15 @@ public class RandomUtils {
             'y', 'u', 'i', 'o', 'p', 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 'z', 'x', 'c', 'v', 'b', 'n', 'm',
             'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Z', 'X',
             'C', 'V', 'B', 'N', 'M'};
-    private static final long MULTIPLIER = 0x5DEECE66DL;
-    private static final long ADDEND = 0xBL;
-    private static final long MASK = (1L << 48) - 1;
-    private static final long INTEGER_MASK = (1L << 33) - 1;
-    private static final long SEED_UNIQUIFIER = 8682522807148012L;
-
-    private static long seed;
-
-    static {
-        long s = SEED_UNIQUIFIER + System.nanoTime();
-        s = (s ^ MULTIPLIER) & MASK;
-        seed = s;
-    }
 
     public static final byte[] randomBytes(int size) {
         byte[] bb = BYTES;
         byte[] ab = new byte[size];
+        ThreadLocalRandom rng = ThreadLocalRandom.current();
         for (int i = 0; i < size; i++) {
-            ab[i] = randomByte(bb);
+            ab[i] = bb[rng.nextInt(bb.length)];
         }
         return ab;
-    }
-
-    private static byte randomByte(byte[] b) {
-        int ran = (int) ((next() & INTEGER_MASK) >>> 16);
-        return b[ran % b.length];
-    }
-
-    private static long next() {
-        long oldSeed = seed;
-        long nextSeed = 0L;
-        do {
-            nextSeed = (oldSeed * MULTIPLIER + ADDEND) & MASK;
-        } while (oldSeed == nextSeed);
-        seed = nextSeed;
-        return nextSeed;
     }
 
 }

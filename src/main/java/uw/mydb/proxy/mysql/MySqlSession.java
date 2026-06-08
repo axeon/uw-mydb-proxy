@@ -107,7 +107,6 @@ public class MySqlSession {
 
     /**
      * 结果集状态。
-     * 0 正常 1 包头状态 2 field状态 3.row data状态
      */
     private volatile int resultStatus = RESULT_INIT;
 
@@ -283,10 +282,15 @@ public class MySqlSession {
      * 真正关闭连接。
      */
     protected void trueClose() {
+        if (sessionStatus == SESSION_CLOSED) {
+            return;
+        }
         sessionStatus = SESSION_CLOSED;
         this.channel.close();
         try {
-            this.channelPool.release( this.channel );
+            if (this.channelPool != null) {
+                this.channelPool.release( this.channel );
+            }
         } catch (Throwable e) {
             log.error( e.getMessage(), e );
         }

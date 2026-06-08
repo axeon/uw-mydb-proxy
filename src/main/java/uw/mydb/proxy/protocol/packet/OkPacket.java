@@ -57,8 +57,22 @@ public class OkPacket extends MySqlPacket {
      * @param ctx
      */
     public static void writeAuthOkToChannel(ChannelHandlerContext ctx) {
-        ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.AUTH_OK.length ).writeBytes( OkPacket.AUTH_OK );
-        ctx.writeAndFlush( byteBuf );
+        writeAuthOkToChannel( ctx, (byte) 2 );
+    }
+
+    /**
+     * 向通道中写一条auth ok指令，可指定packetId。
+     *
+     * @param ctx
+     * @param packetId
+     */
+    public static void writeAuthOkToChannel(ChannelHandlerContext ctx, byte packetId) {
+        OkPacket okPacket = new OkPacket();
+        okPacket.packetId = packetId;
+        okPacket.serverStatus = 0x02;
+        ByteBuf buf = ctx.alloc().buffer( 16 );
+        okPacket.writePayLoad( buf );
+        ctx.writeAndFlush( buf );
     }
 
     public boolean hasStatusFlag(long flag) {

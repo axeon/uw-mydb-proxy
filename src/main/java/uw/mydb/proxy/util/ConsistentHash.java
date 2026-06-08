@@ -19,7 +19,7 @@ public class ConsistentHash<T> {
      */
     private final int numberOfReplicas;
 
-    private final SortedMap<Integer, T> circle = new TreeMap();
+    private final SortedMap<Integer, T> circle = new TreeMap<>();
 
     /**
      * hash算法，考虑效率使用murmur3_32.
@@ -40,7 +40,7 @@ public class ConsistentHash<T> {
      */
     private void add(T node) {
         for (int i = 0; i < this.numberOfReplicas; i++) {
-            circle.put(this.hash.hashUnencodedChars(node.toString() + i).asInt(), node);
+            circle.put(this.hash.hashUnencodedChars(node.toString() + "/" + i).asInt(), node);
         }
     }
 
@@ -51,7 +51,7 @@ public class ConsistentHash<T> {
      */
     public void remove(T node) {
         for (int i = 0; i < this.numberOfReplicas; i++) {
-            circle.remove(this.hash.hashUnencodedChars(node.toString() + i).asInt());
+            circle.remove(this.hash.hashUnencodedChars(node.toString() + "/" + i).asInt());
         }
     }
 

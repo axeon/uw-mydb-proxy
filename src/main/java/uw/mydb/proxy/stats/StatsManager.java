@@ -40,7 +40,7 @@ public class StatsManager {
     /**
      * 基于访问库表的统计表。
      */
-    private static final Map<String, SchemaRunStats> schemaRunStatsMap = new ConcurrentHashMap();
+    private static final Map<String, SchemaRunStats> schemaRunStatsMap = new ConcurrentHashMap<>();
 
     /**
      * 统计慢sql。
@@ -130,7 +130,6 @@ public class StatsManager {
         }
         if (exeMillis >= MydbProxyConfigService.getMydbProperties().getSlowQueryMillis()) {
             SlowSql slowSql = new SlowSql( clientIp, clusterId, serverId, database, table, sql, sqlType, rowNum, txBytes, rxBytes, exeMillis, runDate );
-            MydbProxyConfigService.reportSlowSql( slowSql );
             reportExecutor.submit( () -> MydbProxyConfigService.reportSlowSql( slowSql ) );
         }
     }

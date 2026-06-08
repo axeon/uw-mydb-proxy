@@ -67,6 +67,7 @@ public class ProxyDataHandler extends ChannelInboundHandlerAdapter {
         if (session == null) {
             logger.warn( "!!!发现错误来源的访问信息，来源:{}", ctx.channel().remoteAddress() );
             ctx.close();
+            return;
         }
         //拿到消息
         ByteBuf buf = (ByteBuf) msg;

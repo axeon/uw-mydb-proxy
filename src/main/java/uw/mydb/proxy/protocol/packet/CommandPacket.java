@@ -3,6 +3,8 @@ package uw.mydb.proxy.protocol.packet;
 import io.netty.buffer.ByteBuf;
 import uw.mydb.proxy.util.ByteBufUtils;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * From client to server whenever the client wants the server to do something.
  * Bytes         Name
@@ -70,7 +72,7 @@ public class CommandPacket extends MySqlPacket {
     @Override
     protected void write(ByteBuf buf) {
         buf.writeByte(command);
-        buf.writeBytes(arg.getBytes());
+        buf.writeBytes(arg.getBytes(StandardCharsets.UTF_8));
     }
 
 }

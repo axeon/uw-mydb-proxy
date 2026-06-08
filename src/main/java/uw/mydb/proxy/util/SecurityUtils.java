@@ -105,7 +105,7 @@ public class SecurityUtils {
         try {
             md = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException ex) {
-//            throw new AssertionFailedException(ex);
+            throw new DigestException("SHA-256 algorithm not available", ex);
         }
 
         byte[] dig1 = new byte[CACHING_SHA2_DIGEST_LENGTH];

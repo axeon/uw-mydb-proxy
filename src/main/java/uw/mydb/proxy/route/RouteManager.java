@@ -112,10 +112,10 @@ public class RouteManager {
 
         // 检查schema情况
         if (routeResult.isSingle()) {
-            MydbProxyConfigService.checkTableExists( tableConfig.getTableName(), routeResult.getDataTable() );
+            MydbProxyConfigService.ensureTableExists( tableConfig.getTableName(), routeResult.getDataTable() );
         } else {
             for (DataTable dataTable : routeResult.getDataTables()) {
-                MydbProxyConfigService.checkTableExists( tableConfig.getTableName(), dataTable );
+                MydbProxyConfigService.ensureTableExists( tableConfig.getTableName(), dataTable );
             }
         }
         return routeResult;
@@ -139,35 +139,37 @@ public class RouteManager {
      * @return
      */
     private static List<RouteAlgorithm> getRouteAlgorithmList(long routeId) {
-        return routeAlgorithmMap.computeIfAbsent( routeId, key -> {
-            ArrayList<RouteAlgorithm> algorithmList = new ArrayList<>();
-            long loadRouteId = routeId;
-            //重试最多10次。
-            for (int i = 0; i < 10; i++) {
-                RouteConfig routeConfig = MydbProxyConfigService.getRouteConfig( loadRouteId );
-                if (routeConfig == null) {
-                    return algorithmList;
-                }
-                try {
-                    Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
-                    Object object = clazz.getDeclaredConstructor().newInstance();
-                    if (object instanceof RouteAlgorithm algorithm) {
-                        algorithm.init( routeConfig );
-                        algorithm.config();
-                        algorithmList.add( algorithm );
-                    }
-                } catch (Exception e) {
-                    logger.error( "算法类加载失败！" + e.getMessage(), e );
-                }
-                //继续循环上级。
-                if (routeConfig.getParentId() > 0) {
-                    loadRouteId = routeConfig.getParentId();
-                } else {
-                    return algorithmList;
-                }
+        List<RouteAlgorithm> existing = routeAlgorithmMap.get( routeId );
+        if (existing != null) {
+            return existing;
+        }
+        // 在 computeIfAbsent 外部完成加载，避免阻塞 ConcurrentHashMap 分段锁
+        ArrayList<RouteAlgorithm> algorithmList = new ArrayList<>();
+        long loadRouteId = routeId;
+        for (int i = 0; i < 10; i++) {
+            RouteConfig routeConfig = MydbProxyConfigService.getRouteConfig( loadRouteId );
+            if (routeConfig == null) {
+                break;
             }
-            return algorithmList;
-        } );
+            try {
+                Class clazz = Class.forName( routeConfig.getRouteAlgorithm() );
+                Object object = clazz.getDeclaredConstructor().newInstance();
+                if (object instanceof RouteAlgorithm algorithm) {
+                    algorithm.init( routeConfig );
+                    algorithm.config();
+                    algorithmList.add( algorithm );
+                }
+            } catch (Exception e) {
+                logger.error( "算法类加载失败！" + e.getMessage(), e );
+            }
+            if (routeConfig.getParentId() > 0) {
+                loadRouteId = routeConfig.getParentId();
+            } else {
+                break;
+            }
+        }
+        routeAlgorithmMap.putIfAbsent( routeId, algorithmList );
+        return routeAlgorithmMap.get( routeId );
     }
 
 

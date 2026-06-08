@@ -827,6 +827,8 @@ public class SqlParser {
 
     }
 
+    private static final int MAX_CARTESIAN_PRODUCT = 100;
+
     /**
      * 附加路由信息数据。
      *
@@ -845,7 +847,6 @@ public class SqlParser {
         } else {
             ArrayList<SqlParseResult.SqlInfo> sqlInfoList = new ArrayList<>();
             for (DataTable dataTable : tableRouteData.routeResult.getDataTables()) {
-                //此处应该复制多个sql了。。。
                 for (SqlParseResult.SqlInfo sqlInfo : this.parseResult.sqlInfoList) {
                     SqlParseResult.SqlInfo sqlInfo1 = new SqlParseResult.SqlInfo( parseResult.getSourceSql().length() + 32 );
                     sqlInfo1.appendSql( sqlInfo.getNewSql() );
@@ -855,6 +856,11 @@ public class SqlParser {
                         sqlInfo1.setDataTable( dataTable );
                     }
                     sqlInfoList.add( sqlInfo1 );
+                }
+                if (sqlInfoList.size() > MAX_CARTESIAN_PRODUCT) {
+                    this.parseResult.setErrorInfo( MySqlErrorCode.ERR_NO_ROUTE_INFO,
+                            "笛卡尔积路由数量超过限制[" + MAX_CARTESIAN_PRODUCT + "], SQL: " + parseResult.getSourceSql() );
+                    return;
                 }
             }
             this.parseResult.sqlInfoList = sqlInfoList;

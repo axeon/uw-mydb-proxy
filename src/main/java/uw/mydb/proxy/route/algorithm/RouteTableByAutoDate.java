@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class RouteTableByAutoDate extends RouteAlgorithm {
 
-    private static final Logger log = LoggerFactory.getLogger( RouteTableByAutoDate.class );
+    private static final int MAX_ROUTE_COUNT = 1000;
 
     /**
      * 日期数据格式。
@@ -120,6 +120,9 @@ public class RouteTableByAutoDate extends RouteAlgorithm {
             list.add( endText );
         }
         //循环赋值
+        if (list.size() > MAX_ROUTE_COUNT) {
+            throw new RouteException( "日期范围路由数量超过限制: " + list.size() + " > " + MAX_ROUTE_COUNT );
+        }
         List<DataTable> newList = new ArrayList<>();
         for (String text : list) {
             DataTable copy = dataTable.copy();

@@ -24,7 +24,7 @@ import uw.mydb.proxy.util.CachingSha2PasswordPlugin;
 import uw.mydb.proxy.util.MySqlNativePasswordPlugin;
 import uw.mydb.proxy.util.RandomUtils;
 
-import java.util.Arrays;
+import java.security.MessageDigest;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -37,13 +37,13 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ProxySession implements MySqlSessionCallback {
 
-    private static final Logger logger = LoggerFactory.getLogger( ProxySession.class );
+    private static final Logger logger = LoggerFactory.getLogger(ProxySession.class);
 
     /**
      * 多节点执行的异步线程池。
      */
-    private static final ThreadPoolExecutor multiNodeExecutor = new ThreadPoolExecutor( 1, 100, 180L, TimeUnit.SECONDS, new SynchronousQueue<>(),
-            new ThreadFactoryBuilder().setDaemon( true ).setNameFormat( "multi_node_executor-%d" ).build(), new ThreadPoolExecutor.CallerRunsPolicy() );
+    private static final ThreadPoolExecutor multiNodeExecutor = new ThreadPoolExecutor(5, 100, 180L, TimeUnit.SECONDS, new SynchronousQueue<>(),
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat("multi_node_executor-%d").build(), new ThreadPoolExecutor.CallerRunsPolicy());
 
     /**
      * 全局统一的sessionId生成器。
@@ -58,32 +58,32 @@ public class ProxySession implements MySqlSessionCallback {
     /**
      * 数据行计数。
      */
-    private int dataRowsCount;
+    private volatile int dataRowsCount;
 
     /**
      * 受影响行计数。
      */
-    private int affectRowsCount;
+    private volatile int affectRowsCount;
 
     /**
      * 发送字节数。
      */
-    private long txBytes;
+    private volatile long txBytes;
 
     /**
      * 接收字节数。
      */
-    private long rxBytes;
+    private volatile long rxBytes;
 
     /**
      * 是否执行失败了
      */
-    private boolean isExeSuccess = true;
+    private volatile boolean isExeSuccess = true;
 
     /**
      * 是否已登录。
      */
-    private boolean isLogon;
+    private volatile boolean isLogon;
 
     /**
      * 绑定的channel
@@ -213,10 +213,10 @@ public class ProxySession implements MySqlSessionCallback {
     public void receiveOkPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
         OkPacket okPacket = new OkPacket();
-        okPacket.readPayLoad( buf );
+        okPacket.readPayLoad(buf);
         affectRowsCount += okPacket.affectedRows;
         buf.resetReaderIndex();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -227,7 +227,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
         isExeSuccess = false;
     }
 
@@ -239,7 +239,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -250,7 +250,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveFieldDataPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -261,7 +261,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveFieldDataEOFPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -273,7 +273,7 @@ public class ProxySession implements MySqlSessionCallback {
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
         dataRowsCount++;
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -284,7 +284,7 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void receiveRowDataEOFPacket(byte packetId, ByteBuf buf) {
         txBytes += buf.readableBytes();
-        ctx.write( buf.retain() );
+        ctx.write(buf.retain());
     }
 
     /**
@@ -296,7 +296,9 @@ public class ProxySession implements MySqlSessionCallback {
     @Override
     public void onMysqlFailMessage(int errorNo, String info) {
         isExeSuccess = false;
-        sqlParseResult.setErrorInfo( errorNo, info );
+        if (sqlParseResult != null) {
+            sqlParseResult.setErrorInfo(errorNo, info);
+        }
     }
 
     /**
@@ -307,9 +309,9 @@ public class ProxySession implements MySqlSessionCallback {
         //开始统计数据了。
         if (!isExeSuccess && sqlInfo != null) {
             long now = SystemClock.now();
-            StatsManager.reportErrorSql( clientHost, sqlInfo.getClusterId(), 0, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), this.sqlParseResult.getSqlType(),
-                    Math.max( dataRowsCount, affectRowsCount ), txBytes, rxBytes, now - lastRequestTime, now, this.sqlParseResult.getErrorCode(),
-                    this.sqlParseResult.getErrorMessage(), null );
+            StatsManager.reportErrorSql(clientHost, sqlInfo.getClusterId(), 0, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), this.sqlParseResult.getSqlType(),
+                    Math.max(dataRowsCount, affectRowsCount), txBytes, rxBytes, now - lastRequestTime, now, this.sqlParseResult.getErrorCode(),
+                    this.sqlParseResult.getErrorMessage(), null);
         }
         //数据归零
         sqlParseResult = null;
@@ -336,10 +338,14 @@ public class ProxySession implements MySqlSessionCallback {
      * 设置database。
      */
     public void setDatabase(String database) {
-        if (StringUtils.isNotBlank( database )) {
+        if (StringUtils.isNotBlank(database)) {
             this.database = database;
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( MydbProxyConfigService.getProxyConfig().getBaseCluster(), true );
-            mySqlSession.addCommand( this, "use " + this.database );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession(MydbProxyConfigService.getProxyConfig().getBaseCluster(), true);
+            if (mySqlSession != null) {
+                mySqlSession.addCommand(this, "use " + this.database);
+            } else {
+                logger.warn("setDatabase(): 无法获取基础集群的mysqlSession, database={}", database);
+            }
         }
     }
 
@@ -350,12 +356,12 @@ public class ProxySession implements MySqlSessionCallback {
      */
     public void sendHandshake(ChannelHandlerContext ctx) {
         // 生成认证数据
-        byte[] rand1 = RandomUtils.randomBytes( 8 );
-        byte[] rand2 = RandomUtils.randomBytes( 12 );
+        byte[] rand1 = RandomUtils.randomBytes(8);
+        byte[] rand2 = RandomUtils.randomBytes(12);
         // 保存认证数据
         byte[] seed = new byte[rand1.length + rand2.length];
-        System.arraycopy( rand1, 0, seed, 0, rand1.length );
-        System.arraycopy( rand2, 0, seed, rand1.length, rand2.length );
+        System.arraycopy(rand1, 0, seed, 0, rand1.length);
+        System.arraycopy(rand2, 0, seed, rand1.length, rand2.length);
         this.authSeed = seed;
         // 发送握手数据包
         AuthHandshakeRequestPacket hs = new AuthHandshakeRequestPacket();
@@ -368,7 +374,7 @@ public class ProxySession implements MySqlSessionCallback {
         hs.serverCapabilities = MySQLCapability.getServerCapabilities();
         hs.authPluginName = MySqlNativePasswordPlugin.PROTOCOL_PLUGIN_NAME;
         //写channel里
-        hs.writeToChannel( ctx );
+        hs.writeToChannel(ctx);
         ctx.flush();
     }
 
@@ -381,13 +387,13 @@ public class ProxySession implements MySqlSessionCallback {
     public void auth(ChannelHandlerContext ctx, ByteBuf buf) {
         MydbProxyConfig config = MydbProxyConfigService.getProxyConfig();
         AuthHandshakeResponsePacket authPacket = new AuthHandshakeResponsePacket();
-        authPacket.readPayLoad( buf );
+        authPacket.readPayLoad(buf);
         String authPluginName = authPacket.authPluginName;
         long capabilities = authPacket.clientCapability;
 
         //如果客户端开启压缩，那么直接返回不支持。
-        if (MySQLCapability.isClientCompress( capabilities )) {
-            onProxyFailMessage( ctx, MySqlErrorCode.ER_NET_UNCOMPRESS_ERROR, "Can not use compression protocol!" );
+        if (MySQLCapability.isClientCompress(capabilities)) {
+            onProxyFailMessage(ctx, MySqlErrorCode.ER_NET_UNCOMPRESS_ERROR, "Can not use compression protocol!");
             onFinish();
             ctx.close();
             return;
@@ -403,8 +409,8 @@ public class ProxySession implements MySqlSessionCallback {
 //            return;
 //        }
 
-        if (!StringUtils.equals( config.getUsername(), authPacket.username )) {
-            onProxyFailMessage( ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! " );
+        if (!StringUtils.equals(config.getUsername(), authPacket.username)) {
+            onProxyFailMessage(ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! ");
             onFinish();
             ctx.close();
             return;
@@ -412,21 +418,21 @@ public class ProxySession implements MySqlSessionCallback {
 
         // 检查密码匹配。
         byte[] encryptPass = null;
-        if (authPluginName.equals( CachingSha2PasswordPlugin.PROTOCOL_PLUGIN_NAME )) {
-            encryptPass = CachingSha2PasswordPlugin.scrambleCachingSha2( config.getPassword(), this.authSeed );
+        if (authPluginName.equals(CachingSha2PasswordPlugin.PROTOCOL_PLUGIN_NAME)) {
+            encryptPass = CachingSha2PasswordPlugin.scrambleCachingSha2(config.getPassword(), this.authSeed);
         } else {
-            encryptPass = MySqlNativePasswordPlugin.scramble411( config.getPassword(), this.authSeed );
+            encryptPass = MySqlNativePasswordPlugin.scramble411(config.getPassword(), this.authSeed);
         }
 
-        if (!Arrays.equals( encryptPass, authPacket.password )) {
-            onProxyFailMessage( ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.username + "', because password is error " );
+        if (!MessageDigest.isEqual(encryptPass, authPacket.password)) {
+            onProxyFailMessage(ctx, MySqlErrorCode.ER_PASSWORD_NO_MATCH, "Access denied for user '" + authPacket.username + "', because password is error ");
             onFinish();
             ctx.close();
             return;
         }
 
         // 检查scheme权限
-        if (StringUtils.isNotBlank( authPacket.database )) {
+        if (StringUtils.isNotBlank(authPacket.database)) {
             this.database = authPacket.database;
         }
         // 设置字符集编码
@@ -435,7 +441,7 @@ public class ProxySession implements MySqlSessionCallback {
         this.clientUser = authPacket.username;
         this.isLogon = true;
         this.authSeed = null;
-        OkPacket.writeAuthOkToChannel( ctx );
+        OkPacket.writeAuthOkToChannel(ctx);
     }
 
     /**
@@ -446,9 +452,9 @@ public class ProxySession implements MySqlSessionCallback {
      */
     public void initDB(ChannelHandlerContext ctx, ByteBuf buf) {
         CommandPacket cmd = new CommandPacket();
-        cmd.readPayLoad( buf );
+        cmd.readPayLoad(buf);
         //切换Schema
-        this.setDatabase( new String( cmd.arg ) );
+        this.setDatabase(cmd.arg);
     }
 
     /**
@@ -463,19 +469,19 @@ public class ProxySession implements MySqlSessionCallback {
         //如果schema没有任何表分区定义，则直接转发到默认库。
         //读取sql
         CommandPacket cmd = new CommandPacket();
-        cmd.readPayLoad( buf );
-        String sql = new String( cmd.arg );
+        cmd.readPayLoad(buf);
+        String sql = cmd.arg;
         if (logger.isTraceEnabled()) {
-            logger.trace( "Receive client[{}] SQL: {}", this.clientHost, sql );
+            logger.trace("Receive client[{}] SQL: {}", this.clientHost, sql);
         }
         //根据解析结果判定，当前支持1.单实例执行；2.多实例执行
-        SqlParser parser = new SqlParser( this, sql );
+        SqlParser parser = new SqlParser(this, sql);
         sqlParseResult = parser.parse();
         //sql解析后，routeResult=null的，可能已经在parser里处理过了。
         if (sqlParseResult.hasError()) {
             if (sqlParseResult.getErrorCode() > 0) {
                 //error code>0的，发送错误信息。
-                onProxyFailMessage( ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage() );
+                onProxyFailMessage(ctx, sqlParseResult.getErrorCode(), sqlParseResult.getErrorMessage());
             }
             onFinish();
             return;
@@ -484,17 +490,17 @@ public class ProxySession implements MySqlSessionCallback {
         if (sqlParseResult.getSqlInfo() != null) {
             //单实例执行直接绑定执行即可。
             this.sqlInfo = sqlParseResult.getSqlInfo();
-            MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), sqlParseResult.isMasterQuery() );
+            MySqlSession mySqlSession = MySqlClient.getMySqlSession(sqlInfo.getClusterId(), sqlParseResult.isMasterQuery());
             if (mySqlSession == null) {
-                logger.warn( "MySQL Cluster[{}]无法找到合适的mysqlSession!", sqlInfo.getClusterId() );
-                onProxyFailMessage( ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!" );
+                logger.warn("MySQL Cluster[{}]无法找到合适的mysqlSession!", sqlInfo.getClusterId());
+                onProxyFailMessage(ctx, MySqlErrorCode.ERR_NO_ROUTE_NODE, "Can't route to mysqlCluster!");
                 onFinish();
                 return;
             }
-            mySqlSession.addCommand( this, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), sqlParseResult.getSqlType() );
+            mySqlSession.addCommand(this, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), sqlParseResult.getSqlType());
         } else {
             //多实例执行使用CountDownLatch同步返回所有结果后，再执行转发，可能会导致阻塞。
-            multiNodeExecutor.submit( new ProxyMultiNodeHandler( this.clientHost, this.ctx, sqlParseResult ) );
+            multiNodeExecutor.submit(new ProxyMultiNodeHandler(this.clientHost, this.ctx, sqlParseResult));
         }
     }
 
@@ -504,7 +510,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param ctx
      */
     public void ping(ChannelHandlerContext ctx) {
-        OkPacket.writeOkToChannel( ctx );
+        OkPacket.writeOkToChannel(ctx);
     }
 
     /**
@@ -523,7 +529,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void kill(ChannelHandlerContext ctx, ByteBuf buf) {
-        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT KILL!" );
+        onProxyFailMessage(ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT KILL!");
         onFinish();
     }
 
@@ -534,7 +540,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtPrepare(ChannelHandlerContext ctx, ByteBuf buf) {
-        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_PREPARE!" );
+        onProxyFailMessage(ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_PREPARE!");
         onFinish();
     }
 
@@ -545,7 +551,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtExecute(ChannelHandlerContext ctx, ByteBuf buf) {
-        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_EXECUTE!" );
+        onProxyFailMessage(ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_EXECUTE!");
         onFinish();
     }
 
@@ -556,7 +562,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void stmtClose(ChannelHandlerContext ctx, ByteBuf buf) {
-        onProxyFailMessage( ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_CLOSE!" );
+        onProxyFailMessage(ctx, MySqlErrorCode.ERR_NOT_SUPPORTED, "NOT SUPPORT STMT_CLOSE!");
         onFinish();
     }
 
@@ -567,7 +573,7 @@ public class ProxySession implements MySqlSessionCallback {
      * @param buf
      */
     public void heartbeat(ChannelHandlerContext ctx, ByteBuf buf) {
-        OkPacket.writeOkToChannel( ctx );
+        OkPacket.writeOkToChannel(ctx);
         onFinish();
     }
 
@@ -584,7 +590,7 @@ public class ProxySession implements MySqlSessionCallback {
         errorPacket.packetId = 1;
         errorPacket.errorNo = errorNo;
         errorPacket.message = info;
-        errorPacket.writeToChannel( ctx );
+        errorPacket.writeToChannel(ctx);
         ctx.flush();
     }
 

@@ -90,11 +90,13 @@ public class CachingSha2PasswordPlugin {
             throw new Exception("Key parameter is null\"");
         }
 
-        int offset = key.indexOf("\n") + 1;
-        int len = key.indexOf("-----END PUBLIC KEY-----") - offset;
+        // 去除 PEM header/footer 和换行符，提取纯 Base64 数据
+        String base64Data = key
+                .replace("-----BEGIN PUBLIC KEY-----", "")
+                .replace("-----END PUBLIC KEY-----", "")
+                .replaceAll("\\s+", "");
 
-        // TODO: use standard decoders with Java 6+
-        byte[] certificateData = Base64Decoder.decode(key.getBytes(), offset, len);
+        byte[] certificateData = Base64Decoder.decode(base64Data.getBytes(), 0, base64Data.length());
 
         X509EncodedKeySpec spec = new X509EncodedKeySpec(certificateData);
         KeyFactory kf = KeyFactory.getInstance("RSA");

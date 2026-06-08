@@ -3,6 +3,8 @@ package uw.mydb.proxy.util;
 
 import io.netty.buffer.ByteBuf;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * ByteBuf工具类。
  *
@@ -139,7 +141,7 @@ public class ByteBufUtils {
      * @return
      */
     public static final void writeStringWithNull(ByteBuf buf, String data) {
-        writeBytesWithNull(buf, data.getBytes());
+        writeBytesWithNull(buf, data.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -149,7 +151,7 @@ public class ByteBufUtils {
      * @return
      */
     public static final void writeStringWithLenEnc(ByteBuf buf, String data) {
-        writeBytesWithLenEnc(buf, data.getBytes());
+        writeBytesWithLenEnc(buf, data.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -172,6 +174,9 @@ public class ByteBufUtils {
      * @param data
      */
     public static final void writeBytesWithLenEnc(ByteBuf buf, byte[] data) {
+        if (data == null) {
+            data = NULL_DATA;
+        }
         int length = data.length;
         if (length < 251) {
             buf.writeByte((byte) length);
@@ -233,7 +238,7 @@ public class ByteBufUtils {
      * @return
      */
     public static String readStringWithEof(ByteBuf buf) {
-        return new String(readBytesWithEof(buf));
+        return new String(readBytesWithEof(buf), StandardCharsets.UTF_8);
     }
 
 
@@ -244,7 +249,7 @@ public class ByteBufUtils {
      * @return
      */
     public static String readStringWithNull(ByteBuf buf) {
-        return new String(readBytesWithNull(buf));
+        return new String(readBytesWithNull(buf), StandardCharsets.UTF_8);
     }
 
     /**
@@ -254,7 +259,7 @@ public class ByteBufUtils {
      * @return
      */
     public static String readStringWithLenEnc(ByteBuf buf) {
-        return new String(readBytesWithLenEnc(buf));
+        return new String(readBytesWithLenEnc(buf), StandardCharsets.UTF_8);
     }
 
 
@@ -295,17 +300,25 @@ public class ByteBufUtils {
      */
     public static byte[] readBytesWithNull(ByteBuf buf) {
         int start = buf.readerIndex();
-        while (buf.readableBytes() > 0) {
-            if (buf.readByte() == 0x00) {
+        int nullIndex = -1;
+        for (int i = start; i < buf.writerIndex(); i++) {
+            if (buf.getByte(i) == 0x00) {
+                nullIndex = i;
                 break;
             }
         }
-        int end = buf.readerIndex();
-        if (end - start < 1) {
+        if (nullIndex < 0) {
+            // 未找到null终止符，读取剩余所有数据
+            byte[] data = new byte[buf.readableBytes()];
+            buf.readBytes(data);
+            return data;
+        }
+        int len = nullIndex - start;
+        if (len == 0) {
+            buf.skipBytes(1);
             return NULL_DATA;
         }
-        byte[] data = new byte[end - start - 1];
-        buf.readerIndex(start);
+        byte[] data = new byte[len];
         buf.readBytes(data);
         buf.skipBytes(1);
         return data;

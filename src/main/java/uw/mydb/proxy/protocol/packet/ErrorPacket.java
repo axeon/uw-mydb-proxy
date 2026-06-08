@@ -3,6 +3,8 @@ package uw.mydb.proxy.protocol.packet;
 import io.netty.buffer.ByteBuf;
 import uw.mydb.proxy.util.ByteBufUtils;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * From server to client in response to command, if error.
  * Bytes                       Name
@@ -30,7 +32,16 @@ public class ErrorPacket extends MySqlPacket {
     protected void read(ByteBuf buf) {
         packetType = buf.readByte();
         errorNo = ByteBufUtils.readUB2(buf);
-        message = ByteBufUtils.readStringWithEof(buf);
+        if (buf.readableBytes() > 0 && buf.getByte(buf.readerIndex()) == SQLSTATE_MARKER) {
+            buf.skipBytes(1); // skip '#'
+            sqlState = new byte[5];
+            buf.readBytes(sqlState);
+        }
+        if (buf.readableBytes() > 0) {
+            message = ByteBufUtils.readStringWithEof(buf);
+        } else {
+            message = "";
+        }
     }
 
     @Override
@@ -40,7 +51,7 @@ public class ErrorPacket extends MySqlPacket {
         buf.writeByte(mark);
         buf.writeBytes(sqlState);
         if (message != null) {
-            buf.writeBytes(message.getBytes());
+            buf.writeBytes(message.getBytes(StandardCharsets.UTF_8));
         }
     }
 

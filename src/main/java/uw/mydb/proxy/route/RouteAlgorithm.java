@@ -167,11 +167,9 @@ public abstract class RouteAlgorithm {
          * @return
          */
         public boolean isEmptyValue() {
-            if (value==null||value.isEmpty()||value1==null||value2.isEmpty()||value2==null||value2.isEmpty()){
-                return true;
-            }else{
-                return false;
-            }
+            return value == null || value.isEmpty()
+                || value1 == null || value1.isEmpty()
+                || value2 == null || value2.isEmpty();
         }
 
         /**

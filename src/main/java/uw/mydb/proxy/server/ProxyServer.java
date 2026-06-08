@@ -52,8 +52,11 @@ public class ProxyServer {
         bootstrap.group( bossGroup, workerGroup ).channel( NioServerSocketChannel.class ).option( ChannelOption.SO_BACKLOG, 100_000 ).childOption( ChannelOption.TCP_NODELAY,
                 true ).option( ChannelOption.SO_RCVBUF, 32 * 1024 * 1024 ).childOption( ChannelOption.SO_SNDBUF, 32 * 1024 * 1024 ).option( ChannelOption.ALLOCATOR,
                 PooledByteBufAllocator.DEFAULT ).childHandler( new ProxyHandlerFactory() );
-        //此处写死了，应该可配置。
-        bootstrap.bind( "0.0.0.0", MydbProxyConfigService.getMydbProperties().getProxyPort() ).sync();
+        String proxyHost = MydbProxyConfigService.getMydbProperties().getProxyHost();
+        if (proxyHost == null || proxyHost.isEmpty()) {
+            proxyHost = "0.0.0.0";
+        }
+        bootstrap.bind( proxyHost, MydbProxyConfigService.getMydbProperties().getProxyPort() ).sync();
         //设置后台调度任务。
         scheduledExecutorService = Executors.newScheduledThreadPool( 2, r -> {
             Thread thread = new Thread( r );

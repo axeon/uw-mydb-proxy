@@ -10,6 +10,7 @@ import uw.mydb.proxy.constant.SQLType;
 import uw.mydb.proxy.mysql.MySqlClient;
 import uw.mydb.proxy.mysql.MySqlSession;
 import uw.mydb.proxy.mysql.MySqlSessionCallback;
+import uw.mydb.proxy.protocol.constant.MySqlErrorCode;
 import uw.mydb.proxy.protocol.packet.ErrorPacket;
 import uw.mydb.proxy.protocol.packet.OkPacket;
 import uw.mydb.proxy.sqlparse.SqlParseResult;
@@ -187,6 +188,8 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
         if (packetSeq.compareAndSet( packetId - 1, packetId )) {
             txBytes.addAndGet( buf.readableBytes() );
             ctx.write( buf.retain() );
+        } else {
+            logger.warn( "receiveFieldDataPacket丢弃数据包: 期望packetSeq={}, 实际packetId={}", packetSeq.get(), packetId );
         }
     }
 
@@ -259,6 +262,7 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
             MySqlSession mySqlSession = MySqlClient.getMySqlSession( sqlInfo.getClusterId(), parseResult.isMasterQuery() );
             if (mySqlSession == null) {
                 logger.warn( "无法找到合适的mysqlSession!" );
+                countDownLatch.countDown();
                 continue;
             }
             mySqlSession.addCommand( this, sqlInfo.getDatabase(), sqlInfo.getTable(), sqlInfo.getNewSql(), parseResult.getSqlType() );
@@ -290,8 +294,17 @@ public class ProxyMultiNodeHandler implements MySqlSessionCallback, Runnable {
                 txBytes.addAndGet( okPacket.getPacketLength() );
             } else {
                 //说明全部就是错误包啦，直接返回第一個error包
-                errorPacket.writeToChannel( ctx );
-                txBytes.addAndGet( errorPacket.getPacketLength() );
+                if (errorPacket != null) {
+                    errorPacket.writeToChannel( ctx );
+                    txBytes.addAndGet( errorPacket.getPacketLength() );
+                } else {
+                    ErrorPacket defaultError = new ErrorPacket();
+                    defaultError.packetId = 1;
+                    defaultError.errorNo = MySqlErrorCode.ERR_CONN_NOT_ALIVE;
+                    defaultError.message = "All nodes returned error!";
+                    defaultError.writeToChannel( ctx );
+                    txBytes.addAndGet( defaultError.getPacketLength() );
+                }
                 isExeSuccess = false;
             }
         }

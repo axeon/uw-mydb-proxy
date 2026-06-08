@@ -23,8 +23,7 @@ import java.util.List;
  */
 public class MydbProxyConfigService {
 
-    private static final Logger logger = LoggerFactory.getLogger( MydbProxyConfigService.class );
-
+    private static final Logger logger = LoggerFactory.getLogger(MydbProxyConfigService.class);
 
     /**
      * Task配置文件
@@ -39,7 +38,7 @@ public class MydbProxyConfigService {
     /**
      * 基础集群ID。
      */
-    private static long baseClusterId;
+    private static volatile long baseClusterId;
 
     /**
      * 代理ID.
@@ -51,115 +50,152 @@ public class MydbProxyConfigService {
         MydbProxyConfigService.mydbProperties = mydbProperties;
         MydbProxyConfigService.authRestTemplate = authRestTemplate;
         //Proxy配置缓存 key: configKey value:ProxyConfig
-        FusionCache.config( new FusionCache.Config( MydbProxyConfig.class, 20, 0L ), new CacheDataLoader<String, MydbProxyConfig>() {
+        FusionCache.config(new FusionCache.Config(MydbProxyConfig.class, 20, 0L), new CacheDataLoader<String, MydbProxyConfig>() {
             @Override
             public MydbProxyConfig load(String key) throws Exception {
-                return authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getProxyConfig?configKey=" + mydbProperties.getConfigKey(),
-                        MydbProxyConfig.class );
+                return getForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getProxyConfig?configKey=" + mydbProperties.getConfigKey(),
+                        MydbProxyConfig.class);
             }
-        } );
+        });
 
         //table配置缓存 key: configKey:tableName value:TableConfig
-        FusionCache.config( new FusionCache.Config( TableConfig.class, 10000, 0L ), new CacheDataLoader<String, TableConfig>() {
+        FusionCache.config(new FusionCache.Config(TableConfig.class, 10000, 0L), new CacheDataLoader<String, TableConfig>() {
             @Override
             public TableConfig load(String key) throws Exception {
                 if (key != null) {
-                    int splitPos = key.indexOf( ':' );
+                    int splitPos = key.indexOf(':');
                     if (splitPos > -1) {
-                        String configKey = key.substring( 0, splitPos );
-                        String tableName = key.substring( splitPos + 1 );
+                        String configKey = key.substring(0, splitPos);
+                        String tableName = key.substring(splitPos + 1);
                         TableConfig tableConfig =
-                                authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() +
-                                        "&tableName=" + tableName, TableConfig.class );
+                                getForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableConfig?configKey=" + mydbProperties.getConfigKey() +
+                                        "&tableName=" + tableName, TableConfig.class);
                         return tableConfig;
                     }
                 }
                 return null;
             }
-        } );
+        });
 
 
         //route配置缓存 key: configKey:routeId value:RouteConfig
-        FusionCache.config( new FusionCache.Config( RouteConfig.class, 100, 0L ), new CacheDataLoader<String, RouteConfig>() {
+        FusionCache.config(new FusionCache.Config(RouteConfig.class, 100, 0L), new CacheDataLoader<String, RouteConfig>() {
             @Override
             public RouteConfig load(String key) throws Exception {
                 if (key != null) {
-                    int splitPos = key.indexOf( ':' );
+                    int splitPos = key.indexOf(':');
                     if (splitPos > -1) {
-                        String configKey = key.substring( 0, splitPos );
-                        long routeId = Long.parseLong( key.substring( splitPos + 1 ) );
-                        return authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId"
-                                + "=" + routeId, RouteConfig.class );
+                        String configKey = key.substring(0, splitPos);
+                        long routeId = Long.parseLong(key.substring(splitPos + 1));
+                        return getForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getRouteConfig?configKey=" + mydbProperties.getConfigKey() + "&routeId"
+                                + "=" + routeId, RouteConfig.class);
                     }
                 }
                 return null;
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载route配置。
-        } );
+        });
 
 
         //mysql集群配置缓存 key: mysql clusterId value: mysqlClusterConfig
-        FusionCache.config( new FusionCache.Config( MysqlClusterConfig.class, 10000, 0L ), new CacheDataLoader<Long, MysqlClusterConfig>() {
+        FusionCache.config(new FusionCache.Config(MysqlClusterConfig.class, 10000, 0L), new CacheDataLoader<Long, MysqlClusterConfig>() {
             @Override
             public MysqlClusterConfig load(Long clusterId) throws Exception {
                 MysqlClusterConfig clusterConfig =
-                        authRestTemplate.getForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + clusterId, MysqlClusterConfig.class );
+                        getForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getMysqlCluster?configKey=" + mydbProperties.getConfigKey() + "&clusterId=" + clusterId, MysqlClusterConfig.class);
                 clusterConfig.initServerWeightList();
                 return clusterConfig;
             }
         }, (key, oldValue, newValue) -> {
             //此处要重新加载mysqlCluster信息。
-        } );
+        });
 
         //table列表缓存 key: clusterId:database value: HashSet<tableName>
-        FusionCache.config( new FusionCache.Config( DataTable.class, 10000, 0L ), new CacheDataLoader<String, HashSet<String>>() {
+        FusionCache.config(new FusionCache.Config(DataTable.class, 10000, 0L), new CacheDataLoader<String, HashSet<String>>() {
             @Override
             public HashSet<String> load(String key) throws Exception {
                 if (key != null) {
-                    int splitPos = key.indexOf( ':' );
+                    int splitPos = key.indexOf(':');
                     if (splitPos > -1) {
-                        long clusterId = Long.parseLong( key.substring( 0, splitPos ) );
-                        String database = key.substring( splitPos + 1 );
-                        return authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
+                        long clusterId = Long.parseLong(key.substring(0, splitPos));
+                        String database = key.substring(splitPos + 1);
+                        return authRestTemplate.exchange(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableList?clusterId=" + clusterId + "&database=" + database,
                                 HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<HashSet<String>>() {
-                        } ).getBody();
+                                }).getBody();
                     }
                 }
                 return null;
             }
         }, (key, oldValue, newValue) -> {
 
-        } );
+        });
         //saas node缓存： key:configKey:saasId value: DataNode
-        FusionCache.config( new FusionCache.Config( DataNode.class, 10000, 0L ), new CacheDataLoader<String, DataNode>() {
+        FusionCache.config(new FusionCache.Config(DataNode.class, 10000, 0L), new CacheDataLoader<String, DataNode>() {
             @Override
             public DataNode load(String key) throws Exception {
                 if (key != null) {
-                    int splitPos = key.indexOf( ':' );
+                    int splitPos = key.indexOf(':');
                     if (splitPos > -1) {
-                        String configKey = key.substring( 0, splitPos );
-                        String saasId = key.substring( splitPos + 1 );
-                        return authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, DataNode.class ).getBody();
+                        String configKey = key.substring(0, splitPos);
+                        String saasId = key.substring(splitPos + 1);
+                        return authRestTemplate.exchange(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getSaasNode?configKey=" + mydbProperties.getConfigKey() + "&saasId=" + saasId, HttpMethod.GET, null, DataNode.class).getBody();
                     }
                 }
                 return null;
             }
-        } );
+        });
     }
 
     /**
-     * 检查是否存在指定DataTable。
+     * rpc重试次数
      */
-    public static boolean checkTableExists(String tableConfigName, DataTable dataTable) {
-        HashSet<String> tableSet = FusionCache.get( DataTable.class, dataTable.getClusterId() + ":" + dataTable.getDatabase() );
-        if (!tableSet.contains( dataTable.getTable() )) {
-            if (logger.isDebugEnabled()) logger.debug( "向center服务器请求[{}]checkTableExists!", dataTable );
-            String tableName =
-                    authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() + "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class );
-            if (StringUtils.isNotBlank( tableName )) {
-                tableSet.add( tableName );
+    private static final int RPC_RETRY_COUNT = 3;
+
+    /**
+     * rpc重试间隔时间
+     */
+    private static final long RPC_RETRY_INTERVAL_MS = 1000;
+
+    /**
+     * 带重试的GET请求。
+     */
+    private static <T> T getForObject(String url, Class<T> responseType) {
+        Exception lastEx = null;
+        for (int i = 0; i < RPC_RETRY_COUNT; i++) {
+            try {
+                return authRestTemplate.getForObject(url, responseType);
+            } catch (Exception e) {
+                lastEx = e;
+                logger.warn("RPC请求失败[第{}次]: {}", i + 1, e.getMessage());
+                if (i < RPC_RETRY_COUNT - 1) {
+                    try {
+                        Thread.sleep(RPC_RETRY_INTERVAL_MS);
+                    } catch (InterruptedException ie) {
+                        Thread.currentThread().interrupt();
+                        break;
+                    }
+                }
             }
+        }
+        logger.error("RPC请求最终失败: {}", lastEx == null ? "unknown" : lastEx.getMessage(), lastEx);
+        return null;
+    }
+
+    /**
+     * 确保指定DataTable存在，不存在则尝试创建。
+     */
+    public static boolean ensureTableExists(String tableConfigName, DataTable dataTable) {
+        HashSet<String> tableSet = FusionCache.get(DataTable.class, dataTable.getClusterId() + ":" + dataTable.getDatabase());
+        if (tableSet != null && !tableSet.contains(dataTable.getTable())) {
+            if (logger.isDebugEnabled()) logger.debug("向center服务器请求[{}]ensureTableExists!", dataTable);
+            String tableName =
+                    authRestTemplate.postForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/checkAndCreateTable?configKey=" + mydbProperties.getConfigKey() + "&tableConfigName=" + tableConfigName + "&clusterId=" + dataTable.getClusterId() + "&database=" + dataTable.getDatabase() + "&table=" + dataTable.getTable(), null, String.class);
+            if (StringUtils.isNotBlank(tableName)) {
+                tableSet.add(tableName);
+                return true;
+            }
+            return false;
         }
         return true;
     }
@@ -171,8 +207,8 @@ public class MydbProxyConfigService {
     public static List<DataTable> getTableListByPrefix(String tablePrefix) {
         //创建成功则加入set。
         ArrayList<DataTable> dataTableList =
-                authRestTemplate.exchange( mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() + "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
-        } ).getBody();
+                authRestTemplate.exchange(mydbProperties.getMydbCenterHost() + "/rpc/proxy/getTableListByPrefix?configKey=" + mydbProperties.getConfigKey() + "&tablePrefix=" + tablePrefix, HttpMethod.GET, null, new org.springframework.core.ParameterizedTypeReference<ArrayList<DataTable>>() {
+                }).getBody();
         return dataTableList;
     }
 
@@ -191,7 +227,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static MydbProxyConfig getProxyConfig() {
-        return FusionCache.get( MydbProxyConfig.class, mydbProperties.getConfigKey() );
+        return FusionCache.get(MydbProxyConfig.class, mydbProperties.getConfigKey());
     }
 
     /**
@@ -200,7 +236,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static TableConfig getTableConfig(String tableName) {
-        return FusionCache.get( TableConfig.class, mydbProperties.getConfigKey() + ":" + tableName );
+        return FusionCache.get(TableConfig.class, mydbProperties.getConfigKey() + ":" + tableName);
     }
 
     /**
@@ -209,7 +245,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static RouteConfig getRouteConfig(long routeId) {
-        return FusionCache.get( RouteConfig.class, mydbProperties.getConfigKey() + ":" + routeId );
+        return FusionCache.get(RouteConfig.class, mydbProperties.getConfigKey() + ":" + routeId);
     }
 
     /**
@@ -218,7 +254,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static DataNode getSaasNode(String saasId) {
-        return FusionCache.get( DataNode.class, mydbProperties.getConfigKey() + ":" + saasId );
+        return FusionCache.get(DataNode.class, mydbProperties.getConfigKey() + ":" + saasId);
     }
 
     /**
@@ -227,7 +263,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static MysqlClusterConfig getMysqlCluster(long clusterId) {
-        return FusionCache.get( MysqlClusterConfig.class, clusterId );
+        return FusionCache.get(MysqlClusterConfig.class, clusterId);
     }
 
     /**
@@ -251,7 +287,7 @@ public class MydbProxyConfigService {
      * @return
      */
     public static void putTableConfigToLocalCache(String tableName, TableConfig tableConfig) {
-        FusionCache.put( TableConfig.class, mydbProperties.getConfigKey() + ":" + tableName, tableConfig, true );
+        FusionCache.put(TableConfig.class, mydbProperties.getConfigKey() + ":" + tableName, tableConfig, true);
     }
 
     /**
@@ -269,8 +305,8 @@ public class MydbProxyConfigService {
      * @param proxyRunStats
      */
     public static void reportProxyRunStats(ProxyRunStats proxyRunStats) {
-        ProxyReportResponse response = authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportProxyRunStats", proxyRunStats,
-                ProxyReportResponse.class );
+        ProxyReportResponse response = authRestTemplate.postForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportProxyRunStats", proxyRunStats,
+                ProxyReportResponse.class);
         if (response != null) {
             proxyId = response.getProxyId();
         }
@@ -282,7 +318,7 @@ public class MydbProxyConfigService {
      * @param schemaRunStats
      */
     public static void reportSchemaRunStats(Collection<SchemaRunStats> schemaRunStats) {
-        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSchemaRunStats", schemaRunStats, Void.class );
+        authRestTemplate.postForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSchemaRunStats", schemaRunStats, Void.class);
     }
 
     /**
@@ -291,8 +327,8 @@ public class MydbProxyConfigService {
      * @param slowSql
      */
     public static void reportSlowSql(SlowSql slowSql) {
-        slowSql.setProxyId( getProxyId() );
-        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class );
+        slowSql.setProxyId(getProxyId());
+        authRestTemplate.postForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportSlowSql", slowSql, Void.class);
     }
 
     /**
@@ -301,8 +337,8 @@ public class MydbProxyConfigService {
      * @param errorSql
      */
     public static void reportErrorSql(ErrorSql errorSql) {
-        errorSql.setProxyId( getProxyId() );
-        authRestTemplate.postForObject( mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class );
+        errorSql.setProxyId(getProxyId());
+        authRestTemplate.postForObject(mydbProperties.getMydbCenterHost() + "/rpc/proxy/reportErrorSql", errorSql, ProxyReportResponse.class);
     }
 
 

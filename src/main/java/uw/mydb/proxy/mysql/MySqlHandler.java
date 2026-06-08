@@ -50,9 +50,8 @@ public class MySqlHandler extends ChannelInboundHandlerAdapter {
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
         super.exceptionCaught( ctx, cause );
         MySqlSession session = ctx.channel().attr( MYSQL_SESSION ).get();
-        //发送错误信息。
-        session.failMessage( MySqlErrorCode.ERR_CONN_NOT_ALIVE, cause.getMessage() );
         if (session != null) {
+            session.failMessage( MySqlErrorCode.ERR_CONN_NOT_ALIVE, cause.getMessage() );
             session.trueClose();
         }
     }
