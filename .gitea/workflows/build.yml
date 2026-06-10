@@ -15,7 +15,8 @@ jobs:
         run: |
           # 拉取代码并构建
           source ~/.profile
-          git clone -q ${{gitea.server_url}}/${{ gitea.repository }}.git .
+          GIT_SERVER=${{gitea.server_url}}
+          git clone -q ${GIT_SERVER%%://*}://gitea:${{gitea.token}}@${GIT_SERVER#*://}/${{gitea.repository}}.git .
           mvn clean package -U -Dmaven.test.skip=true
 
           # 从 pom.xml 提取项目版本号（取 /project/version 节点）
