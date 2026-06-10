@@ -199,7 +199,7 @@ public class MySqlSession {
         this.sql = sql;
         this.sqlType = sqlType;
         if (sessionStatus > SESSION_NORMAL) {
-            executeCommand();
+            execute();
         }
     }
 
@@ -364,7 +364,7 @@ public class MySqlSession {
                 OkPacket okPacket = new OkPacket();
                 okPacket.readPayLoad( buf );
                 sessionStatus = SESSION_USING;
-                executeCommand();
+                execute();
                 break;
             case MySqlPacket.PACKET_ERROR:
                 //报错了，直接关闭吧。
@@ -450,7 +450,7 @@ public class MySqlSession {
     /**
      * 执行指令。
      */
-    private void executeCommand() {
+    private void execute() {
         if (this.sql != null) {
             ByteBuf buf = channel.alloc().buffer();
             CommandPacket packet = new CommandPacket();

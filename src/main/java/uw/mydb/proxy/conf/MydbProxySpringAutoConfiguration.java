@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.client.RestTemplate;
+import org.springframework.web.client.RestClient;
 import uw.mydb.proxy.mysql.MySqlClient;
 import uw.mydb.proxy.server.ProxyServer;
 
@@ -37,7 +37,7 @@ public class MydbProxySpringAutoConfiguration {
     }
 
     @Bean
-    public MydbProxyConfigService mydbConfigService(final MydbProxyProperties mydbProxyProperties, @Qualifier("authRestTemplate") final RestTemplate authRestTemplate) {
-        return new MydbProxyConfigService( mydbProxyProperties, authRestTemplate );
+    public MydbProxyConfigService mydbConfigService(final MydbProxyProperties mydbProxyProperties, @Qualifier("authRestClient") final RestClient authRestClient) {
+        return new MydbProxyConfigService( mydbProxyProperties, authRestClient );
     }
 }
