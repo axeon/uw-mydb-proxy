@@ -5,6 +5,7 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uw.common.util.SystemClock;
@@ -409,7 +410,7 @@ public class ProxySession implements MySqlSessionCallback {
 //            return;
 //        }
 
-        if (!StringUtils.equals(config.getUsername(), authPacket.username)) {
+        if (!Strings.CS.equals(config.getUsername(), authPacket.username)) {
             onProxyFailMessage(ctx, MySqlErrorCode.ER_ACCESS_DENIED_ERROR, "Access denied for user '" + authPacket.username + "', because user is not exists! ");
             onFinish();
             ctx.close();
