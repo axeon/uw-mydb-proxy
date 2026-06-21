@@ -12,23 +12,29 @@
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
     <appender name="ES" class="uw.logback.es.appender.ElasticSearchAppender">
+        <!-- ES 服务地址(必填)-->
         <esServer>${esServer}</esServer>
+        <!-- ES Basic 认证用户名(可选) -->
         <esUsername>${esUsername}</esUsername>
+        <!-- ES Basic 认证密码(可选) -->
         <esPassword>${esPassword}</esPassword>
+        <!-- 索引名(可选,为空时默认使用 appInfo) -->
         <esIndex>${appName}</esIndex>
+        <!-- 应用信息(必填) -->
         <appInfo>${appName}:${appVersion}</appInfo>
+        <!-- 应用主机(可选),写入日志的 appHost 字段 -->
         <appHost>${appHost}:${appPort}</appHost>
-        <!-- 最大刷新时间间隔 单位秒 -->
+        <!-- 定时刷新时间间隔,单位:秒,默认 10 -->
         <maxFlushInSeconds>10</maxFlushInSeconds>
-        <!-- 批量提交最小字节数 -->
+        <!-- 批量提交触发阈值,单位 KB:buffer 累积达到该 KB 数触发 flush,默认 8192(即 8MB) -->
         <maxKiloBytesOfBatch>8192</maxKiloBytesOfBatch>
-        <!-- 批量提交日志最大线程数 -->
+        <!-- 批量提交最大线程数,默认 5 -->
         <maxBatchThreads>5</maxBatchThreads>
-        <!-- 最大批量线程队列数 -->
+        <!-- 批量提交线程池队列容量,默认 20 -->
         <maxBatchQueueSize>20</maxBatchQueueSize>
         <!-- 每个异常堆栈打印的最大层数 -->
         <maxDepthPerThrowable>20</maxDepthPerThrowable>
-        <!-- 需要排除的异常关键字，多个关键字之间用','分割。-->
+        <!-- 需要折叠的堆栈类名前缀,逗号分隔,匹配的行会被合并计数后省略 -->
         <excludeThrowableKeys>java.base,org.spring,jakarta,org.apache,com.mysql,okhttp,com.fasterxml,uw.auth.service.filter</excludeThrowableKeys>
         <!-- 开启JMX监控支持,默认未开启 -->
         <jmxMonitoring>false</jmxMonitoring>
