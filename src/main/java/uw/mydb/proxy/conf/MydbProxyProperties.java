@@ -5,7 +5,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * mydb配置类。
+ * mydb proxy 配置属性，绑定 {@code uw.mydb.proxy.*} 前缀。
+ * <p>
+ * 启动时由 {@link MydbProxySpringAutoConfiguration} 通过 {@link EnableConfigurationProperties} 注入，
+ * 运行期只读。
  *
  * @author axeon
  */
@@ -14,40 +17,40 @@ import org.springframework.context.annotation.Configuration;
 public class MydbProxyProperties {
 
     /**
-     * 应用名称
+     * 应用名称（来自 {@code spring.application.name}），用于 proxy 运行统计上报。
      */
     @Value("${spring.application.name}")
     private String appName;
 
     /**
-     * 应用版本
+     * 应用版本（来自 {@code project.version}），用于 proxy 运行统计上报。
      */
     @Value("${project.version}")
     private String appVersion;
 
     /**
-     * app主机
+     * proxy 对外暴露的主机 IP（来自 {@code spring.cloud.nacos.discovery.ip}），用于注册到 center。
      */
     @Value("${spring.cloud.nacos.discovery.ip}")
     private String proxyHost;
 
     /**
-     * mydb center主机。
+     * mydb-center 服务地址（含 scheme），proxy 通过它拉取配置与上报统计。默认 {@code http://uw-mydb-center}。
      */
     private String mydbCenterHost="http://uw-mydb-center";
 
     /**
-     * 配置Key。
+     * 配置 Key，用于在 center 区分不同 proxy 集群（多租户/多环境），默认 "default"。
      */
     private String configKey = "default";
 
     /**
-     * 端口号。
+     * proxy 监听端口（对外模拟 MySQL Server），默认 3306 体系下的 3300。
      */
     private int proxyPort = 3300;
 
     /**
-     * 慢查询门限值。
+     * 慢查询阈值（毫秒），SQL 执行耗时超过此值则上报慢 SQL。默认 10 秒。
      */
     private long slowQueryMillis = 10_000L;
 

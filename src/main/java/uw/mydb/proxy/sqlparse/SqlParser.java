@@ -24,9 +24,22 @@ import java.util.Set;
 import static uw.mydb.proxy.sqlparse.parser.Token.*;
 
 /**
- * Sql解析器，根据table sharding设置决定分发mysql。
- * 对于常见的select,insert,update,delete等语句会解析sql表信息。
- * 对于其它的sql，需要hint注解指定运行目标，否则仅在base node上执行。
+ * SQL 解析入口，根据表的分片配置（{@link TableConfig}）决定 SQL 路由目标。
+ * <p>
+ * 主要流程（{@link #parse()}）：
+ * <ol>
+ *   <li>读取首个 token：若为 HINT 则调用 {@link #parseHint} 提取 mydb 专有注解（master/slave、route 列表）。</li>
+ *   <li>跳过 COMMENT / LINE_COMMENT / MULTI_LINE_COMMENT。</li>
+ *   <li>按首关键字分发：SELECT / INSERT / UPDATE / DELETE / USE 走对应解析方法；SET/SHOW/EXPLAIN/DESCRIBE 等放行到默认库；其余返回不支持。</li>
+ *   <li>{@link #calculateAllRouteInfo}：hint 路由优先级最高，其次按 routeKey 路由算法计算，无匹配时回落到 baseNode。</li>
+ *   <li>{@link #generateSqlInfo}：将路由结果与子 SQL 片段重新拼接为每个目标节点上的可执行 SQL（单一路由 -> sqlInfo，多路由 -> sqlInfoList）。
+ *       多表多路由的笛卡尔积受 {@link #MAX_CARTESIAN_PRODUCT} 限制，超限时返回错误。</li>
+ * </ol>
+ * <p>
+ * 内部状态：{@link #tableRouteDataMain} 为 SQL 中第一个出现的可分片表（主表），{@link #tableRouteDataList} 为其余子表。
+ * {@link #subSqlList} 存放按表名位置切分出的 SQL 片段（两个表名之间的静态文本），用于生成多节点 SQL 时复用避免重复字符串替换。
+ * <p>
+ * 非线程安全：实例仅供单条 SQL 解析使用，解析完成后丢弃。
  *
  * @author axeon
  */
@@ -35,50 +48,50 @@ public class SqlParser {
     private static final Logger log = LoggerFactory.getLogger( SqlParser.class );
 
     /**
-     * 代理session
+     * 当前会话（提供 database、setDatabase 能力），无会话场景（如测试）可为 null。
      */
     private ProxySession proxySession;
 
     /**
-     * lexer解析器。
+     * 词法分析器，逐 token 推进解析。
      */
     private Lexer lexer;
 
     /**
-     * lexer解析位置，用于sql分割。
+     * 上次切分子 SQL 的 lexer 位置，配合 {@link #splitSubSql} 在表名边界切片。
      */
     private int lexerPos = 0;
 
     /**
-     * hint的Route信息。
+     * 从 HINT 中解析出的 route 信息（如 "*" 或 "clusterId.database.table" 列表），优先级最高。
      */
     private String hintRouteInfo = null;
 
     /**
-     * 被分割的子sql，用于快速sql，减少替换的IO操作。
+     * 按表名位置切分的子 SQL 片段列表，用于多节点 SQL 拼接，减少字符串替换的 IO 开销。
      */
     private List<String> subSqlList = new ArrayList<>();
 
     /**
-     * 主路由信息，存储表信息和路由结果。
+     * 主表（SQL 中第一个出现的表）的路由数据，含表配置、别名与路由输入/结果。
      */
     private TableRouteData tableRouteDataMain;
 
     /**
-     * 路由信息列表，除了主路由之外的子表路由。
+     * 子表（JOIN / 多表场景中除主表外的表）的路由数据列表，可能为 null。
      */
     private List<TableRouteData> tableRouteDataList;
 
     /**
-     * sql解析结果。
+     * 本次解析的结果对象（SQL 类型、错误、sqlInfo / sqlInfoList 等）。
      */
     private SqlParseResult parseResult;
 
     /**
-     * 默认构造器。
+     * 构造解析器，绑定前端会话（USE 语句可回写 setDatabase）。
      *
-     * @param proxySession
-     * @param sqlSource
+     * @param proxySession 前端会话
+     * @param sqlSource    原始 SQL 文本
      */
     public SqlParser(ProxySession proxySession, String sqlSource) {
         this.proxySession = proxySession;
@@ -87,10 +100,10 @@ public class SqlParser {
     }
 
     /**
-     * 默认构造器。
+     * 构造解析器，仅指定默认 database（无会话场景，如测试）。
      *
-     * @param databaseSource
-     * @param sqlSource
+     * @param databaseSource 默认 database
+     * @param sqlSource      原始 SQL 文本
      */
     public SqlParser(String databaseSource, String sqlSource) {
         this.lexer = new Lexer( sqlSource, false, true );
@@ -98,7 +111,9 @@ public class SqlParser {
     }
 
     /**
-     * 解析sql。
+     * 解析 SQL 的主入口，依次完成 hint 解析、注释跳过、语句类型分发、路由计算与 sqlInfo 生成。
+     *
+     * @return 解析结果（含错误信息或生成的 sqlInfo/sqlInfoList）
      */
     public SqlParseResult parse() {
         if (!lexer.isEOF()) {
@@ -827,12 +842,21 @@ public class SqlParser {
 
     }
 
+    /**
+     * 笛卡尔积路由数量上限。多表多路由场景下，最终派发的 SQL 数量 = 各表路由数之积；
+     * 超过该值视为异常路由（如未带分片键的跨表查询），返回错误避免打挂数据库。
+     */
     private static final int MAX_CARTESIAN_PRODUCT = 100;
 
     /**
-     * 附加路由信息数据。
+     * 将一张表的路由结果（单个或多个 {@link DataTable}）追加到当前 sqlInfoList。
+     * <p>
+     * 若该表为单一路由，则把表名标识（database.table）追加到所有 sqlInfo；
+     * 若为多路由，则对已有 sqlInfoList 做笛卡尔积扩展（每条路由复制一份 sqlInfo 并追加表名），
+     * 笛卡尔积数量超过 {@link #MAX_CARTESIAN_PRODUCT} 时记错误并中止。
      *
-     * @param tableRouteData
+     * @param isMain         是否主表（主表的 dataTable 会写入 sqlInfo）
+     * @param tableRouteData 当前要追加的表路由数据
      */
     private void appendRouteInfoData(boolean isMain, TableRouteData tableRouteData) {
         if (tableRouteData.isSingleRoute()) {
@@ -868,54 +892,69 @@ public class SqlParser {
     }
 
     /**
-     * 表路由信息。
+     * 表路由数据载体，承载 SQL 中某张表的配置、别名、路由输入（{@link uw.mydb.proxy.route.RouteAlgorithm.RouteData}）
+     * 与路由计算结果（{@link uw.mydb.proxy.route.RouteAlgorithm.RouteResult}）。
+     * <p>
+     * 在 {@link SqlParser} 内部用于主表（{@link #tableRouteDataMain}）与子表（{@link #tableRouteDataList}）。
      */
     public static class TableRouteData {
 
         /**
-         * 表信息。
+         * 表配置（来自 {@link MydbProxyConfigService#getTableConfig}，含 baseNode / routeId / matchType 等）。
          */
         protected TableConfig tableConfig;
 
         /**
-         * 表别名。
+         * SQL 中该表的别名（AS alias 或隐式别名），用于 WHERE 中按别名匹配 routeKey。
          */
         protected String tableAliasName;
 
         /**
-         * 路由数据。
+         * 路由算法输入数据（routeKey 与对应的值/范围/列表），由 WHERE/VALUES 解析填充；routeId<=0 时为 null。
          */
         protected RouteAlgorithm.RouteData routeData;
 
         /**
-         * 绑定的路由结果数据。
+         * 路由计算结果（命中的 DataNode + table 列表），由 {@link RouteManager#calculate} 产出。
          */
         protected RouteAlgorithm.RouteResult routeResult;
 
+        /**
+         * @param tableConfig 表配置
+         */
         public TableRouteData(TableConfig tableConfig) {
             this.tableConfig = tableConfig;
         }
 
+        /**
+         * @param tableConfig    表配置
+         * @param tableAliasName 别名
+         */
         public TableRouteData(TableConfig tableConfig, String tableAliasName) {
             this.tableConfig = tableConfig;
             this.tableAliasName = tableAliasName;
         }
 
+        /**
+         * 默认构造器（用于子类或反序列化）。
+         */
         public TableRouteData() {
         }
 
         /**
-         * 是否单一路由。
+         * 是否为单一目标路由（routeResult 为 null 或仅命中单个 DataNode）。决定 sqlInfo 走单条还是笛卡尔积扩展。
          *
-         * @return
+         * @return true 表示路由到单一目标
          */
         public boolean isSingleRoute() {
             return routeResult == null || routeResult.isSingle();
         }
 
         /**
-         * 获取单表路由结果。
-         * 单表路由结果很有可能没有经过计算的。
+         * 获取单表路由结果。若 routeResult 为 null（未配置路由），返回 baseNode + 原始表名；
+         * 否则取 routeResult 的唯一 DataTable。
+         *
+         * @return 单一路由对应的 DataTable
          */
         public DataTable getSingleRouteResult() {
             if (routeResult == null) {
@@ -925,34 +964,58 @@ public class SqlParser {
             }
         }
 
+        /**
+         * @return 表配置
+         */
         public TableConfig getTableConfig() {
             return tableConfig;
         }
 
+        /**
+         * @param tableConfig 表配置
+         */
         public void setTableConfig(TableConfig tableConfig) {
             this.tableConfig = tableConfig;
         }
 
+        /**
+         * @return 表别名（可能为 null）
+         */
         public String getTableAliasName() {
             return tableAliasName;
         }
 
+        /**
+         * @param tableAliasName 表别名
+         */
         public void setTableAliasName(String tableAliasName) {
             this.tableAliasName = tableAliasName;
         }
 
+        /**
+         * @return 路由输入数据（可能为 null）
+         */
         public RouteAlgorithm.RouteData getRouteData() {
             return routeData;
         }
 
+        /**
+         * @param routeData 路由输入数据
+         */
         public void setRouteData(RouteAlgorithm.RouteData routeData) {
             this.routeData = routeData;
         }
 
+        /**
+         * @return 路由计算结果（可能为 null）
+         */
         public RouteAlgorithm.RouteResult getRouteResult() {
             return routeResult;
         }
 
+        /**
+         * @param routeResult 路由计算结果
+         */
         public void setRouteResult(RouteAlgorithm.RouteResult routeResult) {
             this.routeResult = routeResult;
         }

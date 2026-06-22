@@ -8,7 +8,13 @@ import org.slf4j.LoggerFactory;
 import uw.mydb.proxy.util.ByteBufUtils;
 
 /**
- * MySqlPacket
+ * 所有 MySQL 协议包的抽象基类，定义包头（3 字节长度 + 1 字节 packetId）的统一读写逻辑，
+ * 并以 {@code public static final byte} 常量形式定义 MySQL 协议的命令字节（COM_xxx）与响应类型（OK/ERROR/EOF 等）。
+ * <p>
+ * 子类只需实现 {@link #write(ByteBuf)} 与 {@link #read(ByteBuf)} 处理 payload 部分。
+ * {@link #writePayLoad(ByteBuf)} 会先写空包头占位、写完 payload 后回退重写真实长度，避免预先计算长度。
+ * <p>
+ * 非线程安全：每个包实例仅供单次读写使用。
  *
  * @author axeon
  */
@@ -17,42 +23,42 @@ public abstract class MySqlPacket {
     private static final Logger logger = LoggerFactory.getLogger(MySqlPacket.class);
 
     /**
-     * 空的位置数据。
+     * 3 字节空长度占位符，{@link #writePayLoad} 先写入再回退重写。
      */
     private static final byte[] NULL_PACKET_LEN = new byte[3];
 
     /**
-     * 承载类型OK
+     * payload 首字节标识：OK 包。
      */
     public static final byte PACKET_OK = 0;
 
     /**
-     * 承载类型ERROR
+     * payload 首字节标识：ERROR 包。
      */
     public static final byte PACKET_ERROR = (byte) 0xFF;
 
     /**
-     * 承载类型EOF
+     * payload 首字节标识：EOF 包（warning_count + status flags，长度 &lt; 9 字节时区分 OK）。
      */
     public static final byte PACKET_EOF = (byte) 0xFE;
 
     /**
-     * 承载类型AUTH_MORE_DATA
+     * payload 首字节标识：认证过程更多数据（caching_sha2_password 快速认证路径）。
      */
     public static final byte PACKET_AUTH_MORE_DATA = 1;
 
     /**
-     * 承载类型AUTH切换
+     * payload 首字节标识：认证插件切换请求。
      */
     public static final byte PACKET_AUTH_SWITCH = (byte)0xFE;
 
     /**
-     * 承载类型QUIT
+     * payload 首字节标识：客户端退出（部分场景下使用）。
      */
     public static final byte PACKET_QUIT = 2;
 
     /**
-     * 当前为load data的响应包
+     * payload 首字节标识：LOAD DATA 本地文件响应里的文件名占位。
      */
     public static final byte LOAD_DATA_PACKET = (byte) 0xfb;
 
@@ -197,19 +203,19 @@ public abstract class MySqlPacket {
     public static final int SERVER_MORE_RESULTS_EXISTS = 8;
 
     /**
-     * 包长度
+     * 包 payload 长度（不含 4 字节包头）。
      */
     public int packetLength;
 
     /**
-     * 包ID
+     * MySQL 协议 packetId，请求/响应序列号，初始为 0，每包 +1。
      */
     public byte packetId = 0;
 
     /**
-     * 写入payLoad.
+     * 写入完整包：先写 3 字节占位 + packetId，写完 payload 后回退重写真实长度。
      *
-     * @param buf
+     * @param buf 目标 ByteBuf
      */
     public void writePayLoad(ByteBuf buf) {
         //写入空包头。
@@ -234,9 +240,9 @@ public abstract class MySqlPacket {
 
 
     /**
-     * 读取byteBuf内容到packet
+     * 读取完整包：解析 3 字节长度与 packetId 后，调用 {@link #read} 让子类解析 payload。
      *
-     * @param buf
+     * @param buf 源 ByteBuf（position 在包头起始）
      */
     public void readPayLoad(ByteBuf buf) {
         packetLength = ByteBufUtils.readUB3(buf);
@@ -246,42 +252,38 @@ public abstract class MySqlPacket {
 
 
     /**
-     * 把packet内容写入byteBuf。
+     * 子类实现：把 payload 字段写入 ByteBuf（不含包头）。
      *
-     * @param buf
+     * @param buf 目标 ByteBuf
      */
     protected abstract void write(ByteBuf buf);
 
     /**
-     * 读取byteBuf内容到packet
+     * 子类实现：从 ByteBuf 读取 payload 字段（不含包头）。
      *
-     * @param buf
+     * @param buf 源 ByteBuf（position 在 payload 起始）
      */
     protected abstract void read(ByteBuf buf);
 
 
     /**
-     * 给出当前包大小。
-     *
-     * @return
+     * @return payload 长度（不含 4 字节包头）
      */
     public int getPacketLength() {
         return packetLength;
     }
 
     /**
-     * 获取packetId。
-     *
-     * @return
+     * @return MySQL 协议 packetId
      */
     public byte getPacketId() {
         return packetId;
     }
 
     /**
-     * 把数据包直接写入ctx。
+     * 把当前包写入 channel 的 outbound 队列（分配新 ByteBuf，{@link #writePayLoad} 后 {@code ctx.write}）。
      *
-     * @param ctx
+     * @param ctx channel 上下文
      */
     public void writeToChannel(ChannelHandlerContext ctx) {
         ByteBuf buf = ctx.alloc().buffer();
@@ -290,9 +292,9 @@ public abstract class MySqlPacket {
     }
 
     /**
-     * 把数据包直接写入ctx。
+     * 把当前包写入 channel 的 outbound 队列，使用 channel 的 allocator 分配 ByteBuf。
      *
-     * @param channel
+     * @param channel 目标 channel
      */
     public void writeToChannel(Channel channel) {
         ByteBuf buf = channel.alloc().buffer();

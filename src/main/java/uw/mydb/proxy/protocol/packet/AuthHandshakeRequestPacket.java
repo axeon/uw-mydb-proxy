@@ -6,7 +6,9 @@ import uw.mydb.proxy.protocol.constant.MySQLCapability;
 import uw.mydb.proxy.util.ByteBufUtils;
 
 /**
- * MySql握手包
+ * MySQL Initial Handshake Packet（服务端 -> 客户端）：TCP 连接建立后由服务端主动发送，
+ * 携带协议版本、serverVersion、connectionId、认证种子（part1 + part2）、能力位、字符集、状态、认证插件名等，
+ * 启动 MySQL 认证流程。
  *
  * @author axeon
  */

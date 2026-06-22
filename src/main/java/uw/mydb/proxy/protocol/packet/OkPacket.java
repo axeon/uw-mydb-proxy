@@ -6,35 +6,64 @@ import io.netty.channel.ChannelHandlerContext;
 import uw.mydb.proxy.util.ByteBufUtils;
 
 /**
- * From ServerConfig To Client, at the end of a series of Field Packets, and at the
- * end of a series of Data Packets.With prepared statements, EOF Packet can also
- * end parameter information, which we'll describe later.
+ * MySQL OK 包（服务端 -> 客户端）：用于确认一条非结果集命令成功完成，或在结果集末尾替代 EOF（CLIENT_DEPRECATE_EOF）。
+ * <p>
+ * payload 结构：1 字节 header(0x00) + lenenc affectedRows + lenenc insertId + 2 字节 serverStatus +
+ * 2 字节 warningCount + 可选 lenenc message。
  *
  * <pre>
  * Bytes                 Name
  * -----                 ----
- * 1                     field_count, always = 0xfe
+ * 1                     field_count, always = 0x00
+ * lenenc                affected_rows
+ * lenenc                last_insert_id
+ * 2                     server_status
  * 2                     warning_count
- * 2                     Status Flags
+ * lenenc                message (optional)
+ * </pre>
  *
  * @author axeon
  */
 public class OkPacket extends MySqlPacket {
+    /**
+     * 预序列化的最小 OK 包字节（用于 PING 等简单确认），packetId=1。
+     */
     public static final byte[] OK = new byte[]{7, 0, 0, 1, 0, 0, 0, 2, 0, 0, 0};
+    /**
+     * 预序列化的认证成功 OK 包字节，packetId=2（认证序列的下一序号）。
+     */
     public static final byte[] AUTH_OK = new byte[]{7, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0};
 
+    /**
+     * 包类型标识，固定为 {@link #PACKET_OK}（0x00）。
+     */
     public byte packetType = PACKET_OK;
+    /**
+     * 受影响行数（INSERT/UPDATE/DELETE）。
+     */
     public long affectedRows;
+    /**
+     * INSERT 产生的 AUTO_INCREMENT 值。
+     */
     public long insertId;
+    /**
+     * 服务端状态位（如 SERVER_STATUS_AUTOCOMMIT=0x02）。
+     */
     public int serverStatus;
+    /**
+     * 警告计数。
+     */
     public int warningCount;
 
+    /**
+     * 附加消息（可选），如 "Records: 100"。
+     */
     public byte[] message;
 
     /**
-     * 向通道中写一条ok指令。
+     * 向 channel 直接写一条预序列化的 OK 包（packetId=1，status=0x02 autocommit）。
      *
-     * @param ctx
+     * @param ctx channel 上下文
      */
     public static void writeOkToChannel(ChannelHandlerContext ctx) {
         ByteBuf byteBuf = ctx.alloc().buffer( OkPacket.OK.length ).writeBytes( OkPacket.OK );
@@ -42,9 +71,9 @@ public class OkPacket extends MySqlPacket {
     }
 
     /**
-     * 向通道中写一条ok指令。
+     * 向 channel 直接写一条预序列化的 OK 包，使用 channel 的 allocator。
      *
-     * @param channel
+     * @param channel 目标 channel
      */
     public static void writeOkToChannel(Channel channel) {
         ByteBuf byteBuf = channel.alloc().buffer( OkPacket.OK.length ).writeBytes( OkPacket.OK );
@@ -52,19 +81,19 @@ public class OkPacket extends MySqlPacket {
     }
 
     /**
-     * 向通道中写一条auth ok指令。
+     * 写一条认证成功 OK 包（packetId 默认 2，对应认证序列）。
      *
-     * @param ctx
+     * @param ctx channel 上下文
      */
     public static void writeAuthOkToChannel(ChannelHandlerContext ctx) {
         writeAuthOkToChannel( ctx, (byte) 2 );
     }
 
     /**
-     * 向通道中写一条auth ok指令，可指定packetId。
+     * 写一条认证成功 OK 包，可指定 packetId（serverStatus 固定 0x02 autocommit）。
      *
-     * @param ctx
-     * @param packetId
+     * @param ctx      channel 上下文
+     * @param packetId 自定义 packetId
      */
     public static void writeAuthOkToChannel(ChannelHandlerContext ctx, byte packetId) {
         OkPacket okPacket = new OkPacket();
@@ -75,6 +104,12 @@ public class OkPacket extends MySqlPacket {
         ctx.writeAndFlush( buf );
     }
 
+    /**
+     * 判断 serverStatus 是否包含指定状态位。
+     *
+     * @param flag 状态位
+     * @return true 表示该位被置位
+     */
     public boolean hasStatusFlag(long flag) {
         return ((this.serverStatus & flag) == flag);
     }

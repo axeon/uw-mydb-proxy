@@ -3,78 +3,101 @@ package uw.mydb.common.conf;
 import uw.mydb.proxy.constant.MysqlServerType;
 
 /**
- * mysql服务器配置
+ * MySQL 单台服务器配置实体（proxy 与 center 共享），描述一台 MySQL 实例的连接信息与连接池参数。
+ * <p>
+ * 一个 {@link MysqlServerConfig} 隶属于一个 {@link MysqlClusterConfig}，按 serverType（master/slave/read-only）
+ * 与 weight 参与集群的读写负载均衡。
  */
 public class MysqlServerConfig {
 
     /**
-     * 服务器配置ID
+     * 服务器配置 ID（唯一）。
      */
     private long id;
 
     /**
-     * 所在集群ID
+     * 所在集群 ID。
      */
     private long clusterId;
 
     /**
-     * 服务器类型。
+     * 服务器类型（master/slave/read-only 等，见 {@link MysqlServerType}），默认 master。
      */
     private int serverType = MysqlServerType.MASTER.getValue();
 
     /**
-     * 读取权重
+     * 读权重（&gt;=1），用于轮询列表展开，默认 1。
      */
     private int weight = 1;
 
     /**
-     * 主机
+     * MySQL 主机 IP/域名。
      */
     private String host;
 
     /**
-     * 端口号
+     * MySQL 监听端口（通常 3306）。
      */
     private int port;
 
     /**
-     * 用户名
+     * 连接 MySQL 使用的用户名。
      */
     private String username;
 
     /**
-     * 密码
+     * 连接 MySQL 使用的密码。
      */
     private String password;
 
     /**
-     * 最小连接数
+     * 连接池最小空闲连接数，默认 1。
      */
     private int connMin = 1;
 
     /**
-     * 最大连接数
+     * 连接池最大连接数上限，默认 1000。
      */
     private int connMax = 1000;
 
     /**
-     * 连接闲时超时秒数.
+     * 连接空闲超时（秒），超过则回收，默认 180。
      */
     private int connIdleTimeout = 180;
 
     /**
-     * 连接忙时超时秒数.
+     * 连接繁忙超时（秒）：连接被借出后超过该时间未归还则视为异常，默认 180。
      */
     private int connBusyTimeout = 180;
 
     /**
-     * 连接最大寿命秒数.
+     * 连接最大存活寿命（秒），超过则强制回收重建，避免长连接老化，默认 1800。
      */
     private int connMaxAge = 1800;
 
+    /**
+     * 默认构造器（反序列化用）。
+     */
     public MysqlServerConfig() {
     }
 
+    /**
+     * 全参构造器。
+     *
+     * @param id              服务器 ID
+     * @param clusterId       集群 ID
+     * @param serverType      服务器类型
+     * @param weight          读权重
+     * @param host            主机
+     * @param port            端口
+     * @param username        用户名
+     * @param password        密码
+     * @param connMin         最小连接数
+     * @param connMax         最大连接数
+     * @param connIdleTimeout 空闲超时秒数
+     * @param connBusyTimeout 繁忙超时秒数
+     * @param connMaxAge      最大寿命秒数
+     */
     public MysqlServerConfig(long id, long clusterId, int serverType, int weight, String host, int port, String username, String password, int connMin, int connMax, int connIdleTimeout, int connBusyTimeout, int connMaxAge) {
         this.id = id;
         this.clusterId = clusterId;

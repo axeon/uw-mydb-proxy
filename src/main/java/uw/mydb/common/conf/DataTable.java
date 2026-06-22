@@ -98,7 +98,12 @@ public class DataTable {
 
     @Override
     public String toString() {
-        return new StringBuilder().append( dataNode.getClusterId() ).append( '.' ).append( dataNode.getDatabase() ).append( '.' ).append( table ).toString();
+        StringBuilder sb = new StringBuilder();
+        if (dataNode != null) {
+            sb.append( dataNode.getClusterId() ).append( '.' ).append( dataNode.getDatabase() ).append( '.' );
+        }
+        sb.append( table );
+        return sb.toString();
     }
 
     /**

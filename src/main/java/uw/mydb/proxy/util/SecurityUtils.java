@@ -5,14 +5,33 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 /**
- * 加密解密工具类。
+ * MySQL 认证协议的密码加密工具，全静态方法。
+ * <p>
+ * 实现了 MySQL 两个历史版本的密码 scramble 算法：
+ * <ul>
+ *   <li>{@link #scramble411}：mysql_native_password 插件（MySQL 4.1+），基于 SHA-1。</li>
+ *   <li>{@link #scramble323}：MySQL 3.23 老算法（基于自定义 hash，已弃用但保留兼容）。</li>
+ *   <li>{@link #scrambleCachingSha2}：caching_sha2_password 插件（MySQL 8.0 默认），基于 SHA-256。</li>
+ *   <li>{@link #xorString}：通用 XOR 工具，用于 RSA 加密前对密码做 scramble。</li>
+ * </ul>
  *
  * @author axeon
  */
 public class SecurityUtils {
 
+    /**
+     * SHA-256 摘要长度（字节），用于 caching_sha2_password 算法中各阶段缓冲分配。
+     */
     private static int CACHING_SHA2_DIGEST_LENGTH = 32;
 
+    /**
+     * mysql_native_password 的 scramble 算法：XOR(SHA1(pass), SHA1(seed + SHA1(SHA1(pass))))。
+     *
+     * @param pass 明文密码
+     * @param seed 服务端种子（20 字节）
+     * @return scramble 字节（20 字节）
+     * @throws NoSuchAlgorithmException 当 JDK 不支持 SHA-1 时抛出
+     */
     public static final byte[] scramble411(byte[] pass, byte[] seed) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance("SHA-1");
         byte[] pass1 = md.digest(pass);
@@ -27,6 +46,13 @@ public class SecurityUtils {
         return pass3;
     }
 
+    /**
+     * MySQL 3.23 老版 scramble 算法（已弃用），保留仅供历史协议兼容。
+     *
+     * @param pass 明文密码
+     * @param seed 服务端种子
+     * @return scramble 字符串
+     */
     public static final String scramble323(String pass, String seed) {
         if ((pass == null) || (pass.length() == 0)) {
             return pass;

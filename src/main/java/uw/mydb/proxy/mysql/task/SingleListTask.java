@@ -8,13 +8,19 @@ import uw.mydb.proxy.protocol.packet.ResultSetRowDataPacket;
 import java.util.ArrayList;
 
 /**
- * 所有仅返回单行列表的，都可以使用这个方法。
- * 比如show databases,show tables等。
+ * 返回单列字符串列表的任务，每行结果只取第一列。
+ *
+ * <p>典型场景：{@code show databases}、{@code show tables} 等仅返回单列的元数据查询。
+ * 命令结束后 {@link #data} 为每行第一列字符串组成的 {@code ArrayList<String>}。
  *
  * @author axeon
  */
 public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
 
+    /**
+     * @param mysqlClusterId   目标 MySQL cluster id
+     * @param localCmdCallback 业务回调（成功时返回每行第一列字符串列表）
+     */
     public SingleListTask(long mysqlClusterId, LocalCmdCallback<ArrayList<String>> localCmdCallback) {
         super(mysqlClusterId, localCmdCallback);
         this.data = new ArrayList<>();
@@ -22,9 +28,10 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
 
 
     /**
-     * 收到ResultSetHeader数据包。
+     * 解析 ResultSetHeaderPacket，记录列数 fieldCount 供后续 row 解析使用。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
@@ -34,9 +41,10 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
     }
 
     /**
-     * 收到RowDataPacket数据包。
+     * 解析数据行包，仅取第一列加入 {@link #data}。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
@@ -46,9 +54,10 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
     }
 
     /**
-     * 收到Error数据包。
+     * 解析 ErrorPacket，记录错误号与错误文本。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {
@@ -59,9 +68,7 @@ public class SingleListTask extends LocalTaskAdapter<ArrayList<String>> {
     }
 
     /**
-     * 获取客户端信息。
-     *
-     * @return
+     * @return 任务类名，用于 SQL 统计埋点
      */
     @Override
     public String getClientInfo() {

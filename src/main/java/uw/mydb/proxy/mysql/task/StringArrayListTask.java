@@ -8,13 +8,19 @@ import uw.mydb.proxy.protocol.packet.ResultSetRowDataPacket;
 import java.util.ArrayList;
 
 /**
- * 所有仅返回单行列表的，都可以使用这个方法。
- * 比如show databases,show tables等。
+ * 返回多列字符串数组的任务，每行结果转为 {@code String[]} 收集。
+ *
+ * <p>典型场景：需要返回完整多列行数据（每行为 String[]，元素顺序与 fieldCount 对应）的查询，
+ * 如 {@code select a,b,c from ...}。命令结束后 {@link #data} 为 {@code ArrayList<String[]>}。
  *
  * @author axeon
  */
 public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
 
+    /**
+     * @param mysqlClusterId   目标 MySQL cluster id
+     * @param localCmdCallback 业务回调（成功时返回多列字符串数组的列表）
+     */
     public StringArrayListTask(long mysqlClusterId, LocalCmdCallback<ArrayList<String[]>> localCmdCallback) {
         super(mysqlClusterId, localCmdCallback);
         this.data = new ArrayList<>();
@@ -24,9 +30,10 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
 
 
     /**
-     * 收到ResultSetHeader数据包。
+     * 解析 ResultSetHeaderPacket，记录列数 fieldCount 供后续 row 解析使用。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveResultSetHeaderPacket(byte packetId, ByteBuf buf) {
@@ -36,9 +43,10 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
     }
 
     /**
-     * 收到RowDataPacket数据包。
+     * 解析数据行包，把所有列转成 {@code String[]} 加入 {@link #data}。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveRowDataPacket(byte packetId, ByteBuf buf) {
@@ -52,9 +60,7 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
     }
 
     /**
-     * 获取客户端信息。
-     *
-     * @return
+     * @return 任务类名，用于 SQL 统计埋点
      */
     @Override
     public String getClientInfo() {
@@ -62,9 +68,10 @@ public class StringArrayListTask extends LocalTaskAdapter<ArrayList<String[]>> {
     }
 
     /**
-     * 收到Error数据包。
+     * 解析 ErrorPacket，记录错误号与错误文本。
      *
-     * @param buf
+     * @param packetId MySQL 协议包序号
+     * @param buf      原始数据包
      */
     @Override
     public void receiveErrorPacket(byte packetId, ByteBuf buf) {

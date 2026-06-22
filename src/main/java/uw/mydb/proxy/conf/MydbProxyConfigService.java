@@ -16,8 +16,20 @@ import java.util.HashSet;
 import java.util.List;
 
 /**
- * mydb Config配置管理器。
- * 提供static接口，方便读取配置项。
+ * mydb 配置管理器，全静态接口。
+ * <p>
+ * 在构造器（由 {@link MydbProxySpringAutoConfiguration} 注入）中注册多个 {@link FusionCache}：
+ * <ul>
+ *   <li>{@link MydbProxyConfig}：key = {@code configKey}，容量 20。RPC 拉取 proxy 总配置（用户名/密码/baseCluster 等）。</li>
+ *   <li>{@link TableConfig}：key = {@code configKey:tableName}，容量 10000。RPC 拉取表分片配置。</li>
+ *   <li>{@link RouteConfig}：key = {@code configKey:routeId}，容量 100。RPC 拉取路由算法配置。</li>
+ *   <li>{@link MysqlClusterConfig}：key = {@code clusterId}，容量 10000。RPC 拉取 MySQL 集群配置（含 serverList 与权重）。</li>
+ *   <li>{@code HashSet<String>}（DataTable 类型 key）：key = {@code clusterId:database}，容量 10000。RPC 拉取某库的表名集合，用于 {@link #ensureTableExists} 判定。</li>
+ *   <li>{@link DataNode}：key = {@code configKey:saasId}，容量 10000。RPC 拉取 SaaS 路由节点。</li>
+ * </ul>
+ * RPC 均走 {@link #authRestClient}（带鉴权），失败时 {@link #getForObject} 内置 3 次重试（间隔 1s）。
+ * <p>
+ * 提供 {@link #ensureTableExists} 动态建表：发现目标表不在本地缓存表名集合内时，POST 到 center 触发建表并加入集合。
  *
  * @author axeon
  */
@@ -25,15 +37,33 @@ public class MydbProxyConfigService {
 
     private static final Logger logger = LoggerFactory.getLogger(MydbProxyConfigService.class);
 
+    /**
+     * proxy 配置属性（启动时注入，运行期不变）。
+     */
     private static MydbProxyProperties mydbProperties;
 
+    /**
+     * 带鉴权拦截器的 RestClient，用于向 mydb-center 发起 RPC。
+     */
     private static RestClient authRestClient;
 
+    /**
+     * 基础集群 ID（懒加载自 {@link MydbProxyConfig#getBaseCluster()}）。volatile 保证多线程可见性。
+     */
     private static volatile long baseClusterId;
 
+    /**
+     * 当前 proxy 实例在 center 注册后返回的 proxyId（用于上报统计归属）。
+     */
     private static long proxyId;
 
 
+    /**
+     * 构造配置管理器并注册全部 FusionCache 数据加载器。由 Spring 自动配置注入。
+     *
+     * @param mydbProperties proxy 配置属性
+     * @param authRestClient 带鉴权的 RestClient
+     */
     protected MydbProxyConfigService(MydbProxyProperties mydbProperties, RestClient authRestClient) {
         MydbProxyConfigService.mydbProperties = mydbProperties;
         MydbProxyConfigService.authRestClient = authRestClient;
@@ -131,9 +161,23 @@ public class MydbProxyConfigService {
         });
     }
 
+    /**
+     * RPC 失败重试次数（含首次共 3 次）。
+     */
     private static final int RPC_RETRY_COUNT = 3;
+    /**
+     * RPC 重试间隔（毫秒）。
+     */
     private static final long RPC_RETRY_INTERVAL_MS = 1000;
 
+    /**
+     * 带 3 次重试的 GET RPC。全部失败后返回 null（不抛异常，调用方需处理 null）。中断时提前返回。
+     *
+     * @param url          完整 RPC URL
+     * @param responseType 响应类型
+     * @param <T>          响应泛型
+     * @return 响应对象，失败返回 null
+     */
     private static <T> T getForObject(String url, Class<T> responseType) {
         Exception lastEx = null;
         for (int i = 0; i < RPC_RETRY_COUNT; i++) {
@@ -160,7 +204,14 @@ public class MydbProxyConfigService {
     }
 
     /**
-     * 确保指定DataTable存在，不存在则尝试创建。
+     * 确保指定 {@link DataTable} 在目标库中存在，不存在则向 center 请求建表（动态分表场景）。
+     * <p>
+     * 判定逻辑：从 FusionCache 取出 {@code clusterId:database} 的表名集合，若目标表不在其中则 POST checkAndCreateTable，
+     * center 完成建表后返回实际表名（可能因并发而由其他节点已建），将其加入本地集合。
+     *
+     * @param tableConfigName 表配置名（用于在 center 找到建表 SQL）
+     * @param dataTable       目标数据表（clusterId + database + table）
+     * @return true 表示表已存在或建表成功；false 表示建表失败
      */
     public static boolean ensureTableExists(String tableConfigName, DataTable dataTable) {
         HashSet<String> tableSet = FusionCache.get(DataTable.class, dataTable.getClusterId() + ":" + dataTable.getDatabase());

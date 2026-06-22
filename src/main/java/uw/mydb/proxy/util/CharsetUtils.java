@@ -8,25 +8,37 @@ import java.util.HashMap;
 import java.util.Map;
 
 
+/**
+ * MySQL 字符集与 collation 索引映射工具，全静态方法。
+ * <p>
+ * 维护 collationIndex &harr; charsetName 的双向映射，用于在 MySQL 协议握手与字段元数据中
+ * 将 collation 索引（如 255=utf8mb4_general_ci）转换为 Java 字符集名称。
+ */
 public class CharsetUtils {
     public static final Logger logger = LoggerFactory.getLogger(CharsetUtils.class);
 
     /**
-     * collationIndex 和 charsetName 的映射
+     * collationIndex -> charsetName 映射。一个 collationIndex 唯一对应一个 charset。
      */
     private static final Map<Integer, String> INDEX_TO_CHARSET = new HashMap<>();
 
     /**
-     * charsetName 到 默认collationIndex 的映射
+     * charsetName（小写） -> 默认 collationIndex 映射。一个 charset 支持多个 collation，此处存默认值。
      */
     private static final Map<String, Integer> CHARSET_TO_INDEX = new HashMap<>();
 
     /**
-     * collationName 到 CharsetCollation 对象的映射
+     * collationName -> {@link CharsetCollation} 对象映射（当前未使用，保留）。
      */
     @SuppressWarnings("unused")
     private static final Map<String, CharsetCollation> COLLATION_TO_CHARSETCOLLATION = new HashMap<>();
 
+    /**
+     * 根据 collationIndex 获取 Java charset 名称。找不到时返回 "UTF-8" 并记录 WARN。
+     *
+     * @param index collation 索引（1~255+）
+     * @return Java charset 名（如 "UTF-8"、"GBK"）
+     */
     public static final String getCharset(int index) {
         String charset = INDEX_TO_CHARSET.get(index);
         if (charset == null) {

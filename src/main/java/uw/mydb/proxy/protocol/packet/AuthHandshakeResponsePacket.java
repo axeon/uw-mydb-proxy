@@ -8,7 +8,11 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * From client to server during initial handshake.
+ * MySQL Handshake Response（客户端 -> 服务端）：客户端收到 Initial Handshake Packet 后回复，
+ * 携带能力位、最大包大小、字符集、用户名、加密后的密码、目标 database、认证插件名、连接属性等，
+ * 用于服务端校验身份与 schema 选择。
+ *
+ * <pre>
  * Bytes                        Name
  * -----                        ----
  * 4                            client_flags
@@ -18,6 +22,7 @@ import java.util.Map;
  * n (Null-Terminated String)   user
  * n (Length Coded Binary)      scramble_buff (1 + x bytes)
  * n (Null-Terminated String)   database name (optional)
+ * </pre>
  *
  * @author axeon
  */
@@ -102,16 +107,18 @@ public class AuthHandshakeResponsePacket extends MySqlPacket {
 
         if (MySQLCapability.isClientConnectAttrs( clientCapability ) && buf.isReadable()) {
             long kvAllLength = ByteBufUtils.readLenEncInt( buf );
-            if (kvAllLength > 0) {
+            //用buf剩余可读字节数作为上界，防止恶意客户端声明超大kvAllLength导致死循环/OOM。
+            long remaining = buf.readableBytes();
+            if (kvAllLength > 0 && kvAllLength <= remaining) {
                 clientConnectAttrs = new HashMap<>();
-            }
-            int count = 0;
-            while (count < kvAllLength) {
-                String k = ByteBufUtils.readStringWithLenEnc( buf );
-                String v = ByteBufUtils.readStringWithLenEnc( buf );
-                count += ByteBufUtils.calcLenEncDataLength( k.getBytes() );
-                count += ByteBufUtils.calcLenEncDataLength( v.getBytes() );
-                clientConnectAttrs.put( k, v );
+                int count = 0;
+                while (count < kvAllLength && buf.isReadable()) {
+                    String k = ByteBufUtils.readStringWithLenEnc( buf );
+                    String v = ByteBufUtils.readStringWithLenEnc( buf );
+                    count += ByteBufUtils.calcLenEncDataLength( k.getBytes() );
+                    count += ByteBufUtils.calcLenEncDataLength( v.getBytes() );
+                    clientConnectAttrs.put( k, v );
+                }
             }
         }
     }

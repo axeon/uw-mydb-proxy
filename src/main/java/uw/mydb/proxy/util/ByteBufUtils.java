@@ -6,20 +6,53 @@ import io.netty.buffer.ByteBuf;
 import java.nio.charset.StandardCharsets;
 
 /**
- * ByteBuf工具类。
+ * MySQL 协议专用的 ByteBuf 编解码工具，全静态方法。
+ * <p>
+ * 涵盖：
+ * <ul>
+ *   <li>定点小整数 little-endian 读取与写入：{@link #readUB2}/{@link #writeUB2}（2 字节无符号）、
+ *       {@link #readUB3}/{@link #writeUB3}（3 字节，用于包头长度）、{@link #readUB4}/{@link #writeUB4}（4 字节）。</li>
+ *   <li>{@link #readLong}/{@link #writeLong}：8 字节 little-endian。</li>
+ *   <li>MySQL Length-Coded Integer（LenEnc）：{@link #readLenEncInt}/{@link #writeLenEncInt}。
+ *       首字节 &lt;251 直接表示；252/253/254 分别跟 2/3/8 字节小端整数；251 表示 NULL。</li>
+ *   <li>字符串读写：
+ *       <ul>
+ *         <li>{@code *WithNull}：以 0x00 终止的字符串/字节（需扫描 terminator）。</li>
+ *         <li>{@code *WithLenEnc}：以 LenEnc 长度前缀的字符串/字节。</li>
+ *         <li>{@code *WithEof}：读取到 buf 末尾（剩余全部）。</li>
+ *       </ul>
+ *   </li>
+ *   <li>{@link #calcLenEncLength}/{@link #calcLenEncDataLength}：预计算编码后字节数，用于分配缓冲。</li>
+ * </ul>
+ * 所有方法均为单线程语义下的纯函数（不持有状态），可在任意线程调用。
  *
  * @author axeon
  */
 public class ByteBufUtils {
 
+    /**
+     * 空字节数组常量，用于 NULL 或空值场景的统一引用。
+     */
     public static final byte[] NULL_DATA = new byte[0];
 
+    /**
+     * 读取 2 字节 little-endian 无符号整数（0 ~ 65535）。
+     *
+     * @param buf 源 ByteBuf
+     * @return 无符号 16 位整数
+     */
     public static int readUB2(ByteBuf buf) {
         int i = buf.readByte() & 0xff;
         i |= (buf.readByte() & 0xff) << 8;
         return i;
     }
 
+    /**
+     * 读取 3 字节 little-endian 无符号整数（0 ~ 16777215），主要用于 MySQL 包头长度。
+     *
+     * @param buf 源 ByteBuf
+     * @return 无符号 24 位整数
+     */
     public static int readUB3(ByteBuf buf) {
         int i = buf.readByte() & 0xff;
         i |= (buf.readByte() & 0xff) << 8;
@@ -27,6 +60,12 @@ public class ByteBufUtils {
         return i;
     }
 
+    /**
+     * 读取 4 字节 little-endian 无符号整数（0 ~ 4294967295）。
+     *
+     * @param buf 源 ByteBuf
+     * @return 无符号 32 位整数（long 容器避免符号扩展）
+     */
     public static long readUB4(ByteBuf buf) {
         long l = buf.readByte() & 0xff;
         l |= (buf.readByte() & 0xff) << 8;
@@ -35,6 +74,12 @@ public class ByteBufUtils {
         return l;
     }
 
+    /**
+     * 读取 8 字节 little-endian long（LenEnc 首字节 0xFE 时使用）。
+     *
+     * @param buf 源 ByteBuf
+     * @return 64 位整数
+     */
     public static long readLong(ByteBuf buf) {
         long l = (long) (buf.readByte() & 0xff);
         l |= (long) (buf.readByte() & 0xff) << 8;
@@ -48,10 +93,10 @@ public class ByteBufUtils {
     }
 
     /**
-     * 读取LenEnc格式。
+     * 读取 MySQL LenEnc 整数。首字节 251 表示 NULL（返回 -1）；252/253/254 分别后跟 2/3/8 字节小端数；否则首字节即数值。
      *
-     * @param buf
-     * @return
+     * @param buf 源 ByteBuf
+     * @return 数值；NULL 时返回 -1
      */
     public static long readLenEncInt(ByteBuf buf) {
         int length = buf.readByte() & 0xff;
@@ -69,17 +114,35 @@ public class ByteBufUtils {
         }
     }
 
+    /**
+     * 写入 2 字节 little-endian 无符号整数。
+     *
+     * @param buf 目标 ByteBuf
+     * @param i   待写入数值（仅取低 16 位）
+     */
     public static final void writeUB2(ByteBuf buf, int i) {
         buf.writeByte((byte) (i & 0xff));
         buf.writeByte((byte) (i >>> 8));
     }
 
+    /**
+     * 写入 3 字节 little-endian 无符号整数（用于 MySQL 包头长度）。
+     *
+     * @param buf 目标 ByteBuf
+     * @param i   待写入数值（仅取低 24 位）
+     */
     public static final void writeUB3(ByteBuf buf, int i) {
         buf.writeByte((byte) (i & 0xff));
         buf.writeByte((byte) (i >>> 8));
         buf.writeByte((byte) (i >>> 16));
     }
 
+    /**
+     * 写入 4 字节 little-endian int。
+     *
+     * @param buf 目标 ByteBuf
+     * @param i   待写入数值
+     */
     public static final void writeInt(ByteBuf buf, int i) {
         buf.writeByte((byte) (i & 0xff));
         buf.writeByte((byte) (i >>> 8));
@@ -87,10 +150,22 @@ public class ByteBufUtils {
         buf.writeByte((byte) (i >>> 24));
     }
 
+    /**
+     * 写入 4 字节 IEEE 754 float（基于 {@link #writeInt}）。
+     *
+     * @param buf 目标 ByteBuf
+     * @param f   待写入浮点数
+     */
     public static final void writeFloat(ByteBuf buf, float f) {
         writeInt(buf, Float.floatToIntBits(f));
     }
 
+    /**
+     * 写入 4 字节 little-endian 无符号整数。
+     *
+     * @param buf 目标 ByteBuf
+     * @param l   待写入数值（仅取低 32 位）
+     */
     public static final void writeUB4(ByteBuf buf, long l) {
         buf.writeByte((byte) (l & 0xff));
         buf.writeByte((byte) (l >>> 8));
@@ -98,6 +173,12 @@ public class ByteBufUtils {
         buf.writeByte((byte) (l >>> 24));
     }
 
+    /**
+     * 写入 8 字节 little-endian long。
+     *
+     * @param buf 目标 ByteBuf
+     * @param l   待写入数值
+     */
     public static final void writeLong(ByteBuf buf, long l) {
         buf.writeByte((byte) (l & 0xff));
         buf.writeByte((byte) (l >>> 8));
@@ -109,6 +190,12 @@ public class ByteBufUtils {
         buf.writeByte((byte) (l >>> 56));
     }
 
+    /**
+     * 写入 8 字节 IEEE 754 double（基于 {@link #writeLong}）。
+     *
+     * @param buf 目标 ByteBuf
+     * @param d   待写入浮点数
+     */
     public static final void writeDouble(ByteBuf buf, double d) {
         writeLong(buf, Double.doubleToLongBits(d));
     }

@@ -1,14 +1,33 @@
 package uw.mydb.proxy.util;
 
 /**
- * A server version.
+ * MySQL 服务器版本号封装，解析形如 "8.0.30" 或 "8.0.30-0ubuntu0.20.04.1" 的版本字符串为 major.minor.subMinor。
+ * 实现 {@link Comparable}，用于根据版本差异选择不同加密策略（如 caching_sha2_password 的 RSA padding）。
  */
 public class ServerVersion implements Comparable<ServerVersion> {
+    /**
+     * 原始完整版本字符串（可能包含发行版后缀），toString 时优先返回。
+     */
     private String completeVersion;
+    /**
+     * 主版本号。
+     */
     private Integer major;
+    /**
+     * 次版本号。
+     */
     private Integer minor;
+    /**
+     * 修订号。
+     */
     private Integer subMinor;
 
+    /**
+     * @param completeVersion 原始完整版本字符串
+     * @param major           主版本号
+     * @param minor           次版本号
+     * @param subMinor        修订号
+     */
     public ServerVersion(String completeVersion, int major, int minor, int subMinor) {
         this.completeVersion = completeVersion;
         this.major = major;
@@ -16,14 +35,19 @@ public class ServerVersion implements Comparable<ServerVersion> {
         this.subMinor = subMinor;
     }
 
+    /**
+     * @param major    主版本号
+     * @param minor    次版本号
+     * @param subMinor 修订号
+     */
     public ServerVersion(int major, int minor, int subMinor) {
         this(null, major, minor, subMinor );
     }
 
     /**
-     * Parse the server version into major/minor/subminor.
+     * 解析版本字符串为 major/minor/subminor。无法解析时返回 (0,0,0)。
      *
-     * @param versionString string version representation
+     * @param versionString 字符串版本表示
      * @return {@link ServerVersion}
      */
     public static ServerVersion parseVersion(final String versionString) {

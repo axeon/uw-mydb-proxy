@@ -1,5 +1,7 @@
 package uw.mydb.common.conf;
 
+import java.util.Objects;
+
 /**
  * 数据节点对象。
  * 数据节点通过服务器集群和库来确定唯一性。
@@ -18,7 +20,7 @@ public class DataNode {
 
     public DataNode() {
     }
-    
+
     public DataNode(long clusterId, String database) {
         this.clusterId = clusterId;
         this.database = database;
@@ -54,6 +56,22 @@ public class DataNode {
 
     public void setDatabase(String database) {
         this.database = database;
+    }
+
+    /**
+     * 基于clusterId+database判断相等，保证DataTable在HashSet/LinkedHashSet中能正确去重。
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof DataNode)) return false;
+        DataNode dataNode = (DataNode) o;
+        return clusterId == dataNode.clusterId && Objects.equals(database, dataNode.database);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(clusterId, database);
     }
 
     @Override

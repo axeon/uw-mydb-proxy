@@ -17,21 +17,40 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.X509EncodedKeySpec;
 
 /**
- * CachingSha2PasswordPlugin。
+ * MySQL caching_sha2_password 认证插件工具。
+ * <p>
+ * 提供：
+ * <ul>
+ *   <li>{@link #scrambleCachingSha2}：基于 SHA-256 的 scramble 生成（参考 MySQL 源码 {@code Generate_scramble::scramble}）。</li>
+ *   <li>{@link #encrypt}/{@link #encryptPassword}：使用服务端 RSA 公钥加密密码（用于 caching_sha2_password 完整认证路径，避免明文传输）。
+ *       根据 MySQL 版本（&gt;=8.0.5 使用 OAEPWithSHA-1AndMGF1Padding，更早版本使用 PKCS1Padding）。</li>
+ *   <li>{@link #decodeRSAPublicKey}：从 PEM 格式字符串解析 {@link RSAPublicKey}。</li>
+ * </ul>
  */
 public class CachingSha2PasswordPlugin {
 
     static final Logger log = LoggerFactory.getLogger(CachingSha2PasswordPlugin.class);
 
+    /**
+     * 插件协议名，与 MySQL 服务端 caching_sha2_password 对齐。
+     */
     public static final String PROTOCOL_PLUGIN_NAME = "caching_sha2_password"; // caching_sha2_password
 
+    /**
+     * 计算 caching_sha2_password 协议下的 scramble（XOR(SHA256(pass), SHA256(SHA256(SHA256(pass)) | nonce))）。
+     * 空密码返回空字节数组，SHA-256 不可用时记录 WARN 并返回 null。
+     *
+     * @param password 明文密码
+     * @param seed     服务端 nonce
+     * @return scramble 字节（32 字节），失败返回 null
+     */
     public static byte[] scrambleCachingSha2(String password, byte[] seed) {
         if (password == null || password.length() == 0) {
             log.warn("password is empty");
             return new byte[0];
         }
         try {
-            return SecurityUtils.scrambleCachingSha2(password.getBytes(), seed);
+            return SecurityUtils.scrambleCachingSha2(password.getBytes(java.nio.charset.StandardCharsets.UTF_8), seed);
         } catch (DigestException e) {
             log.warn("no such Digest", e);
             return null;
@@ -58,7 +77,8 @@ public class CachingSha2PasswordPlugin {
         byte[] input = null;
         input = password != null ? getBytesNullTerminated(password, encoding) : new byte[]{0};
         byte[] mysqlScrambleBuff = new byte[input.length];
-        SecurityUtils.xorString(input, mysqlScrambleBuff, seed.getBytes(), input.length);
+        //seed必须用与encoding一致的字符集还原为字节，否则平台默认字符集会破坏原始seed字节。
+        SecurityUtils.xorString(input, mysqlScrambleBuff, seed.getBytes(Charset.forName(encoding)), input.length);
         return encryptWithRSAPublicKey(mysqlScrambleBuff, decodeRSAPublicKey(publicKeyString), transformation);
     }
 
